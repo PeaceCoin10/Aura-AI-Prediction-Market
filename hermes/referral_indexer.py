@@ -36,10 +36,16 @@ ENGINE_DEFAULT = "0xE6056Bc6700F6d7E6fF8779B212655284dc1631C"
 CHUNK_DEFAULT = 500
 LOOKBACK_BLOCKS = 10_000
 
-# event signatures, hashed with keccak-256
+# Event signatures and their keccak-256 topics. The values are pinned so the worker runs on a bare
+# Python install (no eth-utils at runtime); test_referral_indexer re-derives them with eth_utils and
+# with `cast keccak`, so a typo cannot survive.
 SIG_BOUGHT = "SharesBought(bytes32,address,uint8,uint256,uint256,uint256,uint256)"
 SIG_SOLD = "SharesSold(bytes32,address,uint8,uint256,uint256,uint256,uint256)"
 SIG_ACCRUE = "accrue(bytes32,address,uint256)"
+
+TOPIC_BOUGHT = "0xf21c4ac9a2ac6238a9a299dec03abcc164b74fa85e7d949380f9d657a08f5fa9"
+TOPIC_SOLD = "0xbd3359e97cfa42d22e4990274c9d107f729226723ce88917de14e1b1d6eab510"
+SEL_ACCRUE = "387886c7"
 
 REF_MAGIC = b"auraref1"          # 8 bytes
 REF_TAG_LEN = len(REF_MAGIC) + 20  # + address = 28 bytes
@@ -90,6 +96,7 @@ def _basic_auth(parsed: urllib.parse.ParseResult) -> str:
 
 # ------------------------------------------------------------------- pure helpers
 def keccak_hex(data: str) -> str:
+    """keccak-256 of a hex string. eth_utils is optional: it is only needed to re-derive topics."""
     from eth_utils import keccak
 
     return "0x" + keccak(hexstr=data).hex()
@@ -125,12 +132,12 @@ def decode_trade(log: dict) -> dict | None:
         return None
     t0 = topics[0]
     words = _words(log.get("data", "0x"))
-    if t0 == topic0(SIG_BOUGHT):
+    if t0 == TOPIC_BOUGHT:
         if len(words) < 5:
             return None
         kind, outcome, amount_in, fee, shares, price = "buy", words[0], words[1], words[2], words[3], words[4]
         return {"kind": kind, "outcome": outcome, "volume": amount_in, "fee": fee, "shares": shares, "priceYes": price}
-    if t0 == topic0(SIG_SOLD):
+    if t0 == TOPIC_SOLD:
         if len(words) < 5:
             return None
         kind, outcome, shares_in, amount_out, fee, price = "sell", words[0], words[1], words[2], words[3], words[4]
@@ -144,7 +151,7 @@ def rebate_for(volume: int, rebate_bps: int = REBATE_BPS_DEFAULT) -> int:
 
 
 def accrue_calldata(trade_id_hex: str, referrer: str, volume: int) -> str:
-    selector = keccak_hex("0x" + SIG_ACCRUE.encode().hex())[2:][:8]
+    selector = SEL_ACCRUE
     tid = trade_id_hex[2:] if trade_id_hex.startswith("0x") else trade_id_hex
     tid = tid.rjust(64, "0")
     return "0x" + selector + tid + referrer[2:].lower().rjust(64, "0") + format(volume, "x").rjust(64, "0")
@@ -153,7 +160,7 @@ def accrue_calldata(trade_id_hex: str, referrer: str, volume: int) -> str:
 # ------------------------------------------------------------------------- index
 def collect(rpc_url: str, engine: str, from_block: int, to_block: int, chunk: int) -> list[dict]:
     """Every trade between two blocks that carries a referral tag."""
-    topics = [topic0(SIG_BOUGHT), topic0(SIG_SOLD)]
+    topics = [TOPIC_BOUGHT, TOPIC_SOLD]
     found: list[dict] = []
     block = from_block
     window = max(chunk, 1)

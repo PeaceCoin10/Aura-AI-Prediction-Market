@@ -133,9 +133,15 @@ def main():
 
         print("\n[8] live ticks (7s cadence)")
         before = page.locator('[data-testid="demo-hall"] button').first.inner_text()
-        page.wait_for_timeout(8000)
-        after = page.locator('[data-testid="demo-hall"] button').first.inner_text()
-        check("probability drifts over one tick", before != after, "text identical after 8s")
+        # Poll instead of sleeping a fixed 8s: a CI runner can land just before a tick boundary,
+        # and a longer window costs nothing when the feed moves on schedule.
+        after = before
+        for _ in range(30):
+            page.wait_for_timeout(1000)
+            after = page.locator('[data-testid="demo-hall"] button').first.inner_text()
+            if after != before:
+                break
+        check("probability drifts over one tick", before != after, "text identical after 30s")
 
         print("\n[9] paper order flow + artwork")
         page.locator('[data-testid="demo-hall"] button').first.click()

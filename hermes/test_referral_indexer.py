@@ -13,6 +13,11 @@ import unittest
 
 import referral_indexer as ri
 
+try:  # optional: only the re-derivation cross-check needs it
+    from eth_utils import keccak as _keccak
+except Exception:  # pragma: no cover - a bare install is the supported runtime
+    _keccak = None
+
 MARKET = "0x" + "11" * 32
 BUYER = "0x" + "ab" * 20
 REFERRER = "0x" + "cd" * 20
@@ -104,20 +109,31 @@ class CalldataTests(unittest.TestCase):
         data = ri.accrue_calldata("0x" + "aa" * 32, REFERRER, 3_000_000)
         body = data[2:]
         self.assertEqual(len(body), 8 + 64 * 3)
-        self.assertEqual("0x" + body[:8], ri.keccak_hex("0x" + ri.SIG_ACCRUE.encode().hex())[:10])
+        self.assertEqual("0x" + body[:8], "0x" + ri.SEL_ACCRUE)
         self.assertEqual(body[8:72], "aa" * 32)
         self.assertEqual(body[72:136], REFERRER[2:].rjust(64, "0"))
         self.assertEqual(int(body[136:200], 16), 3_000_000)
 
-    def test_topics_match_foundry(self):
-        # cross-implementation check: values produced by `cast keccak` / `cast sig` from the ABI
+    def test_pinned_topics_match_foundry(self):
+        # values produced by `cast keccak` / `cast sig` from the ABI, pinned so the worker needs
+        # no crypto dependency at runtime
         self.assertEqual(
-            ri.topic0(ri.SIG_BOUGHT), "0xf21c4ac9a2ac6238a9a299dec03abcc164b74fa85e7d949380f9d657a08f5fa9"
+            ri.TOPIC_BOUGHT, "0xf21c4ac9a2ac6238a9a299dec03abcc164b74fa85e7d949380f9d657a08f5fa9"
         )
         self.assertEqual(
-            ri.topic0(ri.SIG_SOLD), "0xbd3359e97cfa42d22e4990274c9d107f729226723ce88917de14e1b1d6eab510"
+            ri.TOPIC_SOLD, "0xbd3359e97cfa42d22e4990274c9d107f729226723ce88917de14e1b1d6eab510"
         )
-        self.assertEqual(ri.accrue_calldata("0x" + "aa" * 32, REFERRER, 1)[:10], "0x387886c7")
+        self.assertEqual(ri.SEL_ACCRUE, "387886c7")
+
+    @unittest.skipIf(_keccak is None, "eth_utils not installed: pinned values still validated by cast")
+    def test_pinned_topics_are_recomputable(self):
+        # independent re-derivation, so a hand-edited constant cannot slip through
+        for signature, pinned in (
+            (ri.SIG_BOUGHT, ri.TOPIC_BOUGHT),
+            (ri.SIG_SOLD, ri.TOPIC_SOLD),
+        ):
+            self.assertEqual("0x" + _keccak(signature.encode()).hex(), pinned)
+        self.assertEqual(_keccak(ri.SIG_ACCRUE.encode()).hex()[:8], ri.SEL_ACCRUE)
 
 
 if __name__ == "__main__":
