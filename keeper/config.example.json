@@ -1,0 +1,12 @@
+{
+  "rpcUrl": "https://mainnet.base.org",
+  "factory": "0xYOUR_FACTORY_ADDRESS",
+  "feeVault": "0xYOUR_FEE_VAULT_ADDRESS",
+  "privateKey": "",
+  "intervalMs": 30000,
+  "feeThreshold": "10000000",
+  "autoRefund": false,
+  "webhookUrl": "",
+  "proposalDir": "./proposals",
+  "maxFeePerGasGwei": 10
+}

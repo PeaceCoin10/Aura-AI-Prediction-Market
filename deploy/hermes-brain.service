@@ -1,0 +1,25 @@
+[Unit]
+Description=Hermes Prediction Brain (Base mainnet)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/prediction-market
+# 私钥不进 unit 文件：启动脚本会从桌面密钥文档读进内存（也可改用 EnvironmentFile，权限 0600）
+Environment=INTERVAL=300
+Environment=SEED_USDC=100
+Environment=RPC_URL=https://mainnet.base.org
+Environment=ENGINE=0xE6056Bc6700F6d7E6fF8779B212655284dc1631C
+Environment=USDC=0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
+Environment=ORACLE_CONFIRM_SAMPLES=3
+Environment=ORACLE_CONFIRM_GAP=30
+ExecStart=/bin/bash /root/prediction-market/script/run-brain-mainnet.sh
+Restart=always
+RestartSec=15
+# 日志：journalctl -u hermes-brain -f
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

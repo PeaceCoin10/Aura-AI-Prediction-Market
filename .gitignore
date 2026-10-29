@@ -1,0 +1,38 @@
+out/
+cache/
+broadcast/
+node_modules/
+sdk/dist/
+sdk/node_modules/
+keeper/node_modules/
+keeper/proposals/*.json
+*.log
+.env
+.env.local
+.env.*.local
+
+# 前端构建产物（Vercel/Netlify 会在云端重新构建）
+frontend/dist/
+dist/
+*.tsbuildinfo
+
+# 一次性隧道地址（每次启动都变，不要进版本库）
+PUBLIC-URL.txt
+
+# 平台部署状态文件
+.vercel/
+.netlify/
+deploy/.vercel-url
+deploy/.netlify-url
+
+# Hermes brain runtime
+hermes/hermes-runtime/
+hermes-runtime/
+
+# python
+__pycache__/
+*.pyc
+
+# legacy archive build output
+legacy/out/
+legacy/cache/

@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="380" viewBox="0 0 1200 380" role="img" aria-label="SPORTS · F1">
+  <defs>
+    <linearGradient id="txt" x1="0" y1="0" x2="640" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/><stop offset="62%" stop-color="#a7f3d0"/><stop offset="100%" stop-color="#34d399"/>
+    </linearGradient>
+  </defs>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="380" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#030c09"/><stop offset="52%" stop-color="#065f46" stop-opacity=".30"/><stop offset="100%" stop-color="#030c09"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="43%" cy="73%" r="58%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity=".30"/><stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vig" cx="50%" cy="50%" r="72%">
+      <stop offset="55%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".62"/>
+    </radialGradient>
+    <linearGradient id="edge" x1="0" y1="380" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0"/><stop offset="50%" stop-color="#a7f3d0" stop-opacity=".7"/><stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+      <path d="M60 0H0V60" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+    </pattern>
+    <clipPath id="c"><rect width="1200" height="380"/></clipPath>
+  </defs>
+  <g clip-path="url(#c)">
+    <rect width="1200" height="380" fill="url(#bg)"/>
+    <rect width="1200" height="380" fill="url(#grid)"/>
+    <rect width="1200" height="380" fill="url(#glow)"/>
+    <rect x="70" y="90" width="1060" height="190" rx="8" fill="none" stroke="#a7f3d0" stroke-width="2" opacity=".22"/>
+    <line x1="600" y1="90" x2="600" y2="280" stroke="#a7f3d0" stroke-width="2" opacity=".22"/>
+    <circle cx="600" cy="182" r="120" fill="none" stroke="#a7f3d0" stroke-width="2" opacity=".22"/>
+    <circle cx="600" cy="182" r="6" fill="#34d399" opacity=".85"/>
+    <circle cx="927" cy="205" r="3" fill="#34d399" opacity=".55"/>
+    <line x1="927" y1="205" x2="1134" y2="180" stroke="#34d399" stroke-width="1.2" opacity=".28"/>
+    <circle cx="165" cy="477" r="4" fill="#34d399" opacity=".55"/>
+    <line x1="165" y1="477" x2="330" y2="442" stroke="#34d399" stroke-width="1.2" opacity=".28"/>
+    <circle cx="857" cy="338" r="5" fill="#34d399" opacity=".55"/>
+    <line x1="857" y1="338" x2="1034" y2="311" stroke="#34d399" stroke-width="1.2" opacity=".28"/>
+    <circle cx="718" cy="585" r="3" fill="#34d399" opacity=".55"/>
+    <line x1="718" y1="585" x2="896" y2="574" stroke="#34d399" stroke-width="1.2" opacity=".28"/>
+    <circle cx="425" cy="555" r="4" fill="#34d399" opacity=".55"/>
+    <line x1="425" y1="555" x2="650" y2="546" stroke="#34d399" stroke-width="1.2" opacity=".28"/>
+    <circle cx="235" cy="183" r="5" fill="#34d399" opacity=".55"/>
+    <line x1="235" y1="183" x2="330" y2="129" stroke="#34d399" stroke-width="1.2" opacity=".28"/>
+    <circle cx="723" cy="539" r="3" fill="#34d399" opacity=".55"/>
+    <line x1="723" y1="539" x2="866" y2="479" stroke="#34d399" stroke-width="1.2" opacity=".28"/>
+    <rect width="1200" height="380" fill="url(#vig)"/>
+    <rect x="0" y="377" width="1200" height="3" fill="url(#edge)"/>
+  </g>
+  <text x="72" y="198" font-family="Inter, Segoe UI, sans-serif" font-size="66" font-weight="700" fill="url(#txt)" letter-spacing="-1.5">SPORTS · F1</text>
+  <text x="74" y="246" font-family="Inter, Segoe UI, sans-serif" font-size="21" fill="#9fb3c8">28 markets · CPMM pricing · simulated book</text>
+  <rect x="72" y="278" width="152" height="36" rx="18" fill="#34d399"/>
+  <text x="94" y="302" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" fill="#05060a">TRADE NOW</text>
+</svg>

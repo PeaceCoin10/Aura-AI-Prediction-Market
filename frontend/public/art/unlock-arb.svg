@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-label="Will ARB trade lower 24h after its next token unlock?">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="675" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0b0703"/><stop offset="52%" stop-color="#7c2d12" stop-opacity=".30"/><stop offset="100%" stop-color="#0b0703"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="59%" cy="67%" r="58%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity=".30"/><stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vig" cx="50%" cy="50%" r="72%">
+      <stop offset="55%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".62"/>
+    </radialGradient>
+    <linearGradient id="edge" x1="0" y1="675" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0"/><stop offset="50%" stop-color="#fcd34d" stop-opacity=".7"/><stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+      <path d="M60 0H0V60" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+    </pattern>
+    <clipPath id="c"><rect width="1200" height="675"/></clipPath>
+  </defs>
+  <g clip-path="url(#c)">
+    <rect width="1200" height="675" fill="url(#bg)"/>
+    <rect width="1200" height="675" fill="url(#grid)"/>
+    <rect width="1200" height="675" fill="url(#glow)"/>
+    <rect x="113" y="300" width="14" height="199" rx="3" fill="#f87171" opacity="0.30"/>
+    <line x1="120" y1="274" x2="120" y2="518" stroke="#f87171" stroke-width="2" opacity=".4"/>
+    <rect x="233" y="348" width="14" height="152" rx="3" fill="#34d399" opacity="0.38"/>
+    <line x1="240" y1="322" x2="240" y2="518" stroke="#34d399" stroke-width="2" opacity=".4"/>
+    <rect x="336" y="382" width="14" height="118" rx="3" fill="#34d399" opacity="0.46"/>
+    <line x1="343" y1="356" x2="343" y2="518" stroke="#34d399" stroke-width="2" opacity=".4"/>
+    <rect x="460" y="262" width="14" height="237" rx="3" fill="#f87171" opacity="0.54"/>
+    <line x1="467" y1="236" x2="467" y2="518" stroke="#f87171" stroke-width="2" opacity=".4"/>
+    <rect x="587" y="426" width="14" height="74" rx="3" fill="#34d399" opacity="0.30"/>
+    <line x1="594" y1="400" x2="594" y2="518" stroke="#34d399" stroke-width="2" opacity=".4"/>
+    <rect x="686" y="402" width="14" height="98" rx="3" fill="#34d399" opacity="0.38"/>
+    <line x1="693" y1="376" x2="693" y2="518" stroke="#34d399" stroke-width="2" opacity=".4"/>
+    <rect x="800" y="400" width="14" height="99" rx="3" fill="#f87171" opacity="0.46"/>
+    <line x1="807" y1="374" x2="807" y2="518" stroke="#f87171" stroke-width="2" opacity=".4"/>
+    <rect x="935" y="426" width="14" height="73" rx="3" fill="#34d399" opacity="0.54"/>
+    <line x1="942" y1="400" x2="942" y2="518" stroke="#34d399" stroke-width="2" opacity=".4"/>
+    <rect x="1039" y="404" width="14" height="96" rx="3" fill="#34d399" opacity="0.30"/>
+    <line x1="1046" y1="378" x2="1046" y2="518" stroke="#34d399" stroke-width="2" opacity=".4"/>
+    <polyline points="40,243 148,309 256,278 364,274 472,311 580,334 688,337 796,337 904,337 1012,337 1120,337" fill="none" stroke="#fcd34d" stroke-width="3" opacity=".7"/>
+    <rect width="1200" height="675" fill="url(#vig)"/>
+    <rect x="0" y="672" width="1200" height="3" fill="url(#edge)"/>
+  </g>
+</svg>

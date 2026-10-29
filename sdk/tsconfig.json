@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "lib": [
+      "ES2022"
+    ],
+    "outDir": "dist",
+    "rootDir": ".",
+    "declaration": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "exactOptionalPropertyTypes": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "PredictionSDK.ts",
+    "PredictionSDK.test.ts",
+    "CentralPredictionSDK.ts",
+    "CentralPredictionSDK.test.ts",
+    "e2e.ts",
+    "e2e-central.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

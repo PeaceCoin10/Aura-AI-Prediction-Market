@@ -1,0 +1,104 @@
+/root/.pyenv/versions/3.12.0/lib/python3.12/site-packages/slither/utils/output.py:10: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import require
+'forge clean' running (wd: /root/prediction-market)
+'forge build --build-info --skip */test/** */script/** --force' running (wd: /root/prediction-market)
+
+PredictionVault.addLiquidity(uint256) (src/PredictionVault.sol#232-254) uses a dangerous strict equality:
+	- shares == 0 (src/PredictionVault.sol#242)
+ProtocolFeeVault.autoDistributeFee() (src/ProtocolFeeVault.sol#56-65) uses a dangerous strict equality:
+	- amount == 0 (src/ProtocolFeeVault.sol#59)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dangerous-strict-equalities
+
+Reentrancy in PredictionVault.buy(uint8,uint256,uint256) (src/PredictionVault.sol#299-352):
+	External calls:
+	- collateral.safeTransferFrom(msg.sender,address(this),amountIn) (src/PredictionVault.sol#323)
+	- collateral.safeTransfer(feeVault,fee) (src/PredictionVault.sol#324)
+	State variables written after the call(s):
+	- noReserve = newNo (src/PredictionVault.sol#330)
+	PredictionVault.noReserve (src/PredictionVault.sol#74) can be used in cross function reentrancies:
+	- PredictionVault.depth() (src/PredictionVault.sol#566-568)
+	- PredictionVault.noReserve (src/PredictionVault.sol#74)
+	- PredictionVault.previewBuy(uint8,uint256) (src/PredictionVault.sol#581-591)
+	- PredictionVault.priceNo() (src/PredictionVault.sol#559-563)
+	- PredictionVault.priceYes() (src/PredictionVault.sol#552-556)
+	- noReserve = newNo_scope_1 (src/PredictionVault.sol#337)
+	PredictionVault.noReserve (src/PredictionVault.sol#74) can be used in cross function reentrancies:
+	- PredictionVault.depth() (src/PredictionVault.sol#566-568)
+	- PredictionVault.noReserve (src/PredictionVault.sol#74)
+	- PredictionVault.previewBuy(uint8,uint256) (src/PredictionVault.sol#581-591)
+	- PredictionVault.priceNo() (src/PredictionVault.sol#559-563)
+	- PredictionVault.priceYes() (src/PredictionVault.sol#552-556)
+	- yesReserve = newYes (src/PredictionVault.sol#331)
+	PredictionVault.yesReserve (src/PredictionVault.sol#73) can be used in cross function reentrancies:
+	- PredictionVault.depth() (src/PredictionVault.sol#566-568)
+	- PredictionVault.previewBuy(uint8,uint256) (src/PredictionVault.sol#581-591)
+	- PredictionVault.priceNo() (src/PredictionVault.sol#559-563)
+	- PredictionVault.priceYes() (src/PredictionVault.sol#552-556)
+	- PredictionVault.yesReserve (src/PredictionVault.sol#73)
+	- yesReserve = newYes_scope_0 (src/PredictionVault.sol#336)
+	PredictionVault.yesReserve (src/PredictionVault.sol#73) can be used in cross function reentrancies:
+	- PredictionVault.depth() (src/PredictionVault.sol#566-568)
+	- PredictionVault.previewBuy(uint8,uint256) (src/PredictionVault.sol#581-591)
+	- PredictionVault.priceNo() (src/PredictionVault.sol#559-563)
+	- PredictionVault.priceYes() (src/PredictionVault.sol#552-556)
+	- PredictionVault.yesReserve (src/PredictionVault.sol#73)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-1
+
+Reentrancy in PredictionVault.buy(uint8,uint256,uint256) (src/PredictionVault.sol#299-352):
+	External calls:
+	- collateral.safeTransferFrom(msg.sender,address(this),amountIn) (src/PredictionVault.sol#323)
+	- collateral.safeTransfer(feeVault,fee) (src/PredictionVault.sol#324)
+	State variables written after the call(s):
+	- totalVolume += amountIn (src/PredictionVault.sol#346)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#reentrancy-vulnerabilities-2
+
+PredictionFactory.createMarket(bytes32,address,uint256,uint256,uint256,uint256) (src/PredictionFactory.sol#143-183) uses timestamp for comparisons
+	Dangerous comparisons:
+	- resolutionTime_ <= block.timestamp (src/PredictionFactory.sol#154)
+PredictionVault.initialize(address,address,address,address,address,bytes32,uint256,uint256,uint256,uint256) (src/PredictionVault.sol#174-224) uses timestamp for comparisons
+	Dangerous comparisons:
+	- resolutionTime_ <= block.timestamp (src/PredictionVault.sol#191)
+PredictionVault.addLiquidity(uint256) (src/PredictionVault.sol#232-254) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp >= resolutionTime (src/PredictionVault.sol#234)
+PredictionVault.buy(uint8,uint256,uint256) (src/PredictionVault.sol#299-352) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp >= resolutionTime (src/PredictionVault.sol#307)
+PredictionVault.sell(uint8,uint256,uint256) (src/PredictionVault.sol#360-408) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp >= resolutionTime (src/PredictionVault.sol#367)
+PredictionVault.resolve(uint8) (src/PredictionVault.sol#426-435) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp < resolutionTime (src/PredictionVault.sol#428)
+PredictionVault.emergencyRefund() (src/PredictionVault.sol#441-449) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp < resolutionTime + REFUND_DELAY (src/PredictionVault.sol#443)
+PredictionVault.tradingOpen() (src/PredictionVault.sol#571-573) uses timestamp for comparisons
+	Dangerous comparisons:
+	- ! resolved && ! paused() && block.timestamp < resolutionTime (src/PredictionVault.sol#572)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+
+PredictionVault.buy(uint8,uint256,uint256) (src/PredictionVault.sol#299-352) has a high cyclomatic complexity (16).
+PredictionVault.sell(uint8,uint256,uint256) (src/PredictionVault.sol#360-408) has a high cyclomatic complexity (14).
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#cyclomatic-complexity
+
+FixedPoint.min(uint256,uint256) (src/libraries/FixedPoint.sol#45-47) is never used and should be removed
+FixedPoint.mulWouldOverflow(uint256,uint256) (src/libraries/FixedPoint.sol#54-57) is never used and should be removed
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#dead-code
+
+Pragma version0.8.24 (src/ConditionalToken.sol#2) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.
+Pragma version0.8.24 (src/PredictionFactory.sol#2) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.
+Pragma version0.8.24 (src/PredictionVault.sol#2) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.
+Pragma version0.8.24 (src/ProtocolFeeVault.sol#2) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.
+Pragma version0.8.24 (src/libraries/FixedPoint.sol#2) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.
+Pragma version0.8.24 (src/mocks/MockUSDC.sol#2) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.
+solc-0.8.24 is not recommended for deployment
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#incorrect-versions-of-solidity
+
+Variable PredictionVault.sell(uint8,uint256,uint256).newNo_scope_0 (src/PredictionVault.sol#383) is too similar to PredictionVault.buy(uint8,uint256,uint256).newNo_scope_1 (src/PredictionVault.sol#334)
+Variable PredictionVault.buy(uint8,uint256,uint256).newYes_scope_0 (src/PredictionVault.sol#333) is too similar to PredictionVault.sell(uint8,uint256,uint256).newYes_scope_1 (src/PredictionVault.sol#384)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#variable-names-too-similar
+
+FixedPoint.WAD (src/libraries/FixedPoint.sol#21) is never used in FixedPoint (src/libraries/FixedPoint.sol#16-58)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#unused-state-variable
+. analyzed (30 contracts with 93 detectors), 26 result(s) found

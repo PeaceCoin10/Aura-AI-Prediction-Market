@@ -1,0 +1,23 @@
+{
+  "name": "aura-ai-prediction-market",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aura — Agentic DeFi prediction markets: Hermes AI brain + on-chain CPMM + zero-friction paper trading, on Base.",
+  "license": "MIT",
+  "scripts": {
+    "test": "npm run test:contracts && npm run test:sdk && npm run test:brain",
+    "test:contracts": "forge test",
+    "test:invariant": "FOUNDRY_INVARIANT_RUNS=512 FOUNDRY_INVARIANT_DEPTH=200 forge test --match-path 'test/*Invariant*' -vv",
+    "test:sdk": "cd sdk && npm test",
+    "test:brain": "python3 -m unittest discover -s hermes -p 'test_*.py'",
+    "typecheck": "cd frontend && npx tsc --noEmit",
+    "build": "cd frontend && npx vite build",
+    "dev": "cd frontend && npm run dev",
+    "e2e:ui": "cd frontend && python3 scripts/e2e_ui.py",
+    "e2e:chain": "cd frontend && python3 scripts/e2e_local.py",
+    "brain": "python3 hermes/hermes_brain.py --interval 300",
+    "insights": "python3 hermes/insights.py --workdir hermes-runtime --out frontend/public/insights.json",
+    "tunnel": "./deploy/tunnel.sh start",
+    "verify:contracts": "bash deploy/verify-basescan.sh"
+  }
+}

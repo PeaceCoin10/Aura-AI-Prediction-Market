@@ -1,0 +1,22 @@
+{
+  "name": "@prediction/sdk",
+  "version": "1.0.0",
+  "description": "Safe frontend wrappers: legacy PredictionVault SDK + CentralPredictionEngine SDK",
+  "main": "dist/PredictionSDK.js",
+  "types": "dist/PredictionSDK.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node dist/PredictionSDK.test.js && node dist/CentralPredictionSDK.test.js",
+    "test:e2e": "npm run build && node dist/e2e.js",
+    "test:central": "npm run build && node dist/CentralPredictionSDK.test.js",
+    "test:e2e:central": "npm run build && node dist/e2e-central.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.3"
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT"
+}

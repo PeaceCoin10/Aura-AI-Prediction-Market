@@ -1,0 +1,54 @@
+/root/.pyenv/versions/3.12.0/lib/python3.12/site-packages/slither/utils/output.py:10: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import require
+'forge clean' running (wd: /root/prediction-market)
+'forge build --build-info --skip */test/** */script/** --force' running (wd: /root/prediction-market)
+
+CentralPredictionEngine._createMarket(bytes32,string,string,uint256) (src/CentralPredictionEngine.sol#305-327) uses timestamp for comparisons
+	Dangerous comparisons:
+	- resolutionTime <= block.timestamp + MIN_TRADING_WINDOW (src/CentralPredictionEngine.sol#314)
+	- resolutionTime > block.timestamp + MAX_TRADING_WINDOW (src/CentralPredictionEngine.sol#315)
+CentralPredictionEngine.seedLiquidity(bytes32,uint256) (src/CentralPredictionEngine.sol#346-360) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp >= m.resolutionTime (src/CentralPredictionEngine.sol#349)
+CentralPredictionEngine.buyShares(bytes32,uint8,uint256,uint256) (src/CentralPredictionEngine.sol#370-409) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp >= m.resolutionTime (src/CentralPredictionEngine.sol#378)
+CentralPredictionEngine.sellShares(bytes32,uint8,uint256,uint256) (src/CentralPredictionEngine.sol#414-451) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp >= m.resolutionTime (src/CentralPredictionEngine.sol#422)
+CentralPredictionEngine.resolveMarket(bytes32,uint8) (src/CentralPredictionEngine.sol#513-520) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp < m.resolutionTime (src/CentralPredictionEngine.sol#516)
+CentralPredictionEngine.emergencyRefund(bytes32) (src/CentralPredictionEngine.sol#525-531) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp < m.resolutionTime + REFUND_DELAY (src/CentralPredictionEngine.sol#528)
+CentralPredictionEngine._settle(bytes32,CentralPredictionEngine.Market,uint8,bool) (src/CentralPredictionEngine.sol#533-562) uses timestamp for comparisons
+	Dangerous comparisons:
+	- require(bool,string)(m.cash >= m.owed,INSOLVENT) (src/CentralPredictionEngine.sol#549)
+CentralPredictionEngine._isFinal(CentralPredictionEngine.Market) (src/CentralPredictionEngine.sol#572-575) uses timestamp for comparisons
+	Dangerous comparisons:
+	- m.finalized || block.timestamp >= m.disputeEndsAt (src/CentralPredictionEngine.sol#574)
+CentralPredictionEngine.overrideResolution(bytes32,uint8) (src/CentralPredictionEngine.sol#582-598) uses timestamp for comparisons
+	Dangerous comparisons:
+	- m.finalized || block.timestamp >= m.disputeEndsAt (src/CentralPredictionEngine.sol#585)
+CentralPredictionEngine.finalize(bytes32) (src/CentralPredictionEngine.sol#604-612) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp < m.disputeEndsAt (src/CentralPredictionEngine.sol#608)
+CentralPredictionEngine.tradingOpen(bytes32) (src/CentralPredictionEngine.sol#782-785) uses timestamp for comparisons
+	Dangerous comparisons:
+	- m.exists && ! m.resolved && ! paused && block.timestamp < m.resolutionTime (src/CentralPredictionEngine.sol#784)
+CentralPredictionEngine.resolutionState(bytes32) (src/CentralPredictionEngine.sol#807-819) uses timestamp for comparisons
+	Dangerous comparisons:
+	- disputing = m.resolved && ! finalized (src/CentralPredictionEngine.sol#815)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+
+CentralPredictionEngine.buyShares(bytes32,uint8,uint256,uint256) (src/CentralPredictionEngine.sol#370-409) has a high cyclomatic complexity (12).
+CentralPredictionEngine.sellShares(bytes32,uint8,uint256,uint256) (src/CentralPredictionEngine.sol#414-451) has a high cyclomatic complexity (13).
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#cyclomatic-complexity
+
+Pragma version0.8.24 (src/CentralPredictionEngine.sol#2) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.
+Pragma version0.8.24 (src/ProtocolFeeVault.sol#2) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.
+Pragma version0.8.24 (src/libraries/FixedPoint.sol#2) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.
+solc-0.8.24 is not recommended for deployment
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#incorrect-versions-of-solidity
+. analyzed (18 contracts with 93 detectors), 18 result(s) found

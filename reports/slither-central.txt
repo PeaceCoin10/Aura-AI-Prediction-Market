@@ -1,0 +1,76 @@
+/root/.pyenv/versions/3.12.0/lib/python3.12/site-packages/slither/utils/output.py:10: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import require
+'forge clean' running (wd: /root/prediction-market)
+'forge build --build-info --skip */test/** */script/** --force' running (wd: /root/prediction-market)
+
+CentralPredictionEngine._createMarket(bytes32,string,string,uint256) (src/CentralPredictionEngine.sol#278-300) uses timestamp for comparisons
+	Dangerous comparisons:
+	- resolutionTime <= block.timestamp + MIN_TRADING_WINDOW (src/CentralPredictionEngine.sol#287)
+	- resolutionTime > block.timestamp + MAX_TRADING_WINDOW (src/CentralPredictionEngine.sol#288)
+CentralPredictionEngine.seedLiquidity(bytes32,uint256) (src/CentralPredictionEngine.sol#319-333) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp >= m.resolutionTime (src/CentralPredictionEngine.sol#322)
+CentralPredictionEngine.buyShares(bytes32,uint8,uint256,uint256) (src/CentralPredictionEngine.sol#343-382) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp >= m.resolutionTime (src/CentralPredictionEngine.sol#351)
+CentralPredictionEngine.sellShares(bytes32,uint8,uint256,uint256) (src/CentralPredictionEngine.sol#387-424) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp >= m.resolutionTime (src/CentralPredictionEngine.sol#395)
+CentralPredictionEngine.resolveMarket(bytes32,uint8) (src/CentralPredictionEngine.sol#486-493) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp < m.resolutionTime (src/CentralPredictionEngine.sol#489)
+CentralPredictionEngine.emergencyRefund(bytes32) (src/CentralPredictionEngine.sol#498-504) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp < m.resolutionTime + REFUND_DELAY (src/CentralPredictionEngine.sol#501)
+CentralPredictionEngine.tradingOpen(bytes32) (src/CentralPredictionEngine.sol#696-699) uses timestamp for comparisons
+	Dangerous comparisons:
+	- m.exists && ! m.resolved && ! paused && block.timestamp < m.resolutionTime (src/CentralPredictionEngine.sol#698)
+PredictionFactory.createMarket(bytes32,address,uint256,uint256,uint256,uint256) (src/PredictionFactory.sol#143-183) uses timestamp for comparisons
+	Dangerous comparisons:
+	- resolutionTime_ <= block.timestamp (src/PredictionFactory.sol#154)
+PredictionVault.initialize(address,address,address,address,address,bytes32,uint256,uint256,uint256,uint256) (src/PredictionVault.sol#176-226) uses timestamp for comparisons
+	Dangerous comparisons:
+	- resolutionTime_ <= block.timestamp (src/PredictionVault.sol#193)
+PredictionVault.addLiquidity(uint256) (src/PredictionVault.sol#234-258) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp >= resolutionTime (src/PredictionVault.sol#236)
+PredictionVault.buy(uint8,uint256,uint256) (src/PredictionVault.sol#303-359) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp >= resolutionTime (src/PredictionVault.sol#311)
+PredictionVault.sell(uint8,uint256,uint256) (src/PredictionVault.sol#367-415) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp >= resolutionTime (src/PredictionVault.sol#374)
+PredictionVault.resolve(uint8) (src/PredictionVault.sol#433-442) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp < resolutionTime (src/PredictionVault.sol#435)
+PredictionVault.emergencyRefund() (src/PredictionVault.sol#448-456) uses timestamp for comparisons
+	Dangerous comparisons:
+	- block.timestamp < resolutionTime + REFUND_DELAY (src/PredictionVault.sol#450)
+PredictionVault.tradingOpen() (src/PredictionVault.sol#579-581) uses timestamp for comparisons
+	Dangerous comparisons:
+	- ! resolved && ! paused() && block.timestamp < resolutionTime (src/PredictionVault.sol#580)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#block-timestamp
+
+CentralPredictionEngine.buyShares(bytes32,uint8,uint256,uint256) (src/CentralPredictionEngine.sol#343-382) has a high cyclomatic complexity (12).
+CentralPredictionEngine.sellShares(bytes32,uint8,uint256,uint256) (src/CentralPredictionEngine.sol#387-424) has a high cyclomatic complexity (13).
+PredictionVault.buy(uint8,uint256,uint256) (src/PredictionVault.sol#303-359) has a high cyclomatic complexity (16).
+PredictionVault.sell(uint8,uint256,uint256) (src/PredictionVault.sol#367-415) has a high cyclomatic complexity (14).
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#cyclomatic-complexity
+
+Pragma version0.8.24 (src/CentralPredictionEngine.sol#2) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.
+Pragma version0.8.24 (src/ConditionalToken.sol#2) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.
+Pragma version0.8.24 (src/PredictionFactory.sol#2) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.
+Pragma version0.8.24 (src/PredictionVault.sol#2) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.
+Pragma version0.8.24 (src/ProtocolFeeVault.sol#2) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.
+Pragma version0.8.24 (src/libraries/FixedPoint.sol#2) necessitates a version too recent to be trusted. Consider deploying with 0.8.18.
+solc-0.8.24 is not recommended for deployment
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#incorrect-versions-of-solidity
+
+Variable PredictionVault.sell(uint8,uint256,uint256).newNo_scope_0 (src/PredictionVault.sol#390) is too similar to PredictionVault.buy(uint8,uint256,uint256).newNo_scope_1 (src/PredictionVault.sol#335)
+Variable PredictionVault.buy(uint8,uint256,uint256).newYes_scope_0 (src/PredictionVault.sol#334) is too similar to PredictionVault.sell(uint8,uint256,uint256).newYes_scope_1 (src/PredictionVault.sol#391)
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#variable-names-too-similar
+
+CentralPredictionEngine.collateral (src/CentralPredictionEngine.sol#99) should be immutable 
+Reference: https://github.com/crytic/slither/wiki/Detector-Documentation#state-variables-that-could-be-declared-immutable
+. analyzed (33 contracts with 93 detectors), 29 result(s) found
+INFO:Slither:reports/slither-central.json exists already, the overwrite is prevented
