@@ -7,7 +7,7 @@ import {ProtocolFeeVault} from "../src/ProtocolFeeVault.sol";
 import {CentralPredictionEngine} from "../src/CentralPredictionEngine.sol";
 
 /**
- * @notice 单合约多盘口引擎：功能 + 资金安全 + Hermes 全自动流程集成测试
+ * @notice Single-contract multi-market engine: behaviour, fund safety and the full Hermes flow
  */
 contract CentralEngineTest is Test {
     MockUSDC internal usdc;
@@ -16,8 +16,8 @@ contract CentralEngineTest is Test {
 
     address internal constant ADMIN = address(0xA11CE);
     address internal constant TREASURY = address(0xBEEF);
-    address internal constant BOT = address(0xB07); // Hermes 建盘角色
-    address internal constant ORACLE = address(0x0AC1E); // Hermes 裁决角色
+    address internal constant BOT = address(0xB07); // Hermes market creator
+    address internal constant ORACLE = address(0x0AC1E); // Hermes oracle
     address internal constant ALICE = address(0xA1);
     address internal constant BOB = address(0xB1);
     address internal constant CAROL = address(0xC1);
@@ -25,7 +25,7 @@ contract CentralEngineTest is Test {
     bytes32 internal constant MID = keccak256("BTC-24H-ABOVE-100K");
     uint256 internal resolutionTime;
 
-    string internal constant QUESTION = unicode"BTC 能否在 24 小时内突破 100,000 USDC？";
+    string internal constant QUESTION = "Will BTC break 100,000 USDC within 24 hours?";
 
     function setUp() public {
         usdc = new MockUSDC();
@@ -67,13 +67,13 @@ contract CentralEngineTest is Test {
     }
 
 
-    /// @dev 跳过 1 小时争议缓冲期（模拟「Safe 多签没有介入」）
+    /// @dev Skip the 1 hour dispute buffer (simulates "the Safe did not intervene")
     function _passDispute(bytes32 id) internal {
         (, , , , uint256 ends, ) = engine.resolutionState(id);
         if (block.timestamp < ends) vm.warp(ends);
     }
 
-    /// @dev 结算 + 直接跨过争议期
+    /// @dev Settlement + skip the dispute window
     function _resolveAndFinalize(bytes32 id, uint8 outcome) internal {
         vm.prank(ORACLE);
         engine.resolveMarket(id, outcome);
@@ -91,7 +91,7 @@ contract CentralEngineTest is Test {
         }
     }
 
-    /// @notice A1/A2 不变式：现金覆盖应付、覆盖单边全赢；总供应 = 池内 + 用户
+    /// @notice A1/A2 invariants: cash covers owed and either side's full win; supply = pool + users
     function _assertSolvent(bytes32 id) internal view {
         CentralPredictionEngine.Core memory m = _m(id);
         assertGe(m.cash, m.owed, "A1: cash must cover owed");
@@ -103,17 +103,17 @@ contract CentralEngineTest is Test {
         }
     }
 
-    /// @notice 合约持有的 USDC 必须等于所有盘口 cash 之和（手续费已即时划给 FeeVault）
+    /// @notice Contract USDC balance must equal the sum of every market's cash (fees leave immediately)
     function _assertCashReconciles(bytes32 idA, bytes32 idB) internal view {
         assertEq(usdc.balanceOf(address(engine)), _m(idA).cash + _m(idB).cash, "USDC balance == sum(cash)");
     }
 
-    /* -------------------------------- 建盘 -------------------------------- */
+    /* ------------------------------- Create ------------------------------- */
 
     function test_CreateMarket_ByAuthorizedBot() public {
         bytes32 id = keccak256("ETH-ABOVE-4K");
         uint256 rt = block.timestamp + 2 days;
-        string memory q = unicode"ETH 会在一周内突破 4,000 USDC 吗？";
+        string memory q = "Will ETH break 4,000 USDC within a week?";
 
         vm.expectEmit(true, true, false, true, address(engine));
         emit CentralPredictionEngine.MarketCreated(id, BOT, q, "general", rt);
@@ -139,7 +139,7 @@ contract CentralEngineTest is Test {
         vm.expectRevert(CentralPredictionEngine.OnlyCreator.selector);
         engine.createMarket(keccak256("x"), "unauthorized create attempt", block.timestamp + 2 days);
 
-        // 管理员天然拥有建盘权
+        // the admin always holds creation rights
         vm.prank(ADMIN);
         engine.createMarket(keccak256("admin-market"), "admin can create too, roles stack", block.timestamp + 2 days);
         assertEq(engine.marketCount(), 2);
@@ -206,7 +206,7 @@ contract CentralEngineTest is Test {
         engine.setCategory(MID, "late");
     }
 
-    /* -------------------------------- 做市 -------------------------------- */
+    /* ---------------------------- Market making --------------------------- */
 
     function test_SeedLiquidity_MintsPairedInventory() public {
         bytes32 id = keccak256("SEED-TEST");
@@ -251,12 +251,12 @@ contract CentralEngineTest is Test {
         engine.seedLiquidity(MID, 100e6);
     }
 
-    /* -------------------------------- 买入 -------------------------------- */
+    /* -------------------------------- Buy --------------------------------- */
 
     function test_BuyShares_Yes_ChargesFeeAndMovesPrice() public {
         uint256 out = _buy(ALICE, MID, 1, 100e6);
 
-        // 1.5% 抽成即时进 FeeVault
+        // the 1.5% fee reaches the FeeVault immediately
         assertEq(usdc.balanceOf(address(feeVault)), 1_500_000);
         assertEq(feeVault.pendingFees(), 1_500_000);
 
@@ -265,7 +265,7 @@ contract CentralEngineTest is Test {
         assertEq(m.noReserve, 10_000e6 + 98_500_000, "net NO inventory moves into the pool");
         assertEq(engine.yesOf(MID, ALICE), out);
         assertGt(engine.priceYes(MID), 0.5e18, "buying YES pushes YES price up");
-        // 50% 赔率下 1 USDC 应买到接近 2 份（赢则赔 ~2 倍）
+        // at 50% odds 1 USDC must buy close to 2 shares (a win pays ~2x)
         assertGt(out, 180e6, "shares must be ~2x the stake at 50%");
         assertLt(out, 200e6, "no free lunch: impact keeps it under 2x");
         _assertSolvent(MID);
@@ -311,7 +311,7 @@ contract CentralEngineTest is Test {
     }
 
     function test_Revert_Buy_ImpactTooHigh() public {
-        // 池深 20,000 USDC -> 5% = 1,000 USDC；1,001 USDC 必须被拒
+        // pool depth 20,000 USDC -> 5% = 1,000 USDC; 1,001 USDC must be rejected
         usdc.mint(ALICE, 1_001e6);
         vm.startPrank(ALICE);
         usdc.approve(address(engine), 1_001e6);
@@ -319,7 +319,7 @@ contract CentralEngineTest is Test {
         engine.buyShares(MID, 1, 1_001e6, 0);
         vm.stopPrank();
 
-        _buy(BOB, MID, 1, 1_000e6); // 恰好等于上限放行
+        _buy(BOB, MID, 1, 1_000e6); // exactly at the cap is allowed
     }
 
     function test_Revert_Buy_ClosedAndInvalid() public {
@@ -361,7 +361,7 @@ contract CentralEngineTest is Test {
         vm.stopPrank();
     }
 
-    /* -------------------------------- 卖出 -------------------------------- */
+    /* -------------------------------- Sell -------------------------------- */
 
     function test_SellShares_ReturnsCashMinusFee() public {
         uint256 out = _buy(ALICE, MID, 1, 200e6);
@@ -402,15 +402,15 @@ contract CentralEngineTest is Test {
         vm.stopPrank();
     }
 
-    /* -------------------------------- 结算 -------------------------------- */
+    /* ----------------------------- Settlement ----------------------------- */
 
     function test_Resolve_OnlyOracleAndOnlyAfterTime() public {
-        // 非预言机连时间都轮不到校验（modifier 先跑）
+        // a non-oracle caller fails the modifier before any timestamp check
         vm.prank(ALICE);
         vm.expectRevert(CentralPredictionEngine.OnlyOracle.selector);
         engine.resolveMarket(MID, 1);
 
-        // 预言机在结算时间之前调用
+        // the oracle calls before the resolution time
         vm.prank(ORACLE);
         vm.expectRevert(CentralPredictionEngine.TooEarlyToResolve.selector);
         engine.resolveMarket(MID, 1);
@@ -457,7 +457,7 @@ contract CentralEngineTest is Test {
         _assertSolvent(MID);
     }
 
-    /* -------------------------------- 赎回 -------------------------------- */
+    /* ------------------------------- Redeem ------------------------------- */
 
     function test_Redeem_WinnerGetsPayoutLoserGetsNothing() public {
         uint256 aliceYes = _buy(ALICE, MID, 1, 100e6);
@@ -477,7 +477,7 @@ contract CentralEngineTest is Test {
         assertEq(usdc.balanceOf(ALICE) - balBefore, payout);
         assertEq(engine.yesOf(MID, ALICE), 0);
 
-        // 50% 赔率下赢家必须拿到远超本金的赔付（约 1.87 倍）
+        // at 50% odds a winner must receive well above principal (~1.87x)
         assertGt(payout, 100e6, "winning at 50% must pay more than the stake");
         assertApproxEqRel(payout, 195e6, 0.02e18, "50% odds must pay ~1.95x after fees");
 
@@ -522,7 +522,7 @@ contract CentralEngineTest is Test {
         engine.redeem(MID);
     }
 
-    /* ------------------------------ 超时兜底 ------------------------------ */
+    /* --------------------------- Timeout fallback ------------------------- */
 
     function test_EmergencyRefund_AnyoneAfterWindow() public {
         _buy(ALICE, MID, 1, 100e6);
@@ -532,7 +532,7 @@ contract CentralEngineTest is Test {
         engine.emergencyRefund(MID);
 
         vm.warp(resolutionTime + 7 days);
-        vm.prank(CAROL); // 任何路人都能触发
+        vm.prank(CAROL); // any passer-by may trigger it
         engine.emergencyRefund(MID);
 
         CentralPredictionEngine.Core memory m = _m(MID);
@@ -555,12 +555,12 @@ contract CentralEngineTest is Test {
         vm.prank(ADMIN);
         engine.pause();
 
-        // 窗口内：暂停确实拦住赎回
+        // inside the window: the pause really does block redemption
         vm.prank(ALICE);
         vm.expectRevert(CentralPredictionEngine.EnforcedPause.selector);
         engine.redeem(MID);
 
-        // 结算 + 7 天后：无视暂停强制放行
+        // resolution + 7 days: the pause is overridden and redemption goes through
         vm.warp(resolutionTime + 7 days);
         vm.prank(ALICE);
         (uint256 payout,) = engine.redeem(MID);
@@ -568,7 +568,7 @@ contract CentralEngineTest is Test {
         _assertSolvent(MID);
     }
 
-    /* ------------------------------ 残余清扫 ------------------------------ */
+    /* ----------------------------- Leftover sweep ------------------------- */
 
     function test_SweepResidual_OnlyOverflowAboveOwed() public {
         uint256 aliceYes = _buy(ALICE, MID, 1, 100e6);
@@ -585,7 +585,7 @@ contract CentralEngineTest is Test {
         uint256 owedBefore = _m(MID).owed;
         assertEq(owedBefore, aliceYes);
 
-        // 争议期内不许扫账：owed 还可能被 Safe 改判
+        // no sweeping during the dispute window: the Safe may still re-rule owed
         assertEq(engine.sweepable(MID), 0, "nothing sweepable while disputing");
         vm.prank(ADMIN);
         vm.expectRevert(CentralPredictionEngine.DisputeWindowOpen.selector);
@@ -606,7 +606,7 @@ contract CentralEngineTest is Test {
         assertEq(swept, sweepable);
         assertEq(usdc.balanceOf(TREASURY) - balBefore, swept);
 
-        // owed 一分没动，赢家照样能全额赎回
+        // owed is untouched, so winners still redeem in full
         assertEq(_m(MID).owed, owedBefore);
         _assertSolvent(MID);
 
@@ -620,7 +620,7 @@ contract CentralEngineTest is Test {
         engine.sweepResidual(MID);
     }
 
-    /* ------------------------------ 多盘口隔离 ------------------------------ */
+    /* --------------------------- Market isolation ------------------------- */
 
     function test_MultiMarket_IndependentPoolsAndFees() public {
         bytes32 id2 = keccak256("ETH-ABOVE-4K");
@@ -638,7 +638,7 @@ contract CentralEngineTest is Test {
         vm.warp(resolutionTime);
         vm.prank(ORACLE);
         engine.resolveMarket(MID, 1);
-        _passDispute(MID); // 只结算 A 盘
+        _passDispute(MID); // settle market A only
 
         assertFalse(_m(id2).resolved, "B must stay unresolved");
         assertEq(_m(id2).cash, cash2Before, "A's settlement must not touch B's cash");
@@ -646,44 +646,44 @@ contract CentralEngineTest is Test {
         _assertSolvent(id2);
     }
 
-    /* --------------------------- Hermes 全流程集成 --------------------------- */
+    /* ------------------------ Hermes end-to-end flow ---------------------- */
 
     function test_Integration_HermesCreateTradeResolveRedeem() public {
-        // 1) Hermes（BOT）自动建盘 + 注入做市资金
+        // 1) Hermes (BOT) creates the market and seeds liquidity
         bytes32 hermesId = keccak256("hermes-auto-1");
         vm.prank(BOT);
         engine.createMarketWithMeta(
-            hermesId, unicode"BTC 能否在 24 小时内突破 105,000 USDC？", "crypto", block.timestamp + 2 days
+            hermesId, "Will BTC break 105,000 USDC within 24 hours?", "crypto", block.timestamp + 2 days
         );
         _seed(BOT, hermesId, 20_000e6);
 
-        // 2) 散户下注：YES 500 + NO 300
+        // 2) retail trades: 500 YES + 300 NO
         uint256 aliceYes = _buy(ALICE, hermesId, 1, 500e6);
         uint256 bobNo = _buy(BOB, hermesId, 0, 300e6);
         assertGt(engine.priceYes(hermesId), 0.5e18);
         _assertSolvent(hermesId);
 
-        // 3) 到点后 Hermes 作为预言机裁定 YES
+        // 3) at expiry Hermes, acting as the oracle, rules YES
         vm.warp(block.timestamp + 2 days);
         vm.prank(ORACLE);
         engine.resolveMarket(hermesId, 1);
         _passDispute(hermesId);
 
-        // 4) 赢家立刻能提现（> 投入）
+        // 4) the winner can withdraw immediately (> principal)
         vm.prank(ALICE);
         (uint256 payout, uint256 fee) = engine.redeem(hermesId);
         assertGt(payout, 500e6);
         assertEq(payout + fee, aliceYes);
 
-        // 5) 输家拿不到钱
+        // 5) the loser gets nothing
         vm.prank(BOB);
         vm.expectRevert(CentralPredictionEngine.NothingToRedeem.selector);
         engine.redeem(hermesId);
 
-        // 6) 协议抽成：两笔买入各 1.5% + 赢家 0.5%
+        // 6) protocol take: 1.5% on both buys + 0.5% on the winning redemption
         assertEq(feeVault.pendingFees(), 12_000_000 + fee, "trade fees + settle fee");
 
-        // 7) 残余（输家抵押品 + 池内库存）扫给 treasury，不影响已承诺赔付
+        // 7) the leftover (loser collateral + pool inventory) is swept to treasury without touching owed
         uint256 alb = usdc.balanceOf(TREASURY);
         vm.prank(ADMIN);
         uint256 swept = engine.sweepResidual(hermesId);
@@ -696,7 +696,7 @@ contract CentralEngineTest is Test {
         assertEq(_m(hermesId).cash, _m(hermesId).owed, "nothing left unaccounted");
     }
 
-    /* ------------------------------ 不变式压测 ------------------------------ */
+    /* -------------------------- Invariant stress -------------------------- */
 
     function test_Invariants_HoldAcrossInterleavedTrades() public {
         bytes32 id2 = keccak256("FUZZ-MARKET");
@@ -724,7 +724,7 @@ contract CentralEngineTest is Test {
 
         for (uint256 i = 0; i < 3; i++) {
             uint256 yesBal = engine.yesOf(id2, users[i]);
-            uint256 chunk = yesBal / 2 > 500e6 ? 500e6 : yesBal / 2; // 不越过 5% 影响上限
+            uint256 chunk = yesBal / 2 > 500e6 ? 500e6 : yesBal / 2; // stay under the 5% impact cap
             if (chunk > 1e6) {
                 vm.prank(users[i]);
                 engine.sellShares(id2, 1, chunk, 0);
@@ -746,14 +746,14 @@ contract CentralEngineTest is Test {
             }
         }
 
-        // 残余清扫后账面仍自洽：引擎余额 == 所有盘口 cash 之和
+        // after the sweep the books still reconcile: engine balance == sum of every market's cash
         vm.prank(ADMIN);
         engine.sweepResidual(id2);
         _assertSolvent(id2);
         assertEq(usdc.balanceOf(address(engine)), _m(id2).cash + _m(MID).cash);
     }
 
-    /* -------------------------------- 管理 -------------------------------- */
+    /* ------------------------------- Admin -------------------------------- */
 
     function test_Admin_RolesAndTwoStepHandover() public {
         vm.prank(ALICE);
@@ -793,7 +793,7 @@ contract CentralEngineTest is Test {
         new CentralPredictionEngine(address(0xDEAD), address(feeVault), TREASURY, ADMIN);
     }
 
-    /* --------------------------- 裁决争议缓冲期（1h） --------------------------- */
+    /* ---------------------- Dispute buffer (1h) --------------------------- */
 
     function test_Dispute_ResolveOpensOneHourWindowAndBlocksRedeem() public {
         uint256 aliceYes = _buy(ALICE, MID, 1, 100e6);
@@ -816,12 +816,12 @@ contract CentralEngineTest is Test {
         vm.expectRevert(CentralPredictionEngine.DisputeWindowOpen.selector);
         engine.redeem(MID);
 
-        // 争议期内也不能扫残余
+        // no leftover sweep during the dispute window either
         vm.prank(ADMIN);
         vm.expectRevert(CentralPredictionEngine.DisputeWindowOpen.selector);
         engine.sweepResidual(MID);
 
-        // 窗口一到（无需任何人发交易）自动生效
+        // the window lapses (no transaction needed) and the result applies
         vm.warp(endsAt);
         assertTrue(engine.isFinal(MID), "finality is timestamp-driven, not tx-driven");
 
@@ -844,7 +844,7 @@ contract CentralEngineTest is Test {
         vm.expectRevert(CentralPredictionEngine.DisputeWindowOpen.selector);
         engine.redeem(MID);
 
-        vm.warp(endsAt); // 恰好等于结束时刻即放行
+        vm.warp(endsAt); // the exact end timestamp is already allowed
         vm.prank(ALICE);
         (uint256 payout,) = engine.redeem(MID);
         assertGt(payout, 0);
@@ -856,9 +856,9 @@ contract CentralEngineTest is Test {
 
         vm.warp(resolutionTime);
         vm.prank(ORACLE);
-        engine.resolveMarket(MID, 1); // 预言机先判 YES
+        engine.resolveMarket(MID, 1); // the oracle rules YES first
 
-        // Safe 多签在窗口内发现证据反了 → 一键改判 NO
+        // the Safe finds contradicting evidence inside the window -> one-click re-rule to NO
         vm.prank(ADMIN);
         engine.overrideResolution(MID, 0);
 
@@ -874,7 +874,7 @@ contract CentralEngineTest is Test {
 
         vm.warp(endsAt);
 
-        // 新赢家全额赔付，旧结果作废
+        // the new winners are paid in full, the old outcome is void
         vm.prank(BOB);
         (uint256 bobPayout,) = engine.redeem(MID);
         assertGt(bobPayout, 100e6, "NO holder now gets paid");
@@ -937,7 +937,7 @@ contract CentralEngineTest is Test {
     function test_Revert_Override_WrongCallerOutcomeOrWindow() public {
         _buy(ALICE, MID, 1, 100e6);
 
-        // 未裁决
+        // not ruled yet
         vm.prank(ADMIN);
         vm.expectRevert(CentralPredictionEngine.NotResolved.selector);
         engine.overrideResolution(MID, 1);
@@ -946,7 +946,7 @@ contract CentralEngineTest is Test {
         vm.prank(ORACLE);
         engine.resolveMarket(MID, 1);
 
-        // 非 admin（包括预言机自己）
+        // not the admin (including the oracle itself)
         vm.prank(ORACLE);
         vm.expectRevert(CentralPredictionEngine.OnlyAdmin.selector);
         engine.overrideResolution(MID, 0);
@@ -955,17 +955,17 @@ contract CentralEngineTest is Test {
         vm.expectRevert(CentralPredictionEngine.OnlyAdmin.selector);
         engine.overrideResolution(MID, 0);
 
-        // 同一个结果
+        // same outcome
         vm.prank(ADMIN);
         vm.expectRevert(CentralPredictionEngine.SameOutcome.selector);
         engine.overrideResolution(MID, 1);
 
-        // 非法结果值
+        // illegal outcome value
         vm.prank(ADMIN);
         vm.expectRevert(CentralPredictionEngine.InvalidOutcome.selector);
         engine.overrideResolution(MID, 3);
 
-        // 窗口已过
+        // window already passed
         _passDispute(MID);
         vm.prank(ADMIN);
         vm.expectRevert(CentralPredictionEngine.DisputeWindowClosed.selector);
@@ -980,7 +980,7 @@ contract CentralEngineTest is Test {
         engine.resolveMarket(MID, 1);
         (, , , , uint256 endsAt, uint256 owed) = engine.resolutionState(MID);
 
-        // 窗口内不许终结
+        // no finalisation inside the window
         vm.prank(CAROL);
         vm.expectRevert(CentralPredictionEngine.DisputeWindowOpen.selector);
         engine.finalize(MID);
@@ -989,7 +989,7 @@ contract CentralEngineTest is Test {
         vm.expectEmit(true, false, false, true, address(engine));
         emit CentralPredictionEngine.ResolutionFinalized(MID, 1, owed);
 
-        vm.prank(CAROL); // 任何人
+        vm.prank(CAROL); // anyone
         engine.finalize(MID);
         assertTrue(engine.isFinal(MID));
 

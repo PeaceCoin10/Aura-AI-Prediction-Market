@@ -6,7 +6,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=/root/prediction-market
-# 私钥不进 unit 文件：启动脚本会从桌面密钥文档读进内存（也可改用 EnvironmentFile，权限 0600）
+# The private key is not kept in the unit file: the launcher reads it into memory from the desktop key document (or use EnvironmentFile with mode 0600)
 Environment=INTERVAL=300
 Environment=SEED_USDC=100
 Environment=RPC_URL=https://mainnet.base.org
@@ -17,7 +17,7 @@ Environment=ORACLE_CONFIRM_GAP=30
 ExecStart=/bin/bash /root/prediction-market/script/run-brain-mainnet.sh
 Restart=always
 RestartSec=15
-# 日志：journalctl -u hermes-brain -f
+# logs: journalctl -u hermes-brain -f
 StandardOutput=journal
 StandardError=journal
 

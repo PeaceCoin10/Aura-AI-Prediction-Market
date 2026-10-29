@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Hermes 大脑 · Base 主网常驻启动脚本
+# Hermes brain · long-running launcher for Base mainnet
 #
-#   bash script/run-brain-mainnet.sh              # 常驻，默认 300 秒一轮
-#   bash script/run-brain-mainnet.sh --once       # 只跑一轮
-#   bash script/run-brain-mainnet.sh --dry-run --once   # 只看决策，不发交易
+#   bash script/run-brain-mainnet.sh              # daemon mode, 300s per round by default
+#   bash script/run-brain-mainnet.sh --once       # run exactly one round
+#   bash script/run-brain-mainnet.sh --dry-run --once   # decisions only, no transactions
 #   INTERVAL=120 bash script/run-brain-mainnet.sh
 #
-# 私钥来源优先级：
-#   1) 已 export 的 BRAIN_PK
-#   2) 桌面密钥文档（只读进内存，不落盘、不回显、不出现在 ps 里）
+# Private key resolution order:
+#   1) an already exported BRAIN_PK
+#   2) the desktop key document (read into memory only; never written to disk, echoed, or visible in ps)
 set -euo pipefail
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -20,17 +20,19 @@ export SEED_USDC="${SEED_USDC:-100}"
 export HORIZON_HOURS="${HORIZON_HOURS:-24}"
 export ORACLE_CONFIRM_SAMPLES="${ORACLE_CONFIRM_SAMPLES:-3}"
 export ORACLE_CONFIRM_GAP="${ORACLE_CONFIRM_GAP:-30}"
-# 每轮把盘口评述写成前端可轮询的静态 JSON
+# every round writes the market commentary as static JSON the frontend can poll
 export INSIGHTS_OUT="${INSIGHTS_OUT:-$ROOT/frontend/public/insights.json}"
 INTERVAL="${INTERVAL:-300}"
-KEY_DOC="${BRAIN_KEY_DOC:-/mnt/c/Users/Administrator/Desktop/地址+私钥.txt}"
+# Operator key document: any file the regex below can read a 32-byte hex key out of.
+# Point BRAIN_KEY_DOC at it; nothing key-shaped is ever committed to this repo.
+KEY_DOC="${BRAIN_KEY_DOC:-$HOME/.aura/brain.key}"
 
 if [[ -z "${BRAIN_PK:-}" ]]; then
   if [[ ! -f "$KEY_DOC" ]]; then
-    echo "找不到私钥：请先 export BRAIN_PK=...（或用 BRAIN_KEY_DOC 指定文档路径）" >&2
+    echo "No private key found: export BRAIN_PK=... first (or point BRAIN_KEY_DOC at the document)" >&2
     exit 2
   fi
-  # 读进变量，绝不 echo / 绝不 tee
+  # read into a variable; never echo / never tee
   BRAIN_PK=$(python3 - "$KEY_DOC" <<'PY'
 import re, sys, pathlib
 text = pathlib.Path(sys.argv[1]).read_text(encoding="utf-8", errors="ignore")
@@ -43,14 +45,14 @@ PY
   export BRAIN_PK
 fi
 
-# 注意：这里【不要】unset 代理 —— 行情源（CoinGecko/Binance）要靠代理出网。
-# hermes_brain.py 内部调 cast 时会自己剥掉代理（Chain._run），链上 RPC 依旧直连。
+# Note: do [NOT] unset the proxy here — the price feeds (CoinGecko/Binance) need it to reach the network.
+# hermes_brain.py strips the proxy itself when it shells out to cast (Chain._run), so on-chain RPC stays direct.
 export no_proxy="${no_proxy:-127.0.0.1,localhost}"
 
 echo "engine : $ENGINE"
 echo "usdc   : $USDC"
 echo "rpc    : $RPC_URL"
-echo "interval: ${INTERVAL}s  seed: ${SEED_USDC} USDC  采样: ${ORACLE_CONFIRM_SAMPLES}×${ORACLE_CONFIRM_GAP}s"
+echo "interval: ${INTERVAL}s  seed: ${SEED_USDC} USDC  samples: ${ORACLE_CONFIRM_SAMPLES}×${ORACLE_CONFIRM_GAP}s"
 echo
 
 exec python3 "$ROOT/hermes/hermes_brain.py" \

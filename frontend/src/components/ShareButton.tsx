@@ -3,6 +3,7 @@ import type { PosterInput } from "../lib/share";
 import { play } from "../lib/sound";
 import { Spinner } from "./ui";
 import { format, useT } from "../lib/i18n";
+import { haptic, marketDeepLink, shareToTelegram } from "../lib/telegram";
 
 /** One-click share card for X (used by market cards and position cards). */
 export function ShareButton({
@@ -95,6 +96,18 @@ export function ShareButton({
               >
                 {t.social.share.postOnX}
               </button>
+              {input.marketId && (
+                <button
+                  data-testid="share-telegram"
+                  className="btn-ghost px-3 py-1.5 text-[12px] text-sky-300"
+                  onClick={() => {
+                    haptic("success");
+                    shareToTelegram(marketDeepLink(String(input.marketId)), result.tweet);
+                  }}
+                >
+                  Telegram
+                </button>
+              )}
               <button
                 className="btn-ghost px-3 py-1.5 text-[12px]"
                 onClick={() => {

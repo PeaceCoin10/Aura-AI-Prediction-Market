@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────
-# Aura · 一条命令换成永久 Netlify 域名（纯 REST API，不装任何 CLI）
+# Aura · switch to a permanent Netlify domain with one command (pure REST API, no CLI install)
 #
 #   NETLIFY_TOKEN=xxx ./deploy/netlify.sh
 #   NETLIFY_TOKEN=xxx SITE_NAME=aura-prediction-market ./deploy/netlify.sh
 #
-# 做的事：
-#   1) 本地 vite build（若 dist 缺失或 --build）
-#   2) POST /api/v1/sites 建站（名字被占则自动落到随机子域）
-#   3) 把 frontend/dist 打成 zip → POST /sites/{id}/deploys（zip 直传，秒级）
-#   4) 轮询部署状态 → 回读 https://<site>.netlify.app 的 HTTP 状态
+# What it does:
+#   1) local vite build (only when dist is missing or --build is passed)
+#   2) POST /api/v1/sites to create the site (falls back to a random subdomain if the name is taken)
+#   3) zip frontend/dist → POST /sites/{id}/deploys (direct zip upload, done in seconds)
+#   4) poll the deploy state → re-read the HTTP status of https://<site>.netlify.app
 # ─────────────────────────────────────────────────────────────
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -36,20 +36,20 @@ if [ -n "${DRY_RUN:-}" ]; then
   say "[dry-run] npm --prefix frontend run build"
   say "[dry-run] POST $API/sites  {name: $SITE_NAME}"
   say "[dry-run] POST $API/sites/<id>/deploys  (Content-Type: application/zip, body=dist.zip)"
-  say "[dry-run] 轮询 $API/deploys/<id> → state=ready → 回读 https://$SITE_NAME.netlify.app"
+  say "[dry-run] poll $API/deploys/<id> → state=ready → re-read https://$SITE_NAME.netlify.app"
   exit 0
 fi
 
-[ -n "$TOKEN" ] || die "缺 NETLIFY_TOKEN。到 https://app.netlify.com/user/applications#personal-access-tokens 建一个"
+[ -n "$TOKEN" ] || die "NETLIFY_TOKEN is missing. Create one at https://app.netlify.com/user/applications#personal-access-tokens"
 
 if [ "$BUILD" = "1" ] || [ ! -f frontend/dist/index.html ]; then
-  say "构建前端（frontend/dist）…"
+  say "building frontend (frontend/dist)…"
   ( cd frontend && npm install --no-audit --no-fund >/dev/null && npm run build >/dev/null ) \
-    || die "前端构建失败，先手动 npm run build 看报错"
-  ok "构建完成"
+    || die "frontend build failed; run npm run build manually to see the error"
+  ok "build complete"
 fi
 
-say "建站 / 复用：$SITE_NAME"
+say "create / reuse site: $SITE_NAME"
 SITE_JSON="$(curl -sS -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -X POST "$API/sites" -d "{\"name\":\"$SITE_NAME\"}")"
 SITE_ID="$(printf '%s' "$SITE_JSON" | python3 -c 'import json,sys
@@ -57,17 +57,17 @@ try: print(json.load(sys.stdin).get("id",""))
 except Exception: print("")')"
 
 if [ -z "$SITE_ID" ]; then
-  say "站点名可能已被占用，改为随机子域建站"
+  say "site name is probably taken; creating the site under a random subdomain"
   SITE_JSON="$(curl -sS -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -X POST "$API/sites" -d '{}')"
   SITE_ID="$(printf '%s' "$SITE_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("id",""))')"
 fi
-[ -n "$SITE_ID" ] || { printf '%s\n' "$SITE_JSON"; die "建站失败"; }
+[ -n "$SITE_ID" ] || { printf '%s\n' "$SITE_JSON"; die "site creation failed"; }
 SITE_URL="$(printf '%s' "$SITE_JSON" | python3 -c 'import json,sys
 d=json.load(sys.stdin); print(d.get("ssl_url") or d.get("url") or "")')"
-ok "站点 ID：$SITE_ID"
+ok "site ID: $SITE_ID"
 
 ZIP="$(mktemp -u /tmp/aura_site_XXXX.zip)"
-say "打包 frontend/dist → zip"
+say "packaging frontend/dist → zip"
 python3 - "$ROOT/frontend/dist" "$ZIP" <<'PY'
 import os, sys, zipfile
 src, out = sys.argv[1], sys.argv[2]
@@ -77,18 +77,18 @@ with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
             p = os.path.join(base, f)
             z.write(p, os.path.relpath(p, src))
 PY
-ok "包大小 $(du -h "$ZIP" | cut -f1)"
+ok "archive size $(du -h "$ZIP" | cut -f1)"
 
-say "上传部署（zip 直传）…"
+say "uploading deployment (direct zip)…"
 DEPLOY_JSON="$(curl -sS -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/zip' \
   --data-binary "@$ZIP" "$API/sites/$SITE_ID/deploys")"
 rm -f "$ZIP"
 DEPLOY_ID="$(printf '%s' "$DEPLOY_JSON" | python3 -c 'import json,sys
 try: print(json.load(sys.stdin).get("id",""))
 except Exception: print("")')"
-[ -n "$DEPLOY_ID" ] || { printf '%s\n' "$DEPLOY_JSON" | head -c 800; die "上传部署失败"; }
+[ -n "$DEPLOY_ID" ] || { printf '%s\n' "$DEPLOY_JSON" | head -c 800; die "deployment upload failed"; }
 
-say "等待部署完成（最多 90 秒）…"
+say "waiting for the deployment to finish (up to 90s)…"
 STATE=""
 for _ in $(seq 1 30); do
   BODY="$(curl -sS -H "Authorization: Bearer $TOKEN" "$API/deploys/$DEPLOY_ID")"
@@ -97,19 +97,19 @@ try: print(json.load(sys.stdin).get("state",""))
 except Exception: print("")')"
   case "$STATE" in
     ready) break ;;
-    error) printf '%s\n' "$BODY" | head -c 800; die "Netlify 部署失败（state=error）" ;;
+    error) printf '%s\n' "$BODY" | head -c 800; die "Netlify deployment failed (state=error)" ;;
   esac
   sleep 3
 done
-[ "$STATE" = "ready" ] || die "部署超时（state=$STATE），去面板看：https://app.netlify.com/sites"
+[ "$STATE" = "ready" ] || die "deployment timed out (state=$STATE); check the dashboard at https://app.netlify.com/sites"
 
-say "回读验证 $SITE_URL …"
+say "verifying $SITE_URL by read-back…"
 CODE="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 "$SITE_URL" || echo 000)"
-[ "$CODE" = "200" ] || die "回读返回 HTTP $CODE"
-ok "线上已可用（HTTP 200）"
+[ "$CODE" = "200" ] || die "read-back returned HTTP $CODE"
+ok "live and serving (HTTP 200)"
 
 printf '%s\n' "$SITE_URL" > deploy/.netlify-url
 echo
-echo "  永久域名   $SITE_URL"
-echo "  面板       https://app.netlify.com/sites/$SITE_NAME"
-echo "  重新部署   NETLIFY_TOKEN=xxx ./deploy/netlify.sh --build"
+echo "  permanent URL  $SITE_URL"
+echo "  dashboard      https://app.netlify.com/sites/$SITE_NAME"
+echo "  redeploy       NETLIFY_TOKEN=xxx ./deploy/netlify.sh --build"

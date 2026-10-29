@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# 公网隧道守护：静态服务 + 隧道 + 断线自动重连 + 当前地址落盘
+# Public tunnel supervisor: static server + tunnel + auto-reconnect + persist current URL
 #
-#   优先 Cloudflare 快速隧道（cloudflared，无需账号；进程活着地址就稳定，无拦截页）
-#   失败则回落 localhost.run（SSH 反向隧道，免费档地址会随重连变化）
+#   Prefers the Cloudflare quick tunnel (cloudflared, no account needed; the URL stays stable
+#   while the process lives, and there is no interstitial page)
+#   Falls back to localhost.run (SSH reverse tunnel; the free-tier URL changes on reconnect)
 #
-#   bash deploy/tunnel.sh          # 前台跑（后台请用 nohup/systemd）
-#   bash deploy/tunnel.sh --stop   # 停掉静态服务与所有隧道进程
+#   bash deploy/tunnel.sh          # run in the foreground (use nohup/systemd to detach)
+#   bash deploy/tunnel.sh --stop   # stop the static server and every tunnel process
 #
-# 当前公网地址永远写在 /root/prediction-market/PUBLIC-URL.txt
+# The current public URL is always written to /root/prediction-market/PUBLIC-URL.txt
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -25,9 +26,9 @@ if [[ "${1:-}" == "--stop" ]]; then
   exit 0
 fi
 
-[[ -d "$DIST" ]] || { echo "dist 不存在，先 npm run build"; exit 1; }
+[[ -d "$DIST" ]] || { echo "dist does not exist; run npm run build first"; exit 1; }
 
-# 静态服务（幂等）
+# static server (idempotent)
 if ! ss -lnt 2>/dev/null | grep -q ":$PORT "; then
   ( cd "$DIST" && setsid python3 -m http.server "$PORT" --bind 127.0.0.1 >/dev/null 2>&1 & )
   sleep 1
@@ -38,7 +39,7 @@ publish_url() {
   [[ -n "$url" ]] || return 0
   if [[ "$(cat "$URL_FILE" 2>/dev/null)" != "$url" ]]; then
     echo "$url" > "$URL_FILE"
-    echo "[tunnel] 当前公网地址: $url"
+    echo "[tunnel] current public URL: $url"
   fi
 }
 
@@ -47,7 +48,7 @@ run_cloudflared() {
   while (( tries < 6 )); do
     tries=$((tries + 1))
     : > "$CF_LOG"
-    echo "[tunnel] cloudflared 第 $tries 次启动 $(date -Is)" >> "$CF_LOG"
+    echo "[tunnel] cloudflared start attempt $tries $(date -Is)" >> "$CF_LOG"
     env -u http_proxy -u https_proxy -u all_proxy \
       cloudflared tunnel --url "http://127.0.0.1:$PORT" --no-autoupdate \
       --logfile "$CF_LOG" --loglevel info &
@@ -62,7 +63,7 @@ run_cloudflared() {
     done
 
     if [[ -z "$url" ]]; then
-      echo "[tunnel] cloudflared 40 秒内没拿到地址，杀掉重试" >> "$CF_LOG"
+      echo "[tunnel] cloudflared produced no URL within 40s; killing it and retrying" >> "$CF_LOG"
       kill "$cf_pid" 2>/dev/null
       wait "$cf_pid" 2>/dev/null
       sleep 3
@@ -71,7 +72,7 @@ run_cloudflared() {
 
     publish_url "$url"
     wait "$cf_pid"
-    echo "[tunnel] cloudflared 退出 $(date -Is)，3 秒后重连" >> "$CF_LOG"
+    echo "[tunnel] cloudflared exited $(date -Is); reconnecting in 3s" >> "$CF_LOG"
     sleep 3
   done
   return 1
@@ -90,15 +91,15 @@ run_localhost_run() {
             publish_url "${BASH_REMATCH[1]}"
           fi
         done
-    echo "[tunnel] localhost.run 断开 $(date -Is)，3 秒后重连" >> "$SSH_LOG"
+    echo "[tunnel] localhost.run disconnected $(date -Is); reconnecting in 3s" >> "$SSH_LOG"
     sleep 3
   done
 }
 
 if command -v cloudflared >/dev/null 2>&1; then
-  echo "[tunnel] 使用 cloudflared 快速隧道（优先）"
-  run_cloudflared || { echo "[tunnel] cloudflared 多次失败，回落 localhost.run"; run_localhost_run; }
+  echo "[tunnel] using the cloudflared quick tunnel (preferred)"
+  run_cloudflared || { echo "[tunnel] cloudflared failed repeatedly; falling back to localhost.run"; run_localhost_run; }
 else
-  echo "[tunnel] 没装 cloudflared，直接用 localhost.run"
+  echo "[tunnel] cloudflared is not installed; using localhost.run directly"
   run_localhost_run
 fi

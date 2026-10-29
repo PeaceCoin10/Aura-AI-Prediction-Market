@@ -8,32 +8,32 @@ import {ProtocolFeeVault} from "../src/ProtocolFeeVault.sol";
 import {CentralPredictionEngine} from "../src/CentralPredictionEngine.sol";
 
 /**
- * @notice CentralPredictionEngine 一键部署（单合约多盘口）
+ * @notice One-command deployment of CentralPredictionEngine (single contract, many markets)
  *
- *  本地 anvil：   forge script script/DeployCentral.s.sol:DeployCentral --rpc-url http://127.0.0.1:8545 --broadcast
- *  Base 主网：    forge script script/DeployCentral.s.sol:DeployCentral --rpc-url $BASE_RPC_URL --broadcast --verify ...
+ *  Local anvil: forge script script/DeployCentral.s.sol:DeployCentral --rpc-url http://127.0.0.1:8545 --broadcast
+ *  Base mainnet: forge script script/DeployCentral.s.sol:DeployCentral --rpc-url $BASE_RPC_URL --broadcast --verify ...
  *
- * 环境变量：
- *   PRIVATE_KEY   部署私钥（必需）
- *   TREASURY      手续费收款地址（默认 = 部署者；主网必须是合约，例如 Safe）
- *   ADMIN         引擎 admin（默认 = 部署者；主网必须是合约，例如 Safe）
- *   CREATOR       Hermes 建盘地址（默认 = 部署者；可以是 EOA）
- *   ORACLE        Hermes 裁决地址（默认 = 部署者；可以是 EOA）
- *   COLLATERAL    覆盖抵押品地址（默认按 chainid 选 USDC；本地自动发 MockUSDC）
- *   SEED_DEMO     1 = 顺便建一个 24h 演示盘口（需要部署者本身有建盘权）
+ * Environment:
+ *   PRIVATE_KEY   deployer key (required)
+ *   TREASURY      fee recipient (default: deployer; on mainnet it must be a contract such as a Safe)
+ *   ADMIN         engine admin (default: deployer; on mainnet it must be a contract such as a Safe)
+ *   CREATOR       Hermes market creator (default: deployer; an EOA is fine)
+ *   ORACLE        Hermes oracle (default: deployer; an EOA is fine)
+ *   COLLATERAL    collateral override (default: USDC per chain id; a MockUSDC is deployed locally)
+ *   SEED_DEMO     1 = also create a 24h demo market (the deployer needs creation rights)
  *
- *   REQUIRE_SAFE_CONTRACT  1（默认）= 主网强制多签模式；0 = 单钱包模式
+ *   REQUIRE_SAFE_CONTRACT  1 (default) = enforce multisig mode on mainnet; 0 = single-wallet mode
  *
- * 主网（8453）双模式：
- *   REQUIRE_SAFE_CONTRACT=1（默认，生产推荐）
- *     - ADMIN / TREASURY 必须是合约（Safe）
- *     - 部署者不能同时是最终 admin
- *     - CREATOR 与 ORACLE 必须是不同地址（职责分离）
- *   REQUIRE_SAFE_CONTRACT=0（单钱包，一把 EOA 兼任 ADMIN/TREASURY/CREATOR/ORACLE）
- *     - 跳过上述三条合约/分离校验，其余（USDC 6 位小数、地址非零）照旧
- *     - 单点风险：私钥泄露 = 资金全失、admin 特权被夺；脚本会打印显式告警
- * 若 ADMIN 是 Safe，脚本不会（也无法）替你调 setCreator/setOracle —— 会打印出
- * Safe Transaction Builder 需要的 calldata，由多签执行。
+ * Mainnet (8453), two modes:
+ *   REQUIRE_SAFE_CONTRACT=1 (default, recommended in production)
+ *     - ADMIN / TREASURY must be contracts (Safes)
+ *     - the deployer cannot also be the final admin
+ *     - CREATOR and ORACLE must be different addresses (separation of duties)
+ *   REQUIRE_SAFE_CONTRACT=0 (single wallet: one EOA holds ADMIN/TREASURY/CREATOR/ORACLE)
+ *     - skips the three checks above, everything else still applies (6-decimal USDC, non-zero addresses)
+ *     - single point of failure: a leaked key loses the funds and the admin privileges; the script warns loudly
+ *  When ADMIN is a Safe the script cannot (and will not) call setCreator/setOracle for you — it prints
+ *  the calldata for the Safe Transaction Builder so the multisig can execute it.
  */
 contract DeployCentral is Script {
     address constant BASE_MAINNET_USDC = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913;
@@ -82,7 +82,7 @@ contract DeployCentral is Script {
         CentralPredictionEngine engine =
             new CentralPredictionEngine(c.collateral, address(feeVault), c.treasury, c.admin);
 
-        // 部署者恰好就是 admin 时才能自己授权；否则交给 Safe 执行（见 _report）
+        // the deployer can only self-authorise when it is the admin; otherwise the Safe executes (see _report)
         bool canSelfAdmin = deployer == c.admin;
         if (canSelfAdmin) {
             if (c.creator != c.admin) engine.setCreator(c.creator, true);
@@ -106,7 +106,7 @@ contract DeployCentral is Script {
         _report(c, address(feeVault), address(engine), demoId, canSelfAdmin, requireSafe, deployer);
     }
 
-    /* ------------------------------ 内部 ------------------------------ */
+    /* ------------------------------ Internals ----------------------------- */
 
     function _checkMainnetConfig(Cfg memory c, address deployer, bool requireSafe) internal view {
         require(c.collateral != address(0), "mainnet: COLLATERAL required");

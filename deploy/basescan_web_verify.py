@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Basescan 网页版合约验证（无需 ETHERSCAN_API_KEY）—— Etherscan 系 ASP.NET 验证向导。
+Basescan web-based contract verification (no ETHERSCAN_API_KEY needed) — the Etherscan ASP.NET wizard.
 
-  1) GET  /verifyContract                抓 __VIEWSTATE/__EVENTVALIDATION
-  2) POST /verifyContract                地址 + Solidity(Standard-Json-Input) + solc + 许可
-  3) POST /verifyContract-solc-json?...  multipart 上传 standard-json（FileUpload1 + UploadButton）
-  4) POST 同一 action                    构造函数参数 + Verify and Publish
+  1) GET  /verifyContract                scrape __VIEWSTATE/__EVENTVALIDATION
+  2) POST /verifyContract                address + Solidity(Standard-Json-Input) + solc + license
+  3) POST /verifyContract-solc-json?...  multipart upload of the standard-json (FileUpload1 + UploadButton)
+  4) POST the same action                constructor args + Verify and Publish
 
-用法：
+Usage:
   python3 deploy/basescan_web_verify.py <address> <label> <sjis.json> [ctor_args_hex]
 """
 import re
@@ -59,7 +59,7 @@ def main():
     s = requests.Session()
     s.headers.update({"User-Agent": UA, "Accept-Language": "en-US,en;q=0.9"})
 
-    # ---- 1) 抓表单
+    # ---- 1) scrape the form
     r = s.get(f"{BASE}/verifyContract", timeout=60)
     r.raise_for_status()
     act1 = action_of(r.text)
@@ -82,7 +82,7 @@ def main():
     sessid = hidden_val(r2.text, CP + "sessid")
     print(f"[{label}] step1 ok -> {act2}  sessid={sessid}")
 
-    # ---- 2) 上传 standard-json
+    # ---- 2) upload the standard-json
     d = hidden(r2.text)
     d.update({
         CP + "sessid": sessid,
@@ -104,7 +104,7 @@ def main():
         print(f"[{label}] upload page:", plain(r3.text))
         return 1
 
-    # ---- 3) 构造参数 + 提交
+    # ---- 3) constructor args + submit
     act3 = action_of(r3.text)
     d = hidden(r3.text)
     d.update({

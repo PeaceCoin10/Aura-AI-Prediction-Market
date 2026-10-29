@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { MarketSnapshot } from "@sdk";
 import { Header, type Tab } from "./components/Header";
 import { MarketGrid } from "./components/MarketCard";
@@ -10,6 +10,8 @@ import { CategoryNav } from "./components/CategoryNav";
 import { DemoDetail, DemoMarketCard } from "./components/DemoMarketCard";
 import { Empty, Spinner } from "./components/ui";
 import { DocsPortal, RiskModal, SecurityDrawer } from "./components/Overlays";
+import { AffiliateDrawer } from "./components/AffiliateDrawer";
+import { bindBackButton, initTelegram, marketFromLaunch } from "./lib/telegram";
 import { StatusBar } from "./components/StatusBar";
 import { PaperPortfolio } from "./components/PaperPortfolio";
 import { useMode } from "./lib/mode";
@@ -33,13 +35,45 @@ import { LiveTicker } from "./components/LiveTicker";
 import { PredictorBoard } from "./components/PredictorBoard";
 
 function ConnectModal({ onClose }: { onClose: () => void }) {
-  const { providers, connect, connecting, error } = useWallet();
+  const { providers, connect, connectSocial, connecting, error } = useWallet();
   const t = useT();
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
       <div className="card w-full max-w-sm p-5 animate-fade-in">
         <h3 className="mb-1 text-base font-semibold text-slate-100">{t.hall.connect.title}</h3>
         <p className="mb-3 text-[11px] text-slate-500">{t.hall.connect.body}</p>
+
+        {/* Zero-friction entry: smart account from a Google or email login, no extension, no gas */}
+        <div className="mb-3 grid grid-cols-2 gap-2">
+          <button
+            data-testid="connect-google"
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-white/12 bg-white/[0.06] px-3 py-2.5 text-[12px] font-medium text-slate-100 hover:border-brand/40 hover:bg-brand/10"
+            disabled={connecting}
+            onClick={async () => {
+              await connectSocial("google");
+              onClose();
+            }}
+          >
+            <span aria-hidden>G</span>
+            <span>Google</span>
+          </button>
+          <button
+            data-testid="connect-email"
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-white/12 bg-white/[0.06] px-3 py-2.5 text-[12px] font-medium text-slate-100 hover:border-brand/40 hover:bg-brand/10"
+            disabled={connecting}
+            onClick={async () => {
+              await connectSocial("email");
+              onClose();
+            }}
+          >
+            <span aria-hidden>@</span>
+            <span>Email</span>
+          </button>
+        </div>
+        <div className="mb-3 text-center text-[10px] text-slate-600">
+          One-tap smart account — first trades are gas-sponsored.
+        </div>
+
         <div className="space-y-2">
           {providers.length === 0 && (
             <div className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-[11px] text-amber-200">
@@ -95,6 +129,28 @@ function Dashboard() {
   const [tab, setTab] = useState<Tab>("feed");
   const [selected, setSelected] = useState<MarketSnapshot | null>(null);
   const [demoSelected, setDemoSelected] = useState<DemoMarket | null>(null);
+  const [affOpen, setAffOpen] = useState(false);
+
+  /** Telegram host Back button mirrors the in-app close action, so the chat never traps the user. */
+  const closeSheet = useCallback(() => {
+    if (affOpen) return setAffOpen(false);
+    if (demoSelected) return setDemoSelected(null);
+    if (selected) return setSelected(null);
+  }, [affOpen, demoSelected, selected]);
+
+  useEffect(() => {
+    if (!affOpen && !demoSelected && !selected) return;
+    return bindBackButton(closeSheet);
+  }, [affOpen, demoSelected, selected, closeSheet]);
+
+  /** Telegram host theme + deep-link routing: `startapp=market_<id>` opens that book directly. */
+  useEffect(() => {
+    initTelegram();
+    const launched = marketFromLaunch();
+    if (!launched) return;
+    const market = DEMO_MARKETS.find((m) => m.id === launched);
+    if (market) setDemoSelected(market);
+  }, []);
   const [connectOpen, setConnectOpen] = useState(false);
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
   const [paused, setPaused] = useState<boolean | null>(null);
@@ -390,6 +446,13 @@ function Dashboard() {
                     >
                       {t.marketing.spotlight.cta}
                     </a>
+                    <button
+                      onClick={() => setAffOpen(true)}
+                      data-testid="affiliate-open"
+                      className="rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-brand transition hover:bg-brand/20"
+                    >
+                      Affiliate · 20% of fees
+                    </button>
                   </div>
                 </div>
               </section>
@@ -476,6 +539,7 @@ function Dashboard() {
       {connectOpen && <ConnectModal onClose={() => setConnectOpen(false)} />}
       <SecurityDrawer open={secOpen} onClose={() => setSecOpen(false)} />
       <DocsPortal open={docsOpen} onClose={() => setDocsOpen(false)} />
+      <AffiliateDrawer open={affOpen} onClose={() => setAffOpen(false)} />
       <RiskModal />
       <WelcomeAirdrop />
       {!account && tab === "portfolio" && (

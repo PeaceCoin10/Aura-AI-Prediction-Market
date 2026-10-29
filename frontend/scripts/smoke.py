@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""前端冒烟：加载 dev server，抓控制台错误 + 截图。"""
+"""Frontend smoke test: load the dev server, capture console errors and a screenshot."""
 import sys
 from playwright.sync_api import sync_playwright
 

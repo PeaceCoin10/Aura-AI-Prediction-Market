@@ -1,46 +1,50 @@
-# Keeper — 无人值守守护机器人
+# Keeper — unattended market watchdog
 
-零权限越界设计：**结算权永远在 admin 多签手里，keeper 只负责提醒 + 生成提案**；
-只有 permissionless 的动作（`autoDistributeFee`、`emergencyRefund`）才由 keeper 自己签名发送。
+The keeper never holds resolution authority. Settlement stays with the admin multisig; the keeper only
+warns and prepares proposals. It signs transactions itself for permissionless actions only
+(`autoDistributeFee`, `emergencyRefund`).
 
-## 职责
+It binds to the legacy architecture — `PredictionFactory` enumerating `PredictionVault` markets — and to
+`ProtocolFeeVault` for fee distribution.
 
-| 场景 | 行为 |
-|---|---|
-| 盘口过了 `resolutionTime` 仍未结算 | 打印告警 + 写出 Safe 多签可直接执行的 `resolve(uint8)` 提案 JSON + 推送 webhook |
-| 盘口过了 `resolutionTime + 7d` 退款窗口 | 升级为 `REFUND_WINDOW_OPEN` 告警；若开启 `autoRefund` 则自动调 `emergencyRefund()` |
-| `ProtocolFeeVault.pendingFees` ≥ 阈值 | 自动调用 `autoDistributeFee()`，手续费打进 treasury |
-| 已结算盘口 | 记录一行 OK，不再重复告警 |
-| Gas 超过上限 | 跳过本轮（不会被打爆），下一轮再试 |
+## Responsibilities
 
-## 运行
+| Situation | Action |
+| --- | --- |
+| Market past `resolutionTime` and not resolved | Log an alert, write a Safe-executable `resolve(uint8)` proposal JSON, POST to the webhook |
+| Market past `resolutionTime` + 7-day refund window | Escalate to `REFUND_WINDOW_OPEN`; call `emergencyRefund()` when `autoRefund` is enabled |
+| `ProtocolFeeVault.pendingFees` ≥ `feeThreshold` | Call `autoDistributeFee()`, moving fees to the treasury |
+| Market already resolved | Log one OK line, no repeated alerts |
+| Gas price above `maxFeePerGasGwei` | Skip the round and retry next interval instead of overpaying |
+
+## Running
 
 ```bash
 cd keeper
-npm install                      # 只依赖 ethers v6
+npm install                       # only dependency: ethers v6
 cp config.example.json config.json
-# 填 rpcUrl / factory / feeVault；私钥建议用环境变量注入
+# fill rpcUrl / factory / feeVault; prefer injecting the key via env
 
-# 单轮（cron 友好）
-node keeper.js --config config.json --once
-
-# 常驻
-node keeper.js --config config.json
-
-# 只看不写
-node keeper.js --config config.json --dry-run
+node keeper.js --config config.json            # long-running
+node keeper.js --config config.json --once     # single pass, exits (cron friendly)
+node keeper.js --config config.json --dry-run  # read and report, never sign
 ```
 
-环境变量优先于配置文件：
+Environment variables take precedence over the config file:
 
 ```
 KEEPER_RPC_URL / KEEPER_FACTORY / KEEPER_FEE_VAULT / KEEPER_PRIVATE_KEY
 KEEPER_FEE_THRESHOLD / KEEPER_AUTO_REFUND / KEEPER_WEBHOOK / KEEPER_INTERVAL_MS
 ```
 
-## 产出的多签提案
+Config keys (`config.example.json`): `rpcUrl`, `factory`, `feeVault`, `privateKey`, `intervalMs`
+(default 30000), `feeThreshold` (USDC, 6 decimals, default 1 USDC), `autoRefund`, `webhookUrl`,
+`proposalDir`, `maxFeePerGasGwei` (default 10). `rpcUrl` and `factory` are required and the addresses
+are validated at startup.
 
-每个过期盘口生成 `proposals/<vault>-RESOLUTION_OVERDUE.json`：
+## Multisig proposals
+
+One file per overdue market, `proposals/<vault>-RESOLUTION_OVERDUE.json`:
 
 ```json
 {
@@ -57,12 +61,25 @@ KEEPER_FEE_THRESHOLD / KEEPER_AUTO_REFUND / KEEPER_WEBHOOK / KEEPER_INTERVAL_MS
 }
 ```
 
-`to / value / operation / data` 就是 Safe Transaction Builder 的字段，多签成员导入即可签名，
-不需要手工拼 calldata，也不会因为手滑把 outcome 填错。
+`safe / to / value / operation / data` are Safe Transaction Builder fields: signers import the file and
+sign, with no hand-assembled calldata and no chance of mistyping the outcome. The JSON layout also keeps
+the three outcome options side by side for review.
 
-## 部署建议
+## Deployment notes
 
-- 用 systemd / pm2 常驻，`--once` + crontab 每分钟也是合理选择（更抗崩溃）
-- 私钥只给「手续费分发 + 超时退款」用，**绝不给 admin 权限的私钥**
-- webhook 可接钉钉/飞书/Slack，失败只记日志不阻塞主循环
-- `maxFeePerGasGwei` 默认 10，Base 上正常远低于此；超过就跳过，避免高费时被抽干
+- Run under systemd or pm2, or schedule `--once` from cron every minute (more resilient to crashes).
+- Give the key fee distribution and timeout refunds only — never a key with admin rights.
+- The webhook accepts any JSON endpoint (DingTalk, Feishu, Slack); failures are logged and never block
+  the main loop.
+- `maxFeePerGasGwei` defaults to 10, comfortably above normal Base fees; exceeding it means skipping the
+  round rather than draining the signer during a fee spike.
+
+## Layout
+
+```
+keeper/
+├── keeper.js              polling loop, proposal writer, webhook, CLI
+├── config.example.json    configuration template
+├── package.json           single dependency: ethers v6
+└── proposals/             generated Safe proposal JSON (gitignored)
+```

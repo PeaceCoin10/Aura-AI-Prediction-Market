@@ -3,6 +3,7 @@ import { pct, shortTime, toProb, usdc } from "../lib/format";
 import { marketPhase, PHASE_TEXT } from "../lib/events";
 import { Countdown, Empty, ProbabilityBar, Spinner } from "./ui";
 import { ShareButton } from "./ShareButton";
+import { TelegramShare } from "./TelegramShare";
 import { LogoLoader } from "./BrandLogo";
 import { useMode } from "../lib/mode";
 import { paperValue } from "../lib/paper";
@@ -129,18 +130,21 @@ export function MarketCard({
 
       <div className="flex items-center justify-between border-t border-white/5 pt-2">
         <span className="text-[10px] text-slate-600">{t.shell.nav[groupOf(market.category)]}</span>
-        <ShareButton
-          compact
-          input={{
-            question: market.question ?? t.social.card.shareFallbackQuestion,
-            category: market.category ?? "general",
-            side,
-            prob,
-            potentialReturn: prob > 0 && prob < 1 ? `${(1 / prob).toFixed(2)}x` : undefined,
-            mode,
-            marketId: market.marketId,
-          }}
-        />
+        <div className="flex items-center gap-1.5">
+          <TelegramShare marketId={market.marketId} question={market.question ?? market.marketId} />
+          <ShareButton
+            compact
+            input={{
+              question: market.question ?? t.social.card.shareFallbackQuestion,
+              category: market.category ?? "general",
+              side,
+              prob,
+              potentialReturn: prob > 0 && prob < 1 ? `${(1 / prob).toFixed(2)}x` : undefined,
+              mode,
+              marketId: market.marketId,
+            }}
+          />
+        </div>
       </div>
     </div>
   );

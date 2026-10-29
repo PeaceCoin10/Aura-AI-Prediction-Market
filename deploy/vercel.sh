@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────
-# Aura · 一条命令换成永久 Vercel 域名（替代会掉线的 trycloudflare 临时隧道）
+# Aura · switch to a permanent Vercel domain with one command (replaces the flaky trycloudflare tunnel)
 #
 #   VERCEL_TOKEN=xxx ./deploy/vercel.sh
 #   VERCEL_TOKEN=xxx PROJECT=aura-prediction-market ./deploy/vercel.sh
 #
-# 做的事：
-#   1) 用 token 调 Vercel API 建/复用项目（幂等）
-#   2) vercel link → vercel deploy --prod（云端 npm install + vite build）
-#   3) 回读 https://<project>.vercel.app 的 HTTP 状态，确认真的活着
+# What it does:
+#   1) use the token against the Vercel API to create / reuse the project (idempotent)
+#   2) vercel link → vercel deploy --prod (cloud-side npm install + vite build)
+#   3) re-read the HTTP status of https://<project>.vercel.app to confirm it is really up
 #
-# 前置：仓库里已有 vercel.json（buildCommand / outputDirectory / SPA rewrite）
+# Prerequisite: vercel.json is already in the repo (buildCommand / outputDirectory / SPA rewrite)
 # ─────────────────────────────────────────────────────────────
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -31,37 +31,37 @@ for a in "$@"; do
   esac
 done
 
-[ -n "$TOKEN" ] || [ -n "${DRY_RUN:-}" ] || die "缺 VERCEL_TOKEN。到 https://vercel.com/account/tokens 建一个，然后 VERCEL_TOKEN=xxx ./deploy/vercel.sh"
+[ -n "$TOKEN" ] || [ -n "${DRY_RUN:-}" ] || die "VERCEL_TOKEN is missing. Create one at https://vercel.com/account/tokens, then run VERCEL_TOKEN=xxx ./deploy/vercel.sh"
 
 if [ -n "${DRY_RUN:-}" ]; then
   say "[dry-run] POST https://api.vercel.com/v11/projects  (name=$PROJECT)"
   say "[dry-run] npx vercel link --yes --project $PROJECT --token \$VERCEL_TOKEN"
   say "[dry-run] npx vercel deploy --prod --yes --token \$VERCEL_TOKEN --cwd $ROOT"
-  say "[dry-run] curl -I https://$PROJECT.vercel.app  (期望 200)"
+  say "[dry-run] curl -I https://$PROJECT.vercel.app  (expect 200)"
   exit 0
 fi
 
-command -v npx >/dev/null || die "没装 Node/npx（Vercel CLI 需要 Node 18+）"
+command -v npx >/dev/null || die "Node/npx is not installed (the Vercel CLI needs Node 18+)"
 
 QS=""
 [ -n "$TEAM" ] && QS="?teamId=$TEAM"
 
-say "确认/创建 Vercel 项目：$PROJECT"
+say "confirm / create the Vercel project: $PROJECT"
 CODE="$(curl -sS -o /tmp/aura_vercel_proj.json -w '%{http_code}' \
   -H "Authorization: Bearer $TOKEN" "https://api.vercel.com/v9/projects/$PROJECT$QS")"
 if [ "$CODE" = "200" ]; then
-  ok "项目已存在"
+  ok "project already exists"
 elif [ "$CODE" = "404" ]; then
   curl -fsS -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
     -X POST "https://api.vercel.com/v11/projects$QS" \
     -d "{\"name\":\"$PROJECT\",\"framework\":null}" >/dev/null \
-    || die "创建项目失败（token 权限 / 项目名被占用）"
-  ok "项目已创建"
+    || die "project creation failed (token permissions / project name already taken)"
+  ok "project created"
 else
-  say "项目查询返回 HTTP $CODE（继续尝试直接部署）"
+  say "project lookup returned HTTP $CODE (attempting a direct deploy anyway)"
 fi
 
-say "link + 生产部署（云端第一次会 npm install + vite build，约 30–90 秒）"
+say "link + production deploy (the first cloud run does npm install + vite build, ~30–90s)"
 npx --yes vercel@latest link --yes --project "$PROJECT" --token "$TOKEN" >/dev/null
 DEPLOY_LOG="$(mktemp)"
 npx --yes vercel@latest deploy --prod --yes --token "$TOKEN" --cwd "$ROOT" | tee "$DEPLOY_LOG"
@@ -69,13 +69,13 @@ npx --yes vercel@latest deploy --prod --yes --token "$TOKEN" --cwd "$ROOT" | tee
 URL="$(grep -oE 'https://[a-zA-Z0-9._-]+\.vercel\.app' "$DEPLOY_LOG" | tail -1 || true)"
 [ -n "$URL" ] || URL="https://$PROJECT.vercel.app"
 
-say "回读验证 $URL …"
+say "verifying $URL by read-back…"
 CODE="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 "$URL" || echo 000)"
-[ "$CODE" = "200" ] || die "部署返回 HTTP $CODE，去看部署日志：$DEPLOY_LOG"
-ok "线上已可用（HTTP 200）"
+[ "$CODE" = "200" ] || die "deployment returned HTTP $CODE; check the deploy log at $DEPLOY_LOG"
+ok "live and serving (HTTP 200)"
 
 printf '%s\n' "$URL" > deploy/.vercel-url
 echo
-echo "  永久域名   $URL"
-echo "  面板       https://vercel.com/dashboard"
-echo "  重新部署   VERCEL_TOKEN=xxx ./deploy/vercel.sh"
+echo "  permanent URL  $URL"
+echo "  dashboard      https://vercel.com/dashboard"
+echo "  redeploy       VERCEL_TOKEN=xxx ./deploy/vercel.sh"

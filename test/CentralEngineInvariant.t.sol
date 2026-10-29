@@ -7,11 +7,11 @@ import {ProtocolFeeVault} from "../src/ProtocolFeeVault.sol";
 import {CentralPredictionEngine} from "../src/CentralPredictionEngine.sol";
 
 /**
- * @notice 不变式测试：随机买卖 / 结算 / 赎回 / 扫残余之后，资金必须始终足额
+ * @notice Invariant suite: after random buys / sells / settlement / redemption / sweeps the books stay solvent
  *
- *  A1  cash >= owed               已承诺未领取的赔付永远有现金兜底
- *  A2  cash >= max(供应)          结算前任何时刻都偿付得起单边全赢
- *  A3  引擎 USDC 余额 == Σ cash    没有资金被偷偷挪出账本
+ *  A1  cash >= owed               every promised payout stays backed by cash
+ *  A2  cash >= max(supply)        either side is payable in full at any time before settlement
+ *  A3  engine USDC balance == Σ cash   no funds leave the ledger silently
  */
 contract CentralEngineHandler is Test {
     CentralPredictionEngine public engine;
@@ -92,13 +92,13 @@ contract CentralEngineHandler is Test {
         address who = _actor(actorSeed);
         if (!engine.isFinal(id)) {
             (, , , , uint256 endsAt, ) = engine.resolutionState(id);
-            if (endsAt > block.timestamp) vm.warp(endsAt); // 跨过争议缓冲期
+            if (endsAt > block.timestamp) vm.warp(endsAt); // cross the dispute buffer
         }
         vm.prank(who);
         try engine.redeem(id) {} catch {}
     }
 
-    /// @dev 争议期内 admin 改判（覆盖 owed 重算路径）
+    /// @dev admin re-rules inside the dispute window (covers the owed recompute path)
     function overrideOutcome(uint256 idSeed, uint8 outcome) external {
         bytes32 id = _id(idSeed);
         if (!engine.marketCore(id).resolved) return;
@@ -106,7 +106,7 @@ contract CentralEngineHandler is Test {
         try engine.overrideResolution(id, outcome % 3) {} catch {}
     }
 
-    /// @dev 争议期结束后显式终结
+    /// @dev explicit finalisation after the dispute window
     function finalizeMarket(uint256 idSeed) external {
         bytes32 id = _id(idSeed);
         (, , , , uint256 endsAt, ) = engine.resolutionState(id);
@@ -186,7 +186,7 @@ contract CentralEngineInvariantTest is Test {
         targetContract(address(handler));
     }
 
-    /// @notice A1：现金永远覆盖已承诺未领取的赔付
+    /// @notice A1: cash always covers the promised-but-unclaimed payout
     function invariant_CashCoversOwed() public view {
         for (uint256 i = 0; i < ids.length; i++) {
             CentralPredictionEngine.Core memory c = engine.marketCore(ids[i]);
@@ -194,7 +194,7 @@ contract CentralEngineInvariantTest is Test {
         }
     }
 
-    /// @notice A2：结算前现金覆盖任一边的全部份额（单边全赢也赔得出）
+    /// @notice A2: before settlement cash covers either side in full (a one-sided win is still payable)
     function invariant_CashCoversBothSides() public view {
         for (uint256 i = 0; i < ids.length; i++) {
             CentralPredictionEngine.Core memory c = engine.marketCore(ids[i]);
@@ -204,7 +204,7 @@ contract CentralEngineInvariantTest is Test {
         }
     }
 
-    /// @notice A3：引擎实际 USDC 余额 == 所有盘口 cash 之和（费用即时划走，不留暗账）
+    /// @notice A3: engine USDC balance == sum of every market's cash (fees leave immediately, no hidden books)
     function invariant_NoHiddenCash() public view {
         uint256 sum;
         for (uint256 i = 0; i < ids.length; i++) {
@@ -213,7 +213,7 @@ contract CentralEngineInvariantTest is Test {
         assertEq(usdc.balanceOf(address(engine)), sum, "A3 violated: hidden cash");
     }
 
-    /// @notice A5：争议期内（未终结）sweepable 必须为 0，且 owed 永远 <= cash
+    /// @notice A5: while a market is in its dispute window sweepable must be 0 and owed must stay <= cash
     function invariant_DisputeWindowProtectsOwed() public view {
         for (uint256 i = 0; i < ids.length; i++) {
             (bool resolved, bool finalized, bool disputing,,, uint256 owed) = engine.resolutionState(ids[i]);
@@ -227,7 +227,7 @@ contract CentralEngineInvariantTest is Test {
         }
     }
 
-    /// @notice 池内库存与总供应必须自洽（供应 = 池内 + 用户）
+    /// @notice pool inventory and total supply must reconcile (supply = pool + users)
     function invariant_SupplyMatchesInventory() public view {
         for (uint256 i = 0; i < ids.length; i++) {
             CentralPredictionEngine.Core memory c = engine.marketCore(ids[i]);

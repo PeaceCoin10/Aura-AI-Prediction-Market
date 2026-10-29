@@ -1,44 +1,49 @@
 /**
- * PredictionSDK — 前端安全交互辅助库
+ * PredictionSDK — safe front-end interaction helper library
  *
- * ⚠️ 合约绑定的现状（2026-10-25 架构切换后）：
- *    本文件里的 calldata 编码器绑定的是**旧架构**（PredictionFactory + 每盘口一个 PredictionVault），
- *    那两个合约已经归档到 `../legacy/contracts/`，不再是主网要部署的东西。
- *    主网新架构是 `CentralPredictionEngine`（单合约多盘口），它的调用面在
- *    `../docs/CENTRAL-ENGINE.md` 里有完整签名表，前端接新引擎时**不能**直接复用这里的 vault 选择器。
- *    可以原样复用的是与合约无关的那一层：MEV 路由表、`submitProtected`、
- *    `assertPlanIntegrity`、`confirmQuoteStillValid`、`waitForReceipt`。
- *    基于新引擎的 SDK 已经写好：`./CentralPredictionSDK.ts`（44 条单测 + `script/e2e-sdk-central.sh` 真链联调）。
- *    新项目请直接用那一个，本文件只作为历史回归与 MEV 提交层的参考。
+ * ⚠️ Contract binding status (after the 2026-10-25 architecture switch):
+ *    The calldata encoders in this file are bound to the **legacy architecture** (PredictionFactory +
+ *    one PredictionVault per market). Both contracts are archived under `../legacy/contracts/` and are
+ *    no longer what gets deployed to mainnet.
+ *    The new mainnet architecture is `CentralPredictionEngine` (a single contract hosting many markets);
+ *    its full signature table lives in `../docs/CENTRAL-ENGINE.md`. When wiring the new engine,
+ *    the front end **must not** reuse the vault selectors defined here.
+ *    What can be reused verbatim is the contract-agnostic layer: the MEV route table, `submitProtected`,
+ *    `assertPlanIntegrity`, `confirmQuoteStillValid`, and `waitForReceipt`.
+ *    An SDK targeting the new engine already exists: `./CentralPredictionSDK.ts` (44 unit tests plus
+ *    `script/e2e-sdk-central.sh` for live-chain integration). New projects should use that one directly;
+ *    this file remains only as a historical regression and MEV-submission reference.
  *
- * 解决的问题：`minSharesOut` 如果前端传 0（或随手写个 1），用户的成交价就完全裸奔，
- * 任何人都能在同一区块里把你的单子夹成任何价格。
+ * The problem this solves: if the front end passes `minSharesOut` as 0 (or casually writes 1), the user's
+ * fill price is completely unprotected, and anyone can sandwich the order to any price within the same block.
  *
- * 本库的设计约束（刻意为之）：
- *   1. **不暴露任何"直接传 minSharesOut"的接口**。唯一的入场是
- *      `buildBuy({ amountIn, slippageBps })`，minSharesOut 由 previewBuy 现算现用。
- *   2. `slippageBps` 必须在 [1, 500] 内。传 0 直接抛错 —— 从代码层禁止裸奔。
- *   3. 发交易前先做完整 preflight（最低下注 / 影响上限 / 已结算 / 暂停 / 深度），
- *      有问题在本地就抛错，不浪费用户 gas。
- *   4. 零依赖：只要求调用方传入一个 `ethCall(to, data)`，可对接 viem / ethers / wagmi。
+ * Deliberate design constraints of this library:
+ *   1. **No API accepts `minSharesOut` directly.** The only entry point is
+ *      `buildBuy({ amountIn, slippageBps })`, and minSharesOut is computed on the fly by previewBuy.
+ *   2. `slippageBps` must lie in [1, 500]. Passing 0 throws immediately — going unprotected is banned at
+ *      the code level.
+ *   3. A complete preflight (minimum bet / impact cap / already resolved / paused / depth) runs before any
+ *      transaction is built, so problems throw locally instead of burning the user's gas.
+ *   4. Zero dependencies: the caller only supplies an `ethCall(to, data)`, so viem / ethers / wagmi all fit.
  *
- * 用法：
+ * Usage:
  *   const sdk = new PredictionSDK(transport, { vault: "0x..." });
  *   const tx  = await sdk.buildBuy({ outcome: 1, amountIn: 100_000_000n, slippageBps: 100 });
  *   await wallet.sendTransaction(tx);
  */
 
-/* ---------------------------------- 类型 ---------------------------------- */
+/* ---------------------------------- Types --------------------------------- */
 
 export interface EthCallTransport {
-  /** 发起 eth_call，返回 0x 开头的十六进制返回值 */
+  /** Performs an eth_call and returns the 0x-prefixed hexadecimal return value */
   ethCall(to: string, data: string): Promise<string>;
   /**
-   * 可选：把已签名交易发给指定路由（eth_sendRawTransaction）。
-   * 私有中继 / MEV 保护端点都走这个口子；不实现也能用 SDK 的报价与编码功能。
+   * Optional: send a signed transaction to a specific route (eth_sendRawTransaction).
+   * Private relays and MEV-protection endpoints are reached through this hook; the SDK's quoting and
+   * encoding features work without it.
    */
   sendRawTransaction?(route: SubmissionRoute, rawTx: string): Promise<string>;
-  /** 可选：查交易回执，用于确认"私有路由超时"到底上链了没有 */
+  /** Optional: fetch a transaction receipt, used to settle whether a "private route timeout" landed on-chain */
   getTransactionReceipt?(hash: string): Promise<TransactionReceipt | null>;
 }
 
@@ -48,13 +53,13 @@ export interface TransactionReceipt {
   transactionHash?: string;
 }
 
-/** 路由的隐私等级：决定超时后能不能安全地回退到下一个端点 */
+/** Privacy tier of a route: decides whether it is safe to fall back to the next endpoint after a timeout */
 export type RoutePrivacy =
-  /** 私有中继（Flashbots Protect 一类）：对公网 mempool 不可见 */
+  /** Private relay (Flashbots Protect and friends): invisible to the public mempool */
   | "private-relay"
-  /** 链本身没有公开 mempool，交易直塞排序器（Base / OP Stack 系） */
+  /** The chain has no public mempool — transactions go straight to the sequencer (Base / OP Stack family) */
   | "sequencer-private"
-  /** 普通公开 RPC：可见即可被抢 */
+  /** Plain public RPC: anything visible can be front-run */
   | "public";
 
 export interface SubmissionRoute {
@@ -62,39 +67,39 @@ export interface SubmissionRoute {
   chainId: number;
   url: string;
   privacy: RoutePrivacy;
-  /** 端点是否需要账号 / API key（SDK 不内置任何 key） */
+  /** Whether the endpoint needs an account / API key (the SDK ships no keys of its own) */
   requiresAccount?: boolean;
   note: string;
 }
 
 export interface SubmissionOptions {
-  /** 覆盖默认路由表（按优先级从上到下尝试） */
+  /** Override the default route table (tried top to bottom by priority) */
   routes?: SubmissionRoute[];
-  /** 单次提交的超时，默认 4000ms */
+  /** Timeout for a single submission attempt, 4000ms by default */
   submitTimeoutMs?: number;
-  /** 报价新鲜度上限，默认 2000ms（Base 出块 ~2s） */
+  /** Maximum quote age, 2000ms by default (Base produces a block roughly every 2s) */
   maxQuoteAgeMs?: number;
-  /** 提交前允许的报价下滑，默认等于 buildBuy 的 slippageBps */
+  /** Allowed quote drift before submission, defaults to buildBuy's slippageBps */
   maxDriftBps?: number;
 }
 
-/** 把 {to,data,value} 签名成 rawTx；由调用方接 viem/ethers 钱包 */
+/** Signs {to,data,value} into a rawTx; the caller wires it to a viem/ethers wallet */
 export type TxSigner = (tx: { to: string; data: string; value: "0x0" }) => Promise<string>;
 
 export interface SdkOptions {
-  /** PredictionVault 克隆地址 */
+  /** PredictionVault clone address */
   vault: string;
-  /** PredictionFactory 地址（只有调 buildCreateMarket 时才需要） */
+  /** PredictionFactory address (only needed to call buildCreateMarket) */
   factory?: string;
-  /** 单笔影响上限的安全余量，默认 0（严格按合约值） */
+  /** Safety margin subtracted from the per-trade impact cap, 0 by default (follow the contract exactly) */
   impactSafetyMarginBps?: number;
-  /** 链 id：决定默认路由表（1 = ETH 主网、8453 = Base 主网、84532 = Base Sepolia） */
+  /** Chain id: selects the default route table (1 = ETH mainnet, 8453 = Base mainnet, 84532 = Base Sepolia) */
   chainId?: number;
-  /** 额外/覆盖的提交路由（例如自己买的 MEV 保护私有 RPC） */
+  /** Extra / overriding submission routes (e.g. a paid MEV-protected private RPC) */
   routes?: SubmissionRoute[];
-  /** 默认单次提交超时，默认 4000ms */
+  /** Default per-submission timeout, 4000ms by default */
   submitTimeoutMs?: number;
-  /** 默认报价新鲜度上限，默认 2000ms */
+  /** Default maximum quote age, 2000ms by default */
   maxQuoteAgeMs?: number;
 }
 
@@ -115,15 +120,15 @@ export interface MarketState {
   priceYes: bigint;
   priceNo: bigint;
   totalLpShares: bigint;
-  /** 链上交易费率（bps），不硬编码，避免合约升级后 SDK 静默算错 */
+  /** On-chain trade fee (bps), never hardcoded, so a contract upgrade cannot silently skew SDK math */
   tradeFeeBps: bigint;
 }
 
 export interface BuyRequest {
   outcome: Outcome;
-  /** 支付金额（USDC 最小单位，6 位小数） */
+  /** Amount paid (USDC base units, 6 decimals) */
   amountIn: bigint;
-  /** 可接受滑点，单位 bps。允许 1..500（0 = 裸奔，禁止） */
+  /** Acceptable slippage in bps. 1..500 allowed (0 = unprotected, refused) */
   slippageBps: number;
 }
 
@@ -131,7 +136,7 @@ export interface TradePlan {
   to: string;
   data: string;
   value: "0x0";
-  /** 便于 UI 展示 */
+  /** Carried for UI display */
   quote: {
     amountIn: bigint;
     expectedSharesOut: bigint;
@@ -139,7 +144,7 @@ export interface TradePlan {
     slippageBps: number;
     priceImpactBps: number;
     effectivePrice: number;
-    /** 报价生成时间（ms），用于提交前的新鲜度校验 */
+    /** Quote creation time (ms), used for the freshness check before submission */
     quotedAt: number;
   };
 }
@@ -172,7 +177,7 @@ export type SdkErrorCode =
   | "NOT_ADMIN"
   | "NOT_PENDING_ADMIN"
   | "BAD_CONFIG"
-  // ---- MEV / 提交路由 / 报价新鲜度 ----
+  // ---- MEV / submission routes / quote freshness ----
   | "NO_ROUTE"
   | "ROUTE_UNAVAILABLE"
   | "SUBMIT_AMBIGUOUS"
@@ -181,7 +186,7 @@ export type SdkErrorCode =
   | "BAD_PLAN"
   | "RECEIPT_TIMEOUT";
 
-/* -------------------------------- ABI 常量 -------------------------------- */
+/* -------------------------------- ABI constants -------------------------------- */
 
 /** cast sig "previewBuy(uint8,uint256)" */
 const SEL_PREVIEW_BUY = "0x5e573804";
@@ -220,15 +225,15 @@ const SEL = {
 } as const;
 
 /**
- * 合约自定义错误 -> 前端错误码。
- * 自定义错误只有 4 字节，理论上有碰撞可能；因此这张表只用于「把链上 revert 翻译成人话」，
- * 真正的拦截仍以本地 preflight 为准。
+ * Contract custom error -> front-end error code.
+ * Custom errors are only 4 bytes wide, so collisions are theoretically possible; this table therefore only
+ * exists to "translate an on-chain revert into human language". Real enforcement stays in local preflight.
  */
 const REVERT_MAP: Record<string, SdkErrorCode> = {
   "0xb8ab88d4": "ABOVE_MAX_BET", // AboveMaxBet()
   "0x5688ffb3": "BELOW_MIN_BET", // BelowMinBet()
   "0x22410594": "IMPACT_TOO_HIGH", // ImpactTooHigh()
-  "0x8199f5f3": "ZERO_SHARES", // SlippageExceeded()（成交不足）
+  "0x8199f5f3": "ZERO_SHARES", // SlippageExceeded() (insufficient fill)
   "0xd93c0665": "TRADING_PAUSED", // EnforcedPause()
   "0x1db9461a": "MARKET_RESOLVED", // MarketResolvedAlready()
   "0xe2c865df": "TRADING_PAUSED", // TradingClosed()
@@ -244,31 +249,31 @@ const REVERT_MAP: Record<string, SdkErrorCode> = {
   "0x10549aa0": "BAD_CONFIG", // InvalidResolutionTime()
 };
 
-/** 给前端直接弹 toast 的中文文案 */
+/** User-facing copy the front end can toast directly */
 export const ERROR_MESSAGES: Record<SdkErrorCode, string> = {
-  SLIPPAGE_NOT_SET: "请先设置滑点保护（不能为 0），否则成交价可能被抢跑",
-  SLIPPAGE_TOO_HIGH: "滑点容忍度不能超过 5%",
-  BELOW_MIN_BET: "单笔下注不能低于 5 USDC",
-  ABOVE_MAX_BET: "单笔下注不能超过 10,000 USDC",
-  IMPACT_TOO_HIGH: "该笔金额占池子比例过大，请减少下单金额",
-  MARKET_RESOLVED: "该盘口已结算，无法继续交易",
-  TRADING_PAUSED: "该盘口已暂停交易，请稍后再试",
-  ZERO_SHARES: "下单金额过小，成交份额为 0，请加大金额",
-  INSUFFICIENT_DEPTH: "池子流动性不足，无法承接该笔交易",
-  BAD_OUTCOME: "只支持 YES(1) 或 NO(0)",
-  BAD_RESPONSE: "链上返回数据异常，请刷新重试",
-  MARKET_NOT_RESOLVED: "盘口尚未结算",
-  NOTHING_TO_REDEEM: "你没有可赎回的份额",
-  NOT_ADMIN: "只有管理员可以执行该操作",
-  NOT_PENDING_ADMIN: "只有被指定的待接收管理员才能完成交接（acceptAdmin）",
-  NO_ROUTE: "当前链没有可用的交易提交路由，请配置私有 RPC 或改用钱包默认网络",
-  ROUTE_UNAVAILABLE: "私有交易路由不可用（缺 key / 端点异常），交易未发出",
-  SUBMIT_AMBIGUOUS: "私有路由超时，无法确认交易是否已被接收：请先用交易哈希查回执，禁止直接重发",
-  NETWORK_TIMEOUT: "节点响应超时，报价已失效，请重试",
-  QUOTE_STALE: "价格在你确认期间已经跑出滑点容忍范围，已拦截，未发交易",
-  BAD_PLAN: "交易数据被改动或与报价不一致，已拦截",
-  RECEIPT_TIMEOUT: "等待回执超时，交易可能仍在打包，请稍后在浏览器确认",
-  BAD_CONFIG: "盘口参数不合法（请检查起投额 / 单笔上限 / 影响上限）",
+  SLIPPAGE_NOT_SET: "Set slippage protection first (it cannot be 0); otherwise your fill price can be front-run",
+  SLIPPAGE_TOO_HIGH: "Slippage tolerance cannot exceed 5%",
+  BELOW_MIN_BET: "Minimum bet size is 5 USDC",
+  ABOVE_MAX_BET: "Maximum bet size is 10,000 USDC",
+  IMPACT_TOO_HIGH: "This order is too large relative to the pool; reduce the amount",
+  MARKET_RESOLVED: "This market has already resolved and can no longer be traded",
+  TRADING_PAUSED: "Trading is paused on this market; please try again later",
+  ZERO_SHARES: "Order size is too small: it fills zero shares; increase the amount",
+  INSUFFICIENT_DEPTH: "Pool liquidity is too thin to absorb this trade",
+  BAD_OUTCOME: "Only YES (1) or NO (0) is supported",
+  BAD_RESPONSE: "The chain returned unexpected data; refresh and try again",
+  MARKET_NOT_RESOLVED: "This market has not resolved yet",
+  NOTHING_TO_REDEEM: "You have no shares to redeem",
+  NOT_ADMIN: "Only the admin can perform this action",
+  NOT_PENDING_ADMIN: "Only the nominated pending admin can complete the handover (acceptAdmin)",
+  NO_ROUTE: "No submission route is available on this chain; configure a private RPC or switch to the wallet's default network",
+  ROUTE_UNAVAILABLE: "The private submission route is unavailable (missing key / endpoint failure); the transaction was not sent",
+  SUBMIT_AMBIGUOUS: "The private route timed out and acceptance is unknown: look the receipt up by transaction hash first, and never resend blindly",
+  NETWORK_TIMEOUT: "The node timed out and the quote is now stale; please retry",
+  QUOTE_STALE: "The price moved outside your slippage tolerance while you were confirming; blocked before sending",
+  BAD_PLAN: "Transaction data was modified or does not match the quote; blocked",
+  RECEIPT_TIMEOUT: "Timed out waiting for a receipt; the transaction may still be included, check the explorer shortly",
+  BAD_CONFIG: "Invalid market parameters (check minimum bet / per-trade cap / impact cap)",
 };
 
 const BPS = 10_000n;
@@ -277,15 +282,16 @@ const MIN_SLIPPAGE_BPS = 1;
 const DEFAULT_SUBMIT_TIMEOUT_MS = 4_000;
 const DEFAULT_QUOTE_MAX_AGE_MS = 2_000;
 
-/* ------------------------------ 提交路由表 ------------------------------ */
+/* ------------------------------ Submission route table ------------------------------ */
 
 /**
- * 已知可用的提交路由（截至本版本实测/官方文档确认）：
- *  - Flashbots Protect 官方只支持以太坊主网(1) 与 Sepolia(11155111)，**不支持 Base**；
- *    把 Base 交易往 rpc.flashbots.net 发会被直接拒绝，所以这里不骗人。
- *  - Base 是 OP Stack 单排序器，**没有公开 pending mempool**：交易直塞 sequencer 队列，
- *    传统"监听 mempool 抢跑"不成立；残余风险是 RPC 层可见性、Flashblocks 预确认可观测性、
- *    以及把交易转卖给搜索者的中间商。要更硬的隐私，用下面的 mevProtectedRoute() 接自己的私有端点。
+ * Known-good submission routes (measured / confirmed against official docs as of this version):
+ *  - Flashbots Protect officially supports Ethereum mainnet (1) and Sepolia (11155111) only, **not Base**;
+ *    sending a Base transaction to rpc.flashbots.net is rejected outright, so we do not pretend otherwise.
+ *  - Base is a single-sequencer OP Stack chain with **no public pending mempool**: transactions land directly
+ *    in the sequencer queue, so classic "watch the mempool and front-run" does not apply. The residual risks
+ *    are RPC-layer visibility, observing Flashblocks preconfirmations, and intermediaries that resell the
+ *    transaction to searchers. For harder privacy, plug your own private endpoint into mevProtectedRoute().
  */
 export const KNOWN_ROUTES: readonly SubmissionRoute[] = [
   {
@@ -294,7 +300,7 @@ export const KNOWN_ROUTES: readonly SubmissionRoute[] = [
     url: "https://rpc.flashbots.net/fast",
     privacy: "private-relay",
     requiresAccount: false,
-    note: "Flashbots Protect（以太坊主网）：隐藏于公开 mempool，失败交易不上链不收费",
+    note: "Flashbots Protect (Ethereum mainnet): hidden from the public mempool, failed transactions never land and cost nothing",
   },
   {
     id: "flashbots-protect-sepolia",
@@ -302,27 +308,28 @@ export const KNOWN_ROUTES: readonly SubmissionRoute[] = [
     url: "https://rpc-sepolia.flashbots.net",
     privacy: "private-relay",
     requiresAccount: false,
-    note: "Flashbots Protect（Sepolia 测试网）",
+    note: "Flashbots Protect (Sepolia testnet)",
   },
   {
     id: "base-mainnet-sequencer",
     chainId: 8453,
     url: "https://mainnet.base.org",
     privacy: "sequencer-private",
-    note: "Base 主网官方 RPC：无私聊 mempool，交易直达 sequencer 队列（非隐私中继）",
+    note: "Official Base mainnet RPC: no private mempool, transactions go straight to the sequencer queue (not a privacy relay)",
   },
   {
     id: "base-sepolia-sequencer",
     chainId: 84532,
     url: "https://sepolia.base.org",
     privacy: "sequencer-private",
-    note: "Base Sepolia 官方 RPC：同上，仅作灰度验证",
+    note: "Official Base Sepolia RPC: same as above, used only for staged verification",
   },
 ];
 
 /**
- * 构造一个外部 MEV 保护 / 私有路由（如按量付费的 provider 私有 RPC）。
- * SDK 不内置任何 URL 与 API key —— 端点必须由调用方提供，避免"看起来受保护其实没配"。
+ * Builds an external MEV-protection / private route (e.g. a metered provider private RPC).
+ * The SDK embeds no URLs and no API keys — the endpoint must come from the caller, so nobody ends up
+ * "looking protected while nothing is actually configured".
  */
 export function mevProtectedRoute(params: {
   id?: string;
@@ -340,7 +347,7 @@ export function mevProtectedRoute(params: {
     url: params.url,
     privacy: "private-relay",
     requiresAccount: params.requiresAccount ?? true,
-    note: params.note ?? "自定义私有路由（MEV 保护 / 私有 mempool），凭据由调用方管理",
+    note: params.note ?? "Custom private route (MEV protection / private mempool); credentials are managed by the caller",
   };
 }
 
@@ -351,8 +358,9 @@ const PRIVACY_RANK: Record<RoutePrivacy, number> = {
 };
 
 /**
- * 按链筛路由并排优先级（私有中继 > 排序器私有 > 公开），自定义路由永远排在最前。
- * 未知链返回空数组 —— 宁可抛 NO_ROUTE，也不静默降级到公开 RPC。
+ * Filters routes by chain and orders them by priority (private relay > sequencer-private > public);
+ * caller-supplied routes always come first. An unknown chain returns an empty array — we would rather throw
+ * NO_ROUTE than silently degrade to a public RPC.
  */
 export function routesForChain(chainId: number, extra: SubmissionRoute[] = []): SubmissionRoute[] {
   const promoted = extra.filter((r) => r.chainId === chainId);
@@ -368,7 +376,7 @@ export function routesForChain(chainId: number, extra: SubmissionRoute[] = []): 
   return merged.sort((a, b) => PRIVACY_RANK[a.privacy] - PRIVACY_RANK[b.privacy]);
 }
 
-/** 超时包装：网络抖动时不让前端无限挂起，统一抛带 code 的 SdkError */
+/** Timeout wrapper: network jitter must never hang the front end; always surfaces a coded SdkError */
 function withTimeout<T>(p: Promise<T>, ms: number, code: SdkErrorCode, what = "rpc"): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(() => reject(new SdkError(code, `${what} timeout after ${ms}ms`)), ms);
@@ -385,7 +393,7 @@ function withTimeout<T>(p: Promise<T>, ms: number, code: SdkErrorCode, what = "r
   });
 }
 
-/* ------------------------------ ABI 编解码 ------------------------------ */
+/* ------------------------------ ABI encoding / decoding ------------------------------ */
 
 function padAddress(a: string): string {
   if (!/^0x[0-9a-fA-F]{40}$/.test(a)) throw new SdkError("BAD_CONFIG", `invalid address: ${a}`);
@@ -420,12 +428,12 @@ function bool(data: string): boolean {
   return word(data) !== 0n;
 }
 
-/** 把 32 字节 ABI word 还原成小写 0x 地址（低 20 字节） */
+/** Turns a 32-byte ABI word back into a lowercase 0x address (low 20 bytes) */
 function addr(data: string): string {
   return "0x" + word(data).toString(16).padStart(40, "0").slice(-40);
 }
 
-/* --------------------------------- 主类 ---------------------------------- */
+/* --------------------------------- Main class --------------------------------- */
 
 export class PredictionSDK {
   private readonly vault: string;
@@ -455,7 +463,7 @@ export class PredictionSDK {
     this.maxQuoteAgeMs = opts.maxQuoteAgeMs ?? DEFAULT_QUOTE_MAX_AGE_MS;
   }
 
-  /* ----------------------------- 行情读取 ----------------------------- */
+  /* ----------------------------- Market data reads ----------------------------- */
 
   async getMarketState(): Promise<MarketState> {
     const [resolved, outcome, tradingOpen, paused, resolutionTime, minBet, maxBet, maxImpactBps, yesReserve, noReserve, depth, priceYes, priceNo, totalLpShares, tradeFeeBps] =
@@ -480,11 +488,11 @@ export class PredictionSDK {
     return { resolved, outcome, tradingOpen, paused, resolutionTime, minBet, maxBet, maxImpactBps, yesReserve, noReserve, depth, priceYes, priceNo, totalLpShares, tradeFeeBps };
   }
 
-  /* --------------------------- 核心：滑点计算 --------------------------- */
+  /* --------------------------- Core: slippage math --------------------------- */
 
   /**
-   * 调 previewBuy() 拿理论份额，再按滑点容忍度下折，得到 minSharesOut。
-   * 这是唯一会产生 minSharesOut 的地方。
+   * Calls previewBuy() for the theoretical share count, then discounts it by the slippage tolerance to get
+   * minSharesOut. This is the only place in the library that produces a minSharesOut.
    */
   async calculateMinSharesOut(
     outcome: Outcome,
@@ -504,7 +512,7 @@ export class PredictionSDK {
       });
     }
 
-    // minSharesOut = expected * (10000 - slippage) / 10000，向下取整
+    // minSharesOut = expected * (10000 - slippage) / 10000, rounded down
     const minOut = (expected * (BPS - BigInt(slippageToleranceBps))) / BPS;
     if (minOut === 0n) {
       throw new SdkError("ZERO_SHARES", "computed minSharesOut == 0", {
@@ -515,16 +523,16 @@ export class PredictionSDK {
     return minOut;
   }
 
-  /** 透传合约的 previewBuy，纯读取 */
+  /** Pass-through to the contract's previewBuy; read-only */
   async previewBuy(outcome: Outcome, amountIn: bigint): Promise<bigint> {
     const data = SEL_PREVIEW_BUY + padWord(BigInt(outcome)) + padWord(amountIn);
     return word(await this.transport.ethCall(this.vault, data));
   }
 
-  /* --------------------------- 构造可签名交易 --------------------------- */
+  /* --------------------------- Build signable transactions --------------------------- */
 
   /**
-   * 构造买入交易。调用方无法指定 minSharesOut —— 只能给滑点容忍度。
+   * Builds a buy transaction. The caller cannot specify minSharesOut — only a slippage tolerance.
    */
   async buildBuy(req: BuyRequest): Promise<TradePlan> {
     this.assertSlippage(req.slippageBps);
@@ -562,7 +570,8 @@ export class PredictionSDK {
   }
 
   /**
-   * 构造卖出交易。同样不给传 minAmountOut，用现有份额乘以 (1 - 滑点)。
+   * Builds a sell transaction. Likewise there is no caller-supplied minAmountOut; it is the current share
+   * count discounted by (1 - slippage).
    */
   async buildSell(params: {
     outcome: Outcome;
@@ -576,7 +585,7 @@ export class PredictionSDK {
     const state = await this.getMarketState();
     if (state.resolved) throw new SdkError("MARKET_RESOLVED", "market already resolved");
 
-    // 与合约 sell() 完全一致的储备推导
+    // Reserve derivation that mirrors the contract's sell() exactly
     const y = state.yesReserve;
     const n = state.noReserve;
     let grossOut: bigint;
@@ -624,11 +633,11 @@ export class PredictionSDK {
     };
   }
 
-  /* --------------------------- 盘口创建（6 参） --------------------------- */
+  /* --------------------------- Market creation (6 params) --------------------------- */
 
   /**
-   * 构造 createMarket 交易。**6 个参数一个都不能少**，
-   * 少传或多传在编码阶段就会抛 BAD_CONFIG，不会到链上才炸。
+   * Builds a createMarket transaction. **None of the 6 arguments may be omitted**:
+   * passing too few or too many throws BAD_CONFIG during encoding, long before it can blow up on-chain.
    */
   async buildCreateMarket(params: {
     conditionId: string;
@@ -679,60 +688,62 @@ export class PredictionSDK {
     return { to: this.factory, data, value: "0x0" };
   }
 
-  /* ----------------------------- 熔断开关 ----------------------------- */
+  /* ----------------------------- Circuit breakers ----------------------------- */
 
-  /** 构造 pause()（仅 admin 可用；SDK 只负责编码，不校验权限） */
+  /** Builds pause() (admin only; the SDK only encodes and does not check permissions) */
   buildPause(): { to: string; data: string; value: "0x0" } {
     return { to: this.vault, data: "0x8456cb59", value: "0x0" };
   }
 
-  /** 构造 unpause() */
+  /** Builds unpause() */
   buildUnpause(): { to: string; data: string; value: "0x0" } {
     return { to: this.vault, data: "0x3f4ba83a", value: "0x0" };
   }
 
-  /* --------------------------- 两步 Admin 移交 --------------------------- */
+  /* --------------------------- Two-step admin handover --------------------------- */
 
   /**
-   * 构造 transferAdmin(address)：**只登记 pendingAdmin，admin 不会立即改变**。
-   * 前端必须把这一步和下一步分开确认，绝不能把两者塞进同一个"确认接管"按钮。
+   * Builds transferAdmin(address): **this only registers a pendingAdmin; admin does not change yet**.
+   * The front end must confirm this step and the next one separately, and must never collapse both into a
+   * single "take over" button.
    */
   buildTransferAdmin(newAdmin: string): { to: string; data: string; value: "0x0" } {
     return { to: this.vault, data: SEL_TRANSFER_ADMIN + padAddress(newAdmin), value: "0x0" };
   }
 
-  /** 构造 acceptAdmin()：必须由 pendingAdmin 本人签名发出，否则链上 revert */
+  /** Builds acceptAdmin(): must be signed and sent by pendingAdmin itself, otherwise the chain reverts */
   buildAcceptAdmin(): { to: string; data: string; value: "0x0" } {
     return { to: this.vault, data: SEL_ACCEPT_ADMIN, value: "0x0" };
   }
 
-  /** 构造工厂侧的 transferAdmin(address)（工厂与盘口同一套两步 ABI） */
+  /** Builds the factory-side transferAdmin(address) (factory and markets share the same two-step ABI) */
   buildFactoryTransferAdmin(newAdmin: string): { to: string; data: string; value: "0x0" } {
     if (!this.factory) throw new SdkError("BAD_CONFIG", "factory address not configured in SdkOptions");
     return { to: this.factory, data: SEL_TRANSFER_ADMIN + padAddress(newAdmin), value: "0x0" };
   }
 
-  /** 构造工厂侧的 acceptAdmin() */
+  /** Builds the factory-side acceptAdmin() */
   buildFactoryAcceptAdmin(): { to: string; data: string; value: "0x0" } {
     if (!this.factory) throw new SdkError("BAD_CONFIG", "factory address not configured in SdkOptions");
     return { to: this.factory, data: SEL_ACCEPT_ADMIN, value: "0x0" };
   }
 
-  /** 读当前 admin */
+  /** Reads the current admin */
   async getAdmin(): Promise<string> {
     return addr(await this.call(SEL.admin));
   }
 
-  /** 读 pendingAdmin；返回 0x000...000 表示当前没有进行中的移交 */
+  /** Reads pendingAdmin; 0x000...000 means no handover is in flight */
   async getPendingAdmin(): Promise<string> {
     return addr(await this.call(SEL.pendingAdmin));
   }
 
-  /* ----------------------- MEV 保护 / 抗夹子提交 ----------------------- */
+  /* ----------------------- MEV protection / sandwich-resistant submission ----------------------- */
 
   /**
-   * 当前可用的提交路由（已按隐私等级排序，私有在前）。
-   * 传 chainId 可查别的链；返回空数组意味着"该链没有兜底路由"，调用方必须显式配置。
+   * Routes currently usable (already sorted by privacy tier, private first).
+   * Pass a chainId to inspect another chain; an empty array means "this chain has no fallback route" and the
+   * caller must configure one explicitly.
    */
   availableRoutes(chainId: number = this.chainId ?? 0): SubmissionRoute[] {
     const extra = this.routes.filter((r) => r.chainId === chainId);
@@ -740,8 +751,8 @@ export class PredictionSDK {
   }
 
   /**
-   * 交易数据完整性自检：防止调用方（或中间层）篡改已签名的 calldata。
-   * 任何一项不符直接抛 BAD_PLAN，绝不把可疑交易签名发出去。
+   * Integrity self-check for transaction data: prevents the caller (or any middleware) from tampering with
+   * already-built calldata. Any mismatch throws BAD_PLAN — a suspicious transaction is never signed and sent.
    */
   assertPlanIntegrity(plan: TradePlan): void {
     if (plan.to.toLowerCase() !== this.vault.toLowerCase()) {
@@ -782,12 +793,14 @@ export class PredictionSDK {
   }
 
   /**
-   * 提交前的"报价新鲜度"闸门：网络抖动/价格跑动时在本地就把单子拦下来。
+   * Pre-submission "quote freshness" gate: when the network jitters or the price runs, the order is stopped
+   * locally instead of on-chain.
    *
-   * 三道判定：
-   *   1. 报价年龄 > maxQuoteAgeMs        → QUOTE_STALE（默认 2s，Base 一个区块的量级）
-   *   2. 重新 previewBuy 后份额下滑 > 允许漂移 → QUOTE_STALE
-   *   3. 按新价重算的 minSharesOut 已高于旧值 → QUOTE_STALE（链上必 revert，不必浪费 gas）
+   * Three checks:
+   *   1. quote age > maxQuoteAgeMs                               -> QUOTE_STALE (2s by default, one Base block)
+   *   2. shares drop after a fresh previewBuy > allowed drift    -> QUOTE_STALE
+   *   3. minSharesOut recomputed at the new price exceeds the old -> QUOTE_STALE (guaranteed revert on-chain,
+   *      so there is no point burning gas)
    */
   async confirmQuoteStillValid(
     plan: TradePlan,
@@ -823,7 +836,7 @@ export class PredictionSDK {
           limit,
         });
       }
-      // 即使漂移在容忍度内，也要保证旧 minSharesOut 仍然成交得了
+      // Even when the drift is within tolerance, the old minSharesOut must still be fillable
       const minOutNow = (fresh * (BPS - BigInt(req.slippageBps))) / BPS;
       if (minOutNow < plan.quote.minSharesOut) {
         throw new SdkError("QUOTE_STALE", "price moved: minSharesOut would revert on-chain", {
@@ -836,13 +849,14 @@ export class PredictionSDK {
   }
 
   /**
-   * 把已签名交易通过路由链提交。
+   * Submits a signed transaction through the route chain.
    *
-   * 安全规则（比"多试几个端点"重要得多）：
-   *   - 私有路由超时 = **结果未知**（可能已被收下），抛 SUBMIT_AMBIGUOUS，绝不自动改投公开池
-   *     —— 否则同一 nonce 会同时曝光到公开 mempool，或造成重复提交。
-   *   - 私有路由返回明确 JSON-RPC 拒绝 = 没上链，可以继续试下一条。
-   *   - 公开路由失败 = 继续试下一条；全部失败抛 NO_ROUTE。
+   * Safety rules (far more important than "just try a few endpoints"):
+   *   - A private-route timeout means **the outcome is unknown** (the tx may already be accepted) -> throw
+   *     SUBMIT_AMBIGUOUS and never auto-fall back to a public pool, otherwise the same nonce is exposed to
+   *     the public mempool or submitted twice.
+   *   - An explicit JSON-RPC rejection from a private route means it did not land, so the next route may be tried.
+   *   - A public-route failure also moves on to the next route; if every route fails, throw NO_ROUTE.
    */
   async submitProtected(
     rawTx: string,
@@ -891,10 +905,11 @@ export class PredictionSDK {
   }
 
   /**
-   * 一步到位：报价 → 完整性自检 → 新鲜度闸门 → 签名 → 私有路由提交。
+   * End to end: quote -> integrity self-check -> freshness gate -> sign -> submit over a private route.
    *
-   * 关键点：**签名之前**就把所有能本地判定的风险拦掉（价格跑了 / 数据被改 / 网络超时），
-   * 用户不会因为网络抖动签出一个必被夹或必 revert 的交易。
+   * The point is that **every locally decidable risk is eliminated before signing** (price ran away, data
+   * tampered with, network timeout), so a user never signs a transaction that is bound to be sandwiched or
+   * bound to revert because of a network hiccup.
    */
   async signAndSubmitBuy(
     req: BuyRequest,
@@ -917,8 +932,8 @@ export class PredictionSDK {
   }
 
   /**
-   * 轮询回执。私有路由超时（SUBMIT_AMBIGUOUS）后用它来判断到底上没上链，
-   * 避免"以为失败又发一遍"造成的双花风险。
+   * Polls for a receipt. After a private-route timeout (SUBMIT_AMBIGUOUS) this is how you settle whether the
+   * transaction actually landed, avoiding a double-spend caused by "assume it failed, send it again".
    */
   async waitForReceipt(
     hash: string,
@@ -946,16 +961,16 @@ export class PredictionSDK {
     }
   }
 
-  /* --------------------------- 错误映射 --------------------------- */
+  /* --------------------------- Error mapping --------------------------- */
 
-  /** 把错误码翻成可直接上屏的中文 */
+  /** Turns an error code into copy that can be shown on screen directly */
   static message(code: SdkErrorCode | "UNKNOWN"): string {
-    return ERROR_MESSAGES[code as SdkErrorCode] ?? "交易失败，请稍后重试";
+    return ERROR_MESSAGES[code as SdkErrorCode] ?? "Transaction failed, please try again shortly";
   }
 
   /**
-   * 把链上 revert（或 ethers/viem 抛出的错误对象）翻译成 { code, message }。
-   * 兼容：裸 hex、{ data }、{ error: { data } }、{ info: { error: { data } } }
+   * Translates an on-chain revert (or an error object thrown by ethers/viem) into { code, message }.
+   * Handles: bare hex, { data }, { error: { data } }, { info: { error: { data } } }
    */
   static mapRevert(err: unknown): { code: SdkErrorCode | "UNKNOWN"; message: string; detail?: string } {
     const data = PredictionSDK.extractRevertData(err);
@@ -965,13 +980,13 @@ export class PredictionSDK {
     const code = REVERT_MAP[selector];
     if (code) return { code, message: PredictionSDK.message(code), detail: data };
 
-    // Error(string) —— require 的兜底路径
+    // Error(string) — the fallback path for require()
     if (selector === "0x08c379a0" && data.length > 138) {
       const len = Number(BigInt("0x" + data.slice(74, 138)));
       const hex = data.slice(138, 138 + len * 2);
       let text = "";
       for (let i = 0; i < hex.length; i += 2) text += String.fromCharCode(parseInt(hex.slice(i, i + 2), 16));
-      return { code: "UNKNOWN", message: `链上拒绝：${text}`, detail: data };
+      return { code: "UNKNOWN", message: `Reverted on-chain: ${text}`, detail: data };
     }
 
     return { code: "UNKNOWN", message: PredictionSDK.message("UNKNOWN"), detail: data };
@@ -989,9 +1004,9 @@ export class PredictionSDK {
     );
   }
 
-  /* ------------------------------- 断言层 ------------------------------- */
+  /* ------------------------------- Assertion layer ------------------------------- */
 
-  /** 滑点是硬门禁：0（裸奔）和 >5% 都直接拒绝 */
+  /** Slippage is a hard gate: both 0 (unprotected) and >5% are refused outright */
   private assertSlippage(bps: number): void {
     if (!Number.isInteger(bps) || bps < MIN_SLIPPAGE_BPS) {
       throw new SdkError(
@@ -1051,11 +1066,12 @@ export class PredictionSDK {
     }
   }
 
-  /* ------------------------------- 辅助计算 ------------------------------- */
+  /* ------------------------------- Helper math ------------------------------- */
 
   /**
-   * 价格冲击 = 成交后价格相对成交前的变动（bps）。
-   * 用与合约完全一致的储备变化计算：买入 outcome 后，该侧的"对手盘"储备增加 net。
+   * Price impact = post-trade price movement relative to the pre-trade price (bps).
+   * Computed from the same reserve deltas the contract uses: after buying `outcome`, the opposing reserve on
+   * that side grows by `net`.
    */
   private priceImpactBps(
     state: MarketState,
@@ -1094,9 +1110,9 @@ export class PredictionSDK {
   }
 }
 
-/* ------------------------------- 适配器 ------------------------------- */
+/* ------------------------------- Adapters ------------------------------- */
 
-/** viem PublicClient 适配（client.call 返回 { data }） */
+/** viem PublicClient adapter (client.call returns { data }) */
 export function viemTransport(client: {
   call(args: { to: string; data: string }): Promise<{ data?: string }>;
 }): EthCallTransport {
@@ -1109,7 +1125,7 @@ export function viemTransport(client: {
   };
 }
 
-/** ethers v6 Provider 适配 */
+/** ethers v6 Provider adapter */
 export function ethersTransport(provider: {
   call(tx: { to: string; data: string }): Promise<string>;
 }): EthCallTransport {

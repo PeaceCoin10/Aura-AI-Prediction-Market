@@ -23,6 +23,7 @@ import { publicClient, makeSdk } from "../lib/sdk";
 import { useWallet } from "../lib/wallet";
 import { useToasts } from "../hooks/useToasts";
 import { format, useT } from "../lib/i18n";
+import { tagOrderData, useReferral } from "../lib/referral";
 import { Countdown, ProbabilityBar, Spinner } from "./ui";
 
 type Side = "buy" | "sell";
@@ -53,6 +54,7 @@ export function TradePanel({
   const t = useT();
   const { account, ensureUsdcAllowance, sendTransaction } = useWallet();
   const { push } = useToasts();
+  const { referrer, addVolume } = useReferral();
   const [side, setSide] = useState<Side>("buy");
   const [outcome, setOutcome] = useState<Outcome>(OUTCOME_YES);
   const [amount, setAmount] = useState("");
@@ -139,10 +141,15 @@ export function TradePanel({
           push({ kind: "info", title: t.trade.toasts.allowanceChecking, body: t.trade.toasts.allowanceBody });
           await ensureUsdcAllowance(amountIn);
         }
-        const hash = await sendTransaction({ to: plan.to as `0x${string}`, data: plan.data as Hex });
+        // The referrer travels in the order's calldata tail: the engine ignores it, the indexer
+        // credits the rebate. Nothing about pricing or slippage depends on it.
+        const data = tagOrderData(plan.data, referrer);
+        const hash = await sendTransaction({ to: plan.to as `0x${string}`, data });
         push({ kind: "trade", title: t.trade.toasts.submitted, hash });
         const receipt = await publicClient.waitForTransactionReceipt({ hash });
         if (receipt.status !== "success") throw new Error(t.trade.toasts.reverted);
+        // Attributed volume for the affiliate panel (browser-local ledger until the indexer settles)
+        addVolume(Number(side === "buy" ? amountIn : quoted ?? 0n) / 1e6);
         const events = sdk.decodeReceiptLogs(
           receipt.logs.map((l) => ({
             address: l.address,
@@ -172,7 +179,7 @@ export function TradePanel({
         setBusy(false);
       }
     },
-    [account, side, amountIn, onDone, push, t],
+    [account, side, amountIn, quoted, referrer, addVolume, onDone, push, t],
   );
 
   const submit = useCallback(async () => {

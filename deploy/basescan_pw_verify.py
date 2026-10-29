@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-用 Playwright 无人值守走 Basescan 官网 "Verify & Publish" 向导（无需 ETHERSCAN_API_KEY）。
+Drive the Basescan "Verify & Publish" wizard unattended with Playwright (no ETHERSCAN_API_KEY needed).
 
-Standard-Json-Input 流程需要真实浏览器 JS（服务端表单是 ASP.NET + JS 上传），
-纯 POST 会卡在上传回发，所以用 Chromium 驱动。
+The Standard-Json-Input flow needs a real browser with JS (the server-side form is ASP.NET with a
+JS upload), and a plain POST gets stuck on the upload postback, so we drive Chromium instead.
 
-用法：
+Usage:
   python3 deploy/basescan_pw_verify.py <address> <sjis.json> <ctor_args_hex> <label> [--headful]
 """
 import json
@@ -28,7 +28,7 @@ def proxy_cfg():
 
 
 def wait_turnstile(page, label, timeout=60):
-    """等 Cloudflare Turnstile 生成 token；若有可见 checkbox 就先点掉。返回 token 是否有值。"""
+    """Wait for Cloudflare Turnstile to produce a token; click a visible checkbox first if present. Returns whether the token has a value."""
     js = ("() => {const i=document.querySelector('input[name=\"cf-turnstile-response\"]');"
           "return i ? i.value : null;}")
     deadline = timeout
@@ -80,7 +80,7 @@ def main():
         print(f"[{label}] goto /verifyContract")
         page.goto(f"{BASE}/verifyContract", wait_until="domcontentloaded", timeout=120000)
 
-        # --- 第 1 步
+        # --- step 1
         page.fill("#ContentPlaceHolder1_txtContractAddress", address)
         page.select_option("#ContentPlaceHolder1_ddlCompilerType", "3")
         page.wait_for_timeout(800)
@@ -98,7 +98,7 @@ def main():
             browser.close()
             return 1
 
-        # --- 第 2 步：上传 standard-json（上传按钮默认 d-none；set_input_files 触发的 JS 可能自动提交）
+        # --- step 2: upload the standard-json (the upload button is d-none by default; the JS fired by set_input_files may auto-submit)
         page.set_input_files("#ContentPlaceHolder1_FileUpload1", sjis_path)
         page.wait_for_timeout(1500)
         try:
@@ -107,7 +107,7 @@ def main():
             pass
         page.wait_for_timeout(1500)
         if page.locator("#ContentPlaceHolder1_FileUpload1").count() > 0:
-            # 没自动提交 → 手动触发（去掉 d-none 后点它，或直接 requestSubmit）
+            # no auto-submit → trigger it manually (drop d-none and click it, or call requestSubmit)
             print(f"[{label}] upload button not auto-triggered, submitting via JS")
             page.evaluate(
                 "() => {const f=document.getElementById('ctl00');"
@@ -124,7 +124,7 @@ def main():
         if "Invalid" in body or "Error !" in body:
             print(f"[{label}] step2 warnings:", [l for l in body.split("\n") if "rror" in l or "Invalid" in l][:8])
 
-        # --- 第 3 步：等 Cloudflare Turnstile 出 token（无感模式常自动通过），再提交
+        # --- step 3: wait for a Cloudflare Turnstile token (invisible mode usually passes on its own), then submit
         tok = wait_turnstile(page, label)
         print(f"[{label}] turnstile token present={tok}")
         if ctor:

@@ -1,7 +1,7 @@
 # Documentation
 
-Everything an operator, integrator or auditor needs. English is the source of truth; the Chinese
-engineering notes live in [`zh-CN/`](zh-CN/) and are kept for reference.
+Everything an operator, integrator or auditor needs. English is the single source of truth; the former
+Chinese engineering notes are archived outside this repository and are no longer part of this tree.
 
 | Document | What it answers |
 | --- | --- |
@@ -9,6 +9,9 @@ engineering notes live in [`zh-CN/`](zh-CN/) and are kept for reference.
 | [ASSETS.md](ASSETS.md) | The full asset inventory: contracts, verified addresses, code size, live URLs, test matrix |
 | [GITHUB-PUSH.md](GITHUB-PUSH.md) | Publish this repo with a PAT — no browser session, no password, no token in `.git/config` |
 | [DEPLOY-PERMANENT.md](DEPLOY-PERMANENT.md) | Permanent hosting: GitHub Pages (default), Vercel, Netlify — one command each |
+| [CENTRAL-ENGINE.md](CENTRAL-ENGINE.md) | Contract reference: constants, roles, trading, settlement, events, invariants |
+| [CENTRAL-SDK-GUIDE.md](CENTRAL-SDK-GUIDE.md) | TypeScript SDK: transport, reads, write preflights, error codes, event decoding |
+| [MAINNET-DEPLOYED.md](MAINNET-DEPLOYED.md) | Live Base mainnet addresses and parameters, read back from chain |
 | [SECURITY.md](SECURITY.md) | Threat model, admin powers, dispute mechanics, Slither and invariant results |
 | [security/slither-report.json](security/slither-report.json) | Raw static-analysis output |
 

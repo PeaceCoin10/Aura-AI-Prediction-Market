@@ -11,6 +11,7 @@ import { encodeFunctionData, type Hex } from "viem";
 import { CHAIN_ID, CHAIN_ID_HEX, ENGINE_ADDRESS, USDC_ADDRESS } from "./config";
 import { ERC20_ABI, usdcAllowance } from "./sdk";
 import { errText } from "./format";
+import { gaslessReady, loginWithSocial, type SocialKind } from "./socialLogin";
 import { en } from "../locales/en";
 
 export interface Eip1193Provider {
@@ -34,6 +35,10 @@ interface WalletState {
   connecting: boolean;
   error?: string;
   connect: (entry?: ProviderEntry) => Promise<void>;
+  /** Google / email smart account through Web3Auth; falls back to an explanatory error when unset */
+  connectSocial: (kind: SocialKind) => Promise<void>;
+  /** true when the active session trades through a sponsored smart account */
+  sponsored: boolean;
   disconnect: () => void;
   switchToBase: () => Promise<void>;
   sendTransaction: (tx: { to: `0x${string}`; data: string }) => Promise<Hex>;
@@ -160,6 +165,40 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setChainId(undefined);
   }, []);
 
+  /**
+   * Social login: Web3Auth hands back an EIP-1193 provider owned by the user's Google / email key.
+   * It is registered as a normal provider entry, so every existing code path (approve, trade,
+   * decode) works unchanged — the only difference is that gas can be sponsored when a bundler is
+   * configured (`sendTransaction` routes through ERC-4337 in that case).
+   */
+  const connectSocial = useCallback(async (kind: SocialKind) => {
+    setConnecting(true);
+    setError(undefined);
+    try {
+      const res = await loginWithSocial(kind);
+      if (!res.address || !res.provider) {
+        setError(res.error ?? en.content.wallet.noAccounts);
+        return;
+      }
+      const socialEntry: ProviderEntry = {
+        info: {
+          uuid: `web3auth-${kind}`,
+          name: kind === "google" ? "Google (smart account)" : "Email (smart account)",
+          icon: "",
+          rdns: "io.web3auth",
+        },
+        provider: res.provider as Eip1193Provider,
+      };
+      setEntry(socialEntry);
+      setAccount(res.address as `0x${string}`);
+      setChainId(CHAIN_ID);
+    } catch (e) {
+      setError(errText(e));
+    } finally {
+      setConnecting(false);
+    }
+  }, []);
+
   // Account / chain changes
   useEffect(() => {
     const p = entry?.provider;
@@ -181,9 +220,15 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     };
   }, [entry]);
 
+  const sponsored = Boolean(entry && entry.info.rdns === "io.web3auth" && gaslessReady());
+
   const sendTransaction = useCallback(
     async (tx: { to: `0x${string}`; data: string }) => {
       if (!entry || !account) throw new Error(en.content.wallet.notConnected);
+
+      // A social session is a Web3Auth smart account: when the project has a bundler + paymaster,
+      // the provider itself wraps the call in a sponsored user operation, so the same
+      // eth_sendTransaction below needs no Base ETH. Without one it behaves as a plain EOA.
       if (chainId !== CHAIN_ID) {
         await switchToBase();
       }
@@ -229,6 +274,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       connecting,
       error,
       connect,
+      connectSocial,
+      sponsored,
       disconnect,
       switchToBase,
       sendTransaction,
@@ -243,6 +290,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       connecting,
       error,
       connect,
+      connectSocial,
+      sponsored,
       disconnect,
       switchToBase,
       sendTransaction,

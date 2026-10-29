@@ -1,14 +1,17 @@
 /**
- * CentralPredictionSDK — 单合约多盘口引擎（CentralPredictionEngine）的前端安全封装
+ * CentralPredictionSDK — a frontend-safe wrapper around the single-contract, multi-market engine (CentralPredictionEngine)
  *
- * 设计目标（与旧 PredictionSDK 的三条铁律一致，但换成新 ABI）：
- *   1. 任何写方法都**不返回裸 calldata**：先跑本地 preflight，链上状态/参数不对就在本地抛错，不浪费 gas。
- *   2. `minSharesOut` / `minAmountOut` 不许裸奔：传 0 直接拒；传得比报价还高直接拒；
- *      传得比「报价 × (1 - 5%)」还松也直接拒（防止前端随手写 1）。
- *   3. 零依赖：只要求调用方注入 `ethCall(to, data)`，可对接 viem / ethers / wagmi / 自建节点。
- *      所有 calldata 由本文件手工编码，测试里用 `cast`（Solidity 自己的编码器）逐字节对齐。
+ * Design goals — the same three invariants as the legacy PredictionSDK, ported to the new ABI:
+ *   1. No write method ever hands back **raw calldata**: every path runs a local preflight first, so a bad
+ *      parameter or stale on-chain state throws locally instead of burning gas on a guaranteed revert.
+ *   2. `minSharesOut` / `minAmountOut` may never travel unprotected: 0 is rejected outright; a value above
+ *      the current quote is rejected (the trade cannot fill); and anything looser than "quote x (1 - 5%)"
+ *      is rejected too, so a frontend typing a lazy 1 cannot quietly disable the guardrail.
+ *   3. Zero dependencies: the caller injects only `ethCall(to, data)`, so viem / ethers / wagmi / a bare
+ *      node all work. Every calldata blob is encoded by hand in this file, and the suite diffs it byte for
+ *      byte against `cast` — Solidity's own encoder.
  *
- * 用法：
+ * Usage:
  *   const sdk = new CentralPredictionSDK(
  *     { ethCall: (to, data) => provider.call({ to, data }) },
  *     { engine: "0x...", chainId: 8453, account: "0x..." },
@@ -16,9 +19,9 @@
  *   const plan = await sdk.buildBuyShares({ marketId, outcome: 1, amountIn: 100_000_000n, slippageBps: 100 });
  *   await wallet.sendTransaction({ to: plan.to, data: plan.data });
  *
- * 合约侧对应关系（docs/CENTRAL-SDK-GUIDE.md 有完整表）：
- *   createMarket(bytes32,string,uint256)                        ← buildCreateMarket（无分类）
- *   createMarketWithMeta(bytes32,string,string,uint256)          ← buildCreateMarket（带 meta.category）
+ * Contract-side mapping (the full table lives in docs/CENTRAL-SDK-GUIDE.md):
+ *   createMarket(bytes32,string,uint256)                        ← buildCreateMarket (no category)
+ *   createMarketWithMeta(bytes32,string,string,uint256)          ← buildCreateMarket (with meta.category)
  *   buyShares(bytes32,uint8,uint256,uint256)                     ← buildBuyShares
  *   sellShares(bytes32,uint8,uint256,uint256)                    ← buildSellShares
  *   redeem(bytes32)                                              ← buildRedeem
@@ -26,46 +29,47 @@
  *   overrideResolution(bytes32,uint8)                            ← buildOverrideResolution
  */
 
-/* ============================== 类型 ============================== */
+/* ============================== Types ============================== */
 
 export type Address = string;
 export type Hex = string;
 
-/** 调用方注入的最小读取接口（只读，不会发交易） */
+/** The minimal read-only view the caller must inject; it never sends a transaction */
 export interface Transport {
-  /** eth_call；失败时抛出的错误里可能带 revert data（下面 decodeRevert 会吃掉） */
+  /** eth_call; on failure the thrown error may carry revert data (which decodeRevert below unwraps) */
   ethCall(to: Address, data: Hex): Promise<Hex>;
   /**
-   * 可选：链上最新区块时间（秒）。合约里所有时间比较都用 block.timestamp，
-   * 测试链快进或节点时钟漂移时，本地墙钟会判断错。不提供就退回系统时间。
+   * Optional: latest on-chain block time, in seconds. Every time comparison in the contract is against
+   * block.timestamp, so a local wall clock mis-judges fast-forwarded test chains and drifting node clocks.
+   * Falls back to the system clock when omitted.
    */
   now?: () => Promise<number | bigint>;
 }
 
 export interface SDKConfig {
-  /** CentralPredictionEngine 地址 */
+  /** CentralPredictionEngine address */
   engine: Address;
-  /** 期望的 chainId（可选；给了就校验，防连错链） */
+  /** Expected chainId (optional; when supplied it is validated, which catches wrong-network sessions) */
   chainId?: number;
-  /** 当前用户地址（可选；给了就做角色/持仓预检） */
+  /** Current user address (optional; enables role and position preflight checks) */
   account?: Address;
 }
 
-/** 本地算出来的交易计划（可直接丢给 wallet.sendTransaction） */
+/** A fully-formed transaction plan computed locally, ready for wallet.sendTransaction */
 export interface TxPlan {
   to: Address;
   data: Hex;
   value: "0x0";
-  /** 这次调用的方法名，便于埋点与日志 */
+  /** Contract method name, for analytics and logs */
   method: string;
-  /** 人类可读摘要（中文），可直接显示在确认弹窗 */
+  /** Human-readable summary (English), safe to show verbatim in a confirmation dialog */
   summary: string;
-  /** 关键参数快照，便于审计与回放 */
+  /** Snapshot of the decisive inputs, for the audit trail and replay */
   meta: Record<string, string | number | bigint | boolean>;
   /**
-   * 风险预警（不阻断交易）：
-   *   impact_near_limit —— 本笔金额造成的价格冲击已达到 5% 硬上限的 80%（4%），
-   *   再大一点就会被合约 revert，前端应提示用户「减小金额或分批」。
+   * Non-blocking risk warning:
+   *   impact_near_limit — this order's price impact has already reached 80% (4%) of the 5% hard cap.
+   *   One size step further and the contract reverts, so the UI should tell the user to shrink or split.
    */
   warning?: "impact_near_limit";
 }
@@ -76,30 +80,30 @@ export const OUTCOME_NO: Outcome = 0;
 export const OUTCOME_YES: Outcome = 1;
 export const OUTCOME_INVALID: Outcome = 2;
 
-/** 滑点容差硬边界：1 bps ~ 500 bps（500 = 5%，与合约的 MAX_IMPACT_BPS_CAP 对齐） */
+/** Hard slippage bounds: 1..500 bps (500 = 5%, matching the contract's MAX_IMPACT_BPS_CAP) */
 export const MIN_SLIPPAGE_BPS = 1n;
 export const MAX_SLIPPAGE_BPS = 500n;
 
-/** 滑点档位预设（直接传给 buildBuyShares/buildSellShares 的 slippageBps） */
-export const SLIPPAGE_CONSERVATIVE = 50n; // 0.5% —— 大额/流动性薄，宁可失败也别被吃
-export const SLIPPAGE_NORMAL = 100n; // 1%   —— 默认推荐
-export const SLIPPAGE_DEGEN = 300n; // 3%   —— 抢热点盘口，接受较大滑点
+/** Slippage presets, passed straight to buildBuyShares/buildSellShares as slippageBps */
+export const SLIPPAGE_CONSERVATIVE = 50n; // 0.5% — large size or thin liquidity: prefer a failed trade to a sandwich
+export const SLIPPAGE_NORMAL = 100n; // 1%   — the recommended default
+export const SLIPPAGE_DEGEN = 300n; // 3%   — racing a hot market, willing to pay more slippage
 
-/** 合约的价格影响硬上限（池深的 5%） */
+/** The contract's hard price-impact cap (5% of pool depth) */
 export const MAX_IMPACT_BPS = 500n;
-/** 冲击达到上限 80%（4%）就预警，而不是等到 revert */
+/** Warn at 80% of the cap (4%) instead of waiting for the revert */
 export const IMPACT_WARN_BPS = 400n;
 
-/* ============================== 错误体系 ============================== */
+/* ============================== Error model ============================== */
 
 /**
- * 双层错误码：
- *   - `local/*`  ：preflight 在本地拦下来的（没花 gas）
- *   - `chain/*`  ：链上 revert，带 4 字节 selector
- * 每个错误都自带中文文案，前端可以直接 `err.message` 展示。
+ * Two-tier error codes:
+ *   - `local/*`  : intercepted by the local preflight (no gas spent)
+ *   - `chain/*`  : an on-chain revert, carrying its 4-byte selector
+ * Every error carries a product-grade English message, so the frontend can render `err.message` directly.
  */
 export type SdkErrorCode =
-  // —— 本地预检 ——
+  // —— local preflight ——
   | "local/TRANSPORT_ERROR"
   | "local/NOT_CONNECTED"
   | "local/CHAIN_MISMATCH"
@@ -129,7 +133,7 @@ export type SdkErrorCode =
   | "local/ALREADY_FINAL"
   | "local/NOT_DISPUTING"
   | "local/SAME_OUTCOME"
-  // —— 链上 revert ——
+  // —— on-chain revert ——
   | "chain/UNKNOWN"
   | "chain/REVERT_STRING"
   | "chain/BELOW_MIN_BET"
@@ -164,11 +168,11 @@ export type SdkErrorCode =
 
 export class SdkError extends Error {
   public readonly code: SdkErrorCode;
-  /** 链上 revert 的 4 字节 selector（本地拦截时为 undefined） */
+  /** 4-byte selector of the on-chain revert (undefined when intercepted locally) */
   public readonly selector?: Hex;
-  /** 是否来自链上（用来区分"预检拦截"和"钱包被 revert"） */
+  /** Whether this came from the chain, which separates a preflight block from a wallet revert */
   public readonly onchain: boolean;
-  /** 原始 append 数据，排查用 */
+  /** Raw revert payload, kept for debugging */
   public readonly raw?: string;
 
   constructor(code: SdkErrorCode, message: string, opts: { selector?: Hex; raw?: string } = {}) {
@@ -181,70 +185,70 @@ export class SdkError extends Error {
   }
 }
 
-const ZH: Record<SdkErrorCode, string> = {
-  "local/TRANSPORT_ERROR": "读取链上状态失败，请检查 RPC 连接后重试",
-  "local/NOT_CONNECTED": "SDK 未配置 engine 地址",
-  "local/CHAIN_MISMATCH": "当前钱包网络与合约所在网络不一致，请切换网络",
-  "local/BAD_ADDRESS": "地址格式不正确",
-  "local/BAD_BYTES32": "marketId 必须是 32 字节十六进制（0x + 64 位）",
-  "local/BAD_OUTCOME": "结果只能是 0(NO) / 1(YES) / 2(INVALID)",
-  "local/BAD_AMOUNT": "金额必须是大于 0 的整数（USDC 6 位小数）",
-  "local/SLIPPAGE_OUT_OF_RANGE": "滑点容差必须在 1~500 bps（0.01%~5%）之间",
-  "local/MIN_OUT_REQUIRED": "minSharesOut/minAmountOut 不能为 0 —— 不设保护会被夹子按任意价格成交",
-  "local/MIN_OUT_ABOVE_QUOTE": "minSharesOut 高于当前报价，这笔交易必然失败（价格已被别人推动？）",
-  "local/SLIPPAGE_TOO_LOOSE": "滑点容差过松（超过 5%），等同于没有保护",
-  "local/QUESTION_LENGTH": "题目长度必须是 8~280 字节（UTF-8）",
-  "local/CATEGORY_LENGTH": "分类长度必须是 1~32 字节",
-  "local/RESOLUTION_TIME_RANGE": "结算时间必须在「现在 + 1 小时」到「现在 + 365 天」之间",
-  "local/MARKET_NOT_FOUND": "盘口不存在",
-  "local/MARKET_EXISTS": "该盘口 ID 已存在，不能重复创建",
-  "local/MARKET_RESOLVED": "盘口已结算，不能再交易",
-  "local/MARKET_NOT_RESOLVED": "盘口尚未结算",
-  "local/TRADING_CLOSED": "已过结算时间，交易关闭",
-  "local/MARKET_PAUSED": "协议已暂停交易，请稍后再试",
-  "local/QUOTE_MISMATCH": "本地报价与链上 preview 不一致（ABI 或版本不匹配），已中止",
-  "local/INSUFFICIENT_SHARES": "持仓份额不足",
-  "local/ACCOUNT_REQUIRED": "该操作需要知道当前用户地址（构造 SDK 时传 account）",
-  "local/NOT_CREATOR": "当前地址没有建盘权限",
-  "local/NOT_ORACLE": "当前地址没有裁决权限",
-  "local/NOT_ADMIN": "只有 admin（Safe 多签）可以执行该操作",
-  "local/ALREADY_FINAL": "裁决已过争议期并终结，不能再改判",
-  "local/NOT_DISPUTING": "当前不在争议期内，不能改判",
-  "local/SAME_OUTCOME": "新结果与当前结果相同",
-  "chain/UNKNOWN": "交易被链上拒绝（未知错误）",
-  "chain/REVERT_STRING": "交易被链上拒绝",
-  "chain/BELOW_MIN_BET": "低于最低下注额（5 USDC）",
-  "chain/ABOVE_MAX_BET": "高于单笔上限（10,000 USDC）",
-  "chain/IMPACT_TOO_HIGH": "这笔下单对价格冲击过大（超过池子 5%），请减小金额或分批",
-  "chain/DISPUTE_WINDOW_OPEN": "该盘口正处于 1 小时裁决争议期，暂不能提现",
-  "chain/DISPUTE_WINDOW_CLOSED": "争议期已结束，结果已不可更改",
-  "chain/NOT_AUTHORIZED_ROLE": "当前地址没有执行该操作的权限",
-  "chain/MARKET_NOT_FOUND": "盘口不存在",
-  "chain/MARKET_EXISTS": "盘口已存在",
-  "chain/MARKET_RESOLVED": "盘口已结算",
-  "chain/NOT_RESOLVED": "盘口尚未结算",
-  "chain/INVALID_OUTCOME": "结果值非法",
-  "chain/INVALID_QUESTION": "题目或分类不合法",
-  "chain/INVALID_RESOLUTION_TIME": "结算时间不合法",
-  "chain/TRADING_CLOSED": "交易已关闭",
-  "chain/ENFORCED_PAUSE": "协议已暂停",
-  "chain/TOO_EARLY_TO_RESOLVE": "还没到结算时间，不能裁定",
-  "chain/REFUND_WINDOW_NOT_REACHED": "还没到 7 天退款窗口",
-  "chain/NOTHING_TO_REDEEM": "没有可提取的份额",
-  "chain/NOTHING_TO_SWEEP": "没有可扫走的残余",
-  "chain/BELOW_MIN_SEED": "做市种子低于下限（10 USDC）",
-  "chain/ZERO_SHARES": "份额计算结果为 0（金额太小）",
-  "chain/SLIPPAGE_EXCEEDED": "成交价超出滑点保护范围，已回滚",
-  "chain/INSUFFICIENT_LIQUIDITY": "流动性或余额不足",
-  "chain/SAME_OUTCOME": "新结果与当前结果相同",
-  "chain/ZERO_ADDRESS": "地址不能为 0",
-  "chain/NOT_CONTRACT": "目标地址不是合约",
-  "chain/SAFE_ERC20": "USDC 转账失败（余额或授权不足）",
-  "chain/PANIC": "合约内部算术/断言失败",
-  "chain/REENTRANCY": "重入保护触发",
+const MESSAGES: Record<SdkErrorCode, string> = {
+  "local/TRANSPORT_ERROR": "Failed to read on-chain state. Check your RPC connection and retry.",
+  "local/NOT_CONNECTED": "The SDK has no engine address configured.",
+  "local/CHAIN_MISMATCH": "Your wallet is on a different network than the contract. Switch networks and retry.",
+  "local/BAD_ADDRESS": "Malformed address.",
+  "local/BAD_BYTES32": "marketId must be 32-byte hex (0x followed by 64 hex characters).",
+  "local/BAD_OUTCOME": "Outcome must be 0 (NO), 1 (YES) or 2 (INVALID).",
+  "local/BAD_AMOUNT": "Amount must be a positive integer in base units (USDC has 6 decimals).",
+  "local/SLIPPAGE_OUT_OF_RANGE": "Slippage tolerance must be between 1 and 500 bps (0.01%-5%).",
+  "local/MIN_OUT_REQUIRED": "minSharesOut/minAmountOut cannot be 0 — without a floor a sandwicher fills you at any price.",
+  "local/MIN_OUT_ABOVE_QUOTE": "minSharesOut is above the current quote, so this trade cannot fill (has the price already been pushed?)",
+  "local/SLIPPAGE_TOO_LOOSE": "Slippage tolerance is looser than 5%, which is the same as having no protection.",
+  "local/QUESTION_LENGTH": "Question must be 8-280 bytes of UTF-8.",
+  "local/CATEGORY_LENGTH": "Category must be 1-32 bytes.",
+  "local/RESOLUTION_TIME_RANGE": "Resolution time must fall between now + 1 hour and now + 365 days.",
+  "local/MARKET_NOT_FOUND": "Market not found.",
+  "local/MARKET_EXISTS": "A market with this ID already exists; it cannot be created twice.",
+  "local/MARKET_RESOLVED": "Market is already resolved and can no longer be traded.",
+  "local/MARKET_NOT_RESOLVED": "Market is not resolved yet.",
+  "local/TRADING_CLOSED": "Trading closed: the resolution time has passed.",
+  "local/MARKET_PAUSED": "Trading is paused protocol-wide. Try again later.",
+  "local/QUOTE_MISMATCH": "Local quote disagrees with the on-chain preview (ABI or version mismatch); aborted.",
+  "local/INSUFFICIENT_SHARES": "Not enough shares held.",
+  "local/ACCOUNT_REQUIRED": "This action needs the current user address (pass `account` when constructing the SDK).",
+  "local/NOT_CREATOR": "This address has no market-creation permission.",
+  "local/NOT_ORACLE": "This address has no resolution permission.",
+  "local/NOT_ADMIN": "Only the admin (Safe multisig) can perform this action.",
+  "local/ALREADY_FINAL": "The resolution is past its dispute window and finalized; it can no longer be overridden.",
+  "local/NOT_DISPUTING": "Not inside a dispute window, so there is nothing to override.",
+  "local/SAME_OUTCOME": "The new outcome is identical to the current one.",
+  "chain/UNKNOWN": "The chain rejected the transaction (unknown error).",
+  "chain/REVERT_STRING": "The chain rejected the transaction.",
+  "chain/BELOW_MIN_BET": "Below the minimum bet (5 USDC).",
+  "chain/ABOVE_MAX_BET": "Above the per-trade cap (10,000 USDC).",
+  "chain/IMPACT_TOO_HIGH": "This order would move the price too far (over 5% of the pool). Reduce the size or split it.",
+  "chain/DISPUTE_WINDOW_OPEN": "This market is inside its 1-hour dispute window; redemption is locked until the window closes.",
+  "chain/DISPUTE_WINDOW_CLOSED": "The dispute window has closed; the outcome can no longer change.",
+  "chain/NOT_AUTHORIZED_ROLE": "Your address is not authorized to perform this action.",
+  "chain/MARKET_NOT_FOUND": "Market not found.",
+  "chain/MARKET_EXISTS": "Market already exists.",
+  "chain/MARKET_RESOLVED": "Market already resolved.",
+  "chain/NOT_RESOLVED": "Market is not resolved yet.",
+  "chain/INVALID_OUTCOME": "Invalid outcome value.",
+  "chain/INVALID_QUESTION": "Invalid question or category.",
+  "chain/INVALID_RESOLUTION_TIME": "Invalid resolution time.",
+  "chain/TRADING_CLOSED": "Trading is closed.",
+  "chain/ENFORCED_PAUSE": "The protocol is paused.",
+  "chain/TOO_EARLY_TO_RESOLVE": "Resolution time has not been reached, so the market cannot be resolved yet.",
+  "chain/REFUND_WINDOW_NOT_REACHED": "The 7-day refund window has not been reached yet.",
+  "chain/NOTHING_TO_REDEEM": "Nothing to redeem.",
+  "chain/NOTHING_TO_SWEEP": "No residual dust to sweep.",
+  "chain/BELOW_MIN_SEED": "Liquidity seed is below the floor (10 USDC).",
+  "chain/ZERO_SHARES": "Computed share amount is 0 (the size is too small).",
+  "chain/SLIPPAGE_EXCEEDED": "Fill price fell outside the slippage floor; reverted.",
+  "chain/INSUFFICIENT_LIQUIDITY": "Insufficient liquidity or balance.",
+  "chain/SAME_OUTCOME": "The new outcome is identical to the current one.",
+  "chain/ZERO_ADDRESS": "Address cannot be the zero address.",
+  "chain/NOT_CONTRACT": "Target address is not a contract.",
+  "chain/SAFE_ERC20": "USDC transfer failed (insufficient balance or allowance).",
+  "chain/PANIC": "Arithmetic or assertion failure inside the contract.",
+  "chain/REENTRANCY": "Reentrancy guard triggered.",
 };
 
-/** 合约自定义错误 selector → (错误码, 是否"权限类") */
+/** Contract custom-error selector → (error code, error name) */
 export const ERROR_SELECTORS: Record<string, { code: SdkErrorCode; name: string }> = {
   "0x5688ffb3": { code: "chain/BELOW_MIN_BET", name: "BelowMinBet" },
   "0xb8ab88d4": { code: "chain/ABOVE_MAX_BET", name: "AboveMaxBet" },
@@ -283,14 +287,14 @@ export const ERROR_SELECTORS: Record<string, { code: SdkErrorCode; name: string 
 };
 
 /**
- * 把钱包/RPC 抛回来的 revert 数据翻译成中文 SdkError。
- * 支持：自定义错误（4 字节 selector）、Error(string)、Panic(uint256)、纯逻辑拦截。
+ * Translate revert data thrown back by a wallet/RPC into an SdkError with an English message.
+ * Handles custom errors (4-byte selector), Error(string), Panic(uint256) and pure local interception.
  */
 export function decodeRevert(err: unknown): SdkError {
   const raw = extractRevertData(err);
   if (!raw || raw === "0x") {
     const msg = err instanceof Error ? err.message : String(err);
-    return new SdkError("chain/UNKNOWN", `${ZH["chain/UNKNOWN"]}：${msg}`, { raw: msg });
+    return new SdkError("chain/UNKNOWN", `${MESSAGES["chain/UNKNOWN"]} (${msg})`, { raw: msg });
   }
   const data = raw.toLowerCase();
   const selector = data.slice(0, 10);
@@ -298,21 +302,21 @@ export function decodeRevert(err: unknown): SdkError {
   if (selector === "0x08c379a0") {
     // Error(string)
     const text = decodeAbiString(data.slice(10));
-    return new SdkError("chain/REVERT_STRING", text || ZH["chain/REVERT_STRING"], { selector, raw: data });
+    return new SdkError("chain/REVERT_STRING", text || MESSAGES["chain/REVERT_STRING"], { selector, raw: data });
   }
   if (selector === "0x4e487b71") {
     // Panic(uint256)
     const code = word(data.slice(10), 0);
-    return new SdkError("chain/PANIC", `${ZH["chain/PANIC"]}（panic code 0x${code.toString(16)}）`, {
+    return new SdkError("chain/PANIC", `${MESSAGES["chain/PANIC"]} (panic code 0x${code.toString(16)})`, {
       selector,
       raw: data,
     });
   }
   const hit = ERROR_SELECTORS[selector];
   if (hit) {
-    return new SdkError(hit.code, ZH[hit.code], { selector, raw: `${hit.name} ${data}` });
+    return new SdkError(hit.code, MESSAGES[hit.code], { selector, raw: `${hit.name} ${data}` });
   }
-  return new SdkError("chain/UNKNOWN", `${ZH["chain/UNKNOWN"]}（selector ${selector}）`, { selector, raw: data });
+  return new SdkError("chain/UNKNOWN", `${MESSAGES["chain/UNKNOWN"]} (selector ${selector})`, { selector, raw: data });
 }
 
 function extractRevertData(err: unknown): string | null {
@@ -332,7 +336,7 @@ function extractRevertData(err: unknown): string | null {
   return null;
 }
 
-/* ============================== ABI 基础工具 ============================== */
+/* ============================== ABI primitives ============================== */
 
 const ZERO32 = "0".repeat(64);
 const HEX_RE = /^0x[0-9a-fA-F]*$/;
@@ -351,27 +355,27 @@ export function isBytes32(v: unknown): v is Hex {
 
 export function pad32(hexBody: string): string {
   const body = strip0x(hexBody);
-  if (body.length > 64) throw new SdkError("local/BAD_BYTES32", ZH["local/BAD_BYTES32"]);
+  if (body.length > 64) throw new SdkError("local/BAD_BYTES32", MESSAGES["local/BAD_BYTES32"]);
   return body.padStart(64, "0");
 }
 
 export function uintWord(v: bigint | number): string {
   const n = typeof v === "bigint" ? v : BigInt(Math.trunc(v));
-  if (n < 0n) throw new SdkError("local/BAD_AMOUNT", ZH["local/BAD_AMOUNT"]);
+  if (n < 0n) throw new SdkError("local/BAD_AMOUNT", MESSAGES["local/BAD_AMOUNT"]);
   return n.toString(16).padStart(64, "0");
 }
 
 export function addressWord(addr: Address): string {
-  if (!isAddress(addr)) throw new SdkError("local/BAD_ADDRESS", ZH["local/BAD_ADDRESS"]);
+  if (!isAddress(addr)) throw new SdkError("local/BAD_ADDRESS", MESSAGES["local/BAD_ADDRESS"]);
   return strip0x(addr).toLowerCase().padStart(64, "0");
 }
 
 export function bytes32Word(v: Hex): string {
-  if (!isBytes32(v)) throw new SdkError("local/BAD_BYTES32", ZH["local/BAD_BYTES32"]);
+  if (!isBytes32(v)) throw new SdkError("local/BAD_BYTES32", MESSAGES["local/BAD_BYTES32"]);
   return strip0x(v).toLowerCase();
 }
 
-/* -------------------- UTF-8 编解码（浏览器/Node 通用，不依赖 Buffer） -------------------- */
+/* -------------------- UTF-8 encode/decode (browser and Node, no Buffer) -------------------- */
 
 const HEX_TO_BYTES: Record<string, number> = {};
 for (let i = 0; i < 256; i += 1) HEX_TO_BYTES[i.toString(16).padStart(2, "0")] = i;
@@ -390,7 +394,7 @@ function bytesToHex(bytes: Uint8Array): string {
   return out;
 }
 
-/** 纯 hex → UTF-8 字符串（不依赖 Buffer，浏览器里也能跑） */
+/** Pure hex → UTF-8 string (no Buffer, so it also runs in the browser) */
 export function hexToUtf8(hex: string): string {
   const clean = strip0x(hex);
   const bytes = new Uint8Array(Math.floor(clean.length / 2));
@@ -400,7 +404,7 @@ export function hexToUtf8(hex: string): string {
   return new TextDecoder().decode(bytes);
 }
 
-/** 动态 string 的 ABI 编码（UTF-8，尾部按 32 字节补齐） */
+/** ABI-encode a dynamic string (UTF-8, right-padded to 32-byte words) */
 export function encodeString(str: string): { body: string; words: number } {
   const bytes = utf8Bytes(str);
   const hex = bytesToHex(bytes);
@@ -409,7 +413,7 @@ export function encodeString(str: string): { body: string; words: number } {
   return { body: uintWord(BigInt(bytes.length)) + padded, words };
 }
 
-/** 解 ABI 编码的 string（offset 指向长度字，之后是 UTF-8 字节） */
+/** Decode an ABI-encoded string (the offset points at the length word, then the UTF-8 bytes follow) */
 export function decodeString(raw: string): string {
   const body = strip0x(raw);
   if (body.length < 64) return "";
@@ -433,9 +437,9 @@ export function decodeAbiString(data: string): string {
   return hexToUtf8(body.slice(128, 128 + len * 2));
 }
 
-/* ============================== 选择器表 ============================== */
+/* ============================== Selector table ============================== */
 
-/** 全部由 `cast sig` 生成，测试里会逐条与编译器 ABI 对齐 */
+/** All entries generated with `cast sig`; the suite re-derives each one against the compiler ABI */
 export const SEL = {
   createMarket: "0xfeeece8b",
   createMarketWithMeta: "0x1e9b6b02",
@@ -472,7 +476,7 @@ export const SEL = {
   settleFeeBps: "0xb648acb4",
 } as const;
 
-/* ============================== 离线定价（与合约同公式） ============================== */
+/* ============================== Offline pricing (same formula as the contract) ============================== */
 
 export interface PoolSnapshot {
   yesReserve: bigint;
@@ -506,10 +510,10 @@ function mulDivUp(a: bigint, b: bigint, d: bigint): bigint {
   return p === 0n ? 0n : (p - 1n) / d + 1n;
 }
 
-/** 与合约 TRADE_FEE_BPS = 150 对齐 */
+/** Mirrors the contract's TRADE_FEE_BPS = 150 */
 export const TRADE_FEE_BPS = 150n;
 
-/** 与合约 previewBuy 完全同构的离线计算（不联网就能给用户看价） */
+/** Offline computation isomorphic to the contract's previewBuy, so prices render without a network round-trip */
 export function previewBuyOffline(
   pool: { yesReserve: bigint; noReserve: bigint },
   outcome: Outcome,
@@ -527,7 +531,7 @@ export function previewBuyOffline(
   return net + (pool.noReserve - mulDivUp(pool.noReserve, pool.yesReserve, pool.yesReserve + net));
 }
 
-/** 与合约 previewSell 完全同构（前后价中点，扣 1.5%） */
+/** Isomorphic to the contract's previewSell: midpoint of the before/after price, minus the 1.5% fee */
 export function previewSellOffline(
   pool: { yesReserve: bigint; noReserve: bigint },
   outcome: Outcome,
@@ -551,14 +555,14 @@ export function previewSellOffline(
   return gross - mulDivUp(gross, tradeFeeBps, BPS);
 }
 
-/** YES 价格（1e18） */
+/** YES price, scaled by 1e18 */
 export function priceYesOffline(pool: { yesReserve: bigint; noReserve: bigint }): bigint {
   const d = pool.yesReserve + pool.noReserve;
   if (d === 0n) return 0n;
   return mulDivDown(pool.noReserve, WAD, d);
 }
 
-/* ============================== 主体 ============================== */
+/* ============================== Main class ============================== */
 
 export class CentralPredictionSDK {
   private readonly transport: Transport;
@@ -567,28 +571,28 @@ export class CentralPredictionSDK {
   private account?: Address;
 
   constructor(transport: Transport, config: SDKConfig) {
-    if (!isAddress(config.engine)) throw new SdkError("local/NOT_CONNECTED", ZH["local/NOT_CONNECTED"]);
+    if (!isAddress(config.engine)) throw new SdkError("local/NOT_CONNECTED", MESSAGES["local/NOT_CONNECTED"]);
     this.transport = transport;
     this.engine = config.engine;
     this.chainId = config.chainId;
     this.account = config.account;
   }
 
-  /* ---------------------------- 内部读取 ---------------------------- */
+  /* ---------------------------- Internal reads ---------------------------- */
 
   private async call(data: Hex, to: Address = this.engine): Promise<string> {
     try {
       const out = await this.transport.ethCall(to, data);
       if (typeof out !== "string" || !HEX_RE.test(out)) {
-        throw new SdkError("local/TRANSPORT_ERROR", `${ZH["local/TRANSPORT_ERROR"]}（返回非法 hex）`);
+        throw new SdkError("local/TRANSPORT_ERROR", `${MESSAGES["local/TRANSPORT_ERROR"]} (invalid hex returned)`);
       }
       return out;
     } catch (err) {
       if (err instanceof SdkError) throw err;
-      // 链上 revert（例如 marketCore 对不存在的盘口照样返回 0，但 role 查询可能 revert）
+      // On-chain revert. Note marketCore still returns zeroes for a missing market, but role lookups can revert.
       if (extractRevertData(err)) throw decodeRevert(err);
       const msg = err instanceof Error ? err.message : String(err);
-      throw new SdkError("local/TRANSPORT_ERROR", `${ZH["local/TRANSPORT_ERROR"]}：${msg}`);
+      throw new SdkError("local/TRANSPORT_ERROR", `${MESSAGES["local/TRANSPORT_ERROR"]} (${msg})`);
     }
   }
 
@@ -603,11 +607,11 @@ export class CentralPredictionSDK {
   }
 
   private requireAccount(): Address {
-    if (!this.account) throw new SdkError("local/ACCOUNT_REQUIRED", ZH["local/ACCOUNT_REQUIRED"]);
+    if (!this.account) throw new SdkError("local/ACCOUNT_REQUIRED", MESSAGES["local/ACCOUNT_REQUIRED"]);
     return this.account;
   }
 
-  /* ---------------------------- 只读视图 ---------------------------- */
+  /* ---------------------------- Read-only views ---------------------------- */
 
   async marketCore(marketId: Hex): Promise<MarketState> {
     const out = await this.call(SEL.marketCore + bytes32Word(marketId));
@@ -645,45 +649,45 @@ export class CentralPredictionSDK {
     };
   }
 
-  /* ---------------------------- 列表页读取 ---------------------------- */
+  /* ---------------------------- List-page reads ---------------------------- */
 
-  /** 盘口总数（列表页分页的起点） */
+  /** Total market count — the starting point for list pagination */
   async marketCount(): Promise<number> {
     return Number(await this.uintCall(SEL.marketCount, ""));
   }
 
-  /** 第 index 个盘口 id（0-based，配合 marketCount 翻页） */
+  /** Market id at index (0-based, paginate alongside marketCount) */
   async marketId(index: number): Promise<Hex> {
     const out = await this.call(SEL.marketIds + uintWord(BigInt(index)));
     return ("0x" + strip0x(out).slice(0, 64)) as Hex;
   }
 
-  /** 盘口题目（字符串，单独一个 view，避免列表页结构体过大） */
+  /** Market question. Its own view so the list-page struct stays small. */
   async marketQuestion(marketId: Hex): Promise<string> {
     return decodeString(await this.call(SEL.marketQuestion + bytes32Word(marketId)));
   }
 
-  /** 盘口分类 */
+  /** Market category */
   async marketCategory(marketId: Hex): Promise<string> {
     return decodeString(await this.call(SEL.marketCategory + bytes32Word(marketId)));
   }
 
-  /** YES 价格（1e18，即概率） */
+  /** YES price (1e18, i.e. the implied probability) */
   async priceYes(marketId: Hex): Promise<bigint> {
     return this.uintCall(SEL.priceYes, bytes32Word(marketId));
   }
 
-  /** 池深 = yesReserve + noReserve */
+  /** Pool depth = yesReserve + noReserve */
   async depthOf(marketId: Hex): Promise<bigint> {
     return this.uintCall(SEL.depth, bytes32Word(marketId));
   }
 
-  /** 争议期是否已结束（可提现） */
+  /** Whether the dispute window is over, i.e. redemption is unlocked */
   async isFinal(marketId: Hex): Promise<boolean> {
     return this.boolCall(SEL.isFinal, bytes32Word(marketId));
   }
 
-  /** 当前是否可交易（存在 && 未结算 && 未暂停） */
+  /** Whether trading is open right now (exists && !resolved && !paused) */
   async tradingOpen(marketId: Hex): Promise<boolean> {
     return this.boolCall(SEL.tradingOpen, bytes32Word(marketId));
   }
@@ -697,19 +701,20 @@ export class CentralPredictionSDK {
     };
   }
 
-  /* ---------------------------- 批量快照（Multicall3） ---------------------------- */
+  /* ---------------------------- Batch snapshots (Multicall3) ---------------------------- */
 
   /**
-   * 一次 RPC 拉多个盘口的「价格 / 池深 / 状态」。
+   * Fetch price / depth / status for many markets in a single RPC round-trip.
    *
-   * 实现走 Base 上的 **Multicall3**（`0xcA11bde05977b3631167028862bE2a173976CA11`，
-   * Base 主网与所有主流链都是同一地址），把 4N 个 view 调用压成 1 个 `eth_call`；
-   * 需要额外字段（题面、持仓）再按需补 `ethCall`，不要为了省事把 30 个盘口串行 await。
+   * Goes through Base's **Multicall3** (`0xcA11bde05977b3631167028862bE2a173976CA11`, the same address on
+   * Base mainnet and on every major chain), collapsing 4N view calls into one `eth_call`. Extra fields
+   * (question, position) belong on demand — never serially await 30 markets just to save effort.
    *
-   * 任何一步失败都能降级：Multicall 不可用 / 单条子调用失败 → 逐条补齐，绝不整体报错。
+   * Every failure mode degrades: no Multicall deployed, or one sub-call failing, falls back to per-market
+   * reads. The batch never fails as a whole.
    *
-   * @param ids        盘口 id 列表（建议一次 ≤ 100 个，响应体大小限制）
-   * @param opts.multicall  传 `false` 强制逐条查；传地址则用自定义 Multicall
+   * @param ids        Market id list (keep it ≤ 100 per call; response-size limits apply)
+   * @param opts.multicall  `false` forces per-market reads; an address overrides the Multicall target
    */
   async marketSnapshots(
     ids: Hex[],
@@ -720,7 +725,7 @@ export class CentralPredictionSDK {
     if (target) {
       try {
         const snaps = await this.snapshotsViaMulticall(ids, target, opts.withMeta === true);
-        // 个别子调用失败（盘口被删/节点异常）→ 只补那几条
+        // A few sub-calls failed (market removed, flaky node): backfill only those
         const missing = snaps.map((s, i) => (s.failed ? i : -1)).filter((i) => i >= 0);
         if (missing.length === 0) return snaps.map(({ failed, ...rest }) => rest as MarketSnapshot);
         await Promise.all(
@@ -730,13 +735,13 @@ export class CentralPredictionSDK {
         );
         return snaps.map(({ failed, ...rest }) => rest as MarketSnapshot);
       } catch {
-        /* 没有 Multicall / 编码不兼容 → 静默降级 */
+        /* No Multicall deployed, or encoding incompatible: degrade silently */
       }
     }
     return Promise.all(ids.map((id) => this.snapshotOne(id, opts.withMeta === true)));
   }
 
-  /** 单个盘口快照（4 个 view 并行） */
+  /** Snapshot of a single market (4 views in parallel) */
   async snapshotOne(marketId: Hex, withMeta = false): Promise<MarketSnapshot> {
     const [core, state, priceYes, depth, question, category] = await Promise.all([
       this.marketCore(marketId),
@@ -840,16 +845,16 @@ export class CentralPredictionSDK {
     return out;
   }
 
-  /* ---------------------------- 事件日志 ---------------------------- */
+  /* ---------------------------- Event logs ---------------------------- */
 
-  /** 本引擎地址（前端过滤日志时用） */
+  /** This engine's address, for the frontend to filter logs by */
   get engineAddress(): Address {
     return this.engine;
   }
 
   /**
-   * 从一笔交易的 receipt.logs 里筛出本引擎事件并解码。
-   * 前端拿到 hash 后直接：`const evs = sdk.decodeReceiptLogs(receipt.logs)`。
+   * Filter a transaction's receipt.logs down to this engine's events and decode them.
+   * Frontends can go straight from a hash: `const evs = sdk.decodeReceiptLogs(receipt.logs)`.
    */
   decodeReceiptLogs(logs: RawLog[]): DecodedEvent[] {
     const mine = logs.filter((l) => strip0x(l.address ?? "").toLowerCase() === strip0x(this.engine).toLowerCase());
@@ -881,8 +886,8 @@ export class CentralPredictionSDK {
   }
 
   /**
-   * 与合约 `onlyCreator` 完全一致的权限判断：admin 本身也拥有建盘权
-   * （合约是 `msg.sender != admin && !creators[msg.sender]`，SDK 不能只看 creators 映射）
+   * Permission check identical to the contract's `onlyCreator`: the admin also holds creation rights.
+   * (The contract tests `msg.sender != admin && !creators[msg.sender]`, so a creators-only check is wrong.)
    */
   async canCreate(addr?: Address): Promise<boolean> {
     const who = addr ?? this.requireAccount();
@@ -890,7 +895,7 @@ export class CentralPredictionSDK {
     return role || who.toLowerCase() === adminAddr.toLowerCase();
   }
 
-  /** 与合约 `onlyOracle` 一致：admin 本身也拥有裁决权 */
+  /** Matches the contract's `onlyOracle`: the admin also holds resolution rights */
   async canOracle(addr?: Address): Promise<boolean> {
     const who = addr ?? this.requireAccount();
     const [role, adminAddr] = await Promise.all([this.isOracle(who), this.admin()]);
@@ -924,58 +929,59 @@ export class CentralPredictionSDK {
     };
   }
 
-  /* ---------------------------- 通用校验 ---------------------------- */
+  /* ---------------------------- Shared validation ---------------------------- */
 
   private assertOutcome(outcome: number): asserts outcome is Outcome {
-    if (![0, 1, 2].includes(outcome)) throw new SdkError("local/BAD_OUTCOME", ZH["local/BAD_OUTCOME"]);
+    if (![0, 1, 2].includes(outcome)) throw new SdkError("local/BAD_OUTCOME", MESSAGES["local/BAD_OUTCOME"]);
   }
 
   private assertAmount(v: bigint | number, label = "amount"): bigint {
     const n = typeof v === "bigint" ? v : BigInt(Math.trunc(v));
-    if (n <= 0n) throw new SdkError("local/BAD_AMOUNT", `${label} 必须大于 0`);
+    if (n <= 0n) throw new SdkError("local/BAD_AMOUNT", `${label} must be greater than 0`);
     return n;
   }
 
   /**
-   * minSharesOut / minAmountOut 强校验 —— 这是本 SDK 的核心防线：
-   *   0            → 直接拒（禁止裸奔）
-   *   > 报价        → 直接拒（这笔交易必然失败）
-   *   < 报价×95%    → 直接拒（容差超过 5%，等于没保护）
+   * Hard validation of minSharesOut / minAmountOut — the core defence of this SDK:
+   *   0            → reject (no unprotected order)
+   *   > quote      → reject (the trade cannot fill)
+   *   < quote*95%  → reject (tolerance beyond 5% is no protection at all)
    */
   private assertMinOut(minOut: bigint | number, quote: bigint, label: string): bigint {
     const n = typeof minOut === "bigint" ? minOut : BigInt(Math.trunc(minOut));
-    if (n <= 0n) throw new SdkError("local/MIN_OUT_REQUIRED", `${label}：${ZH["local/MIN_OUT_REQUIRED"]}`);
-    if (quote === 0n) throw new SdkError("local/BAD_AMOUNT", "报价为 0，无法设定保护价");
+    if (n <= 0n) throw new SdkError("local/MIN_OUT_REQUIRED", `${label}: ${MESSAGES["local/MIN_OUT_REQUIRED"]}`);
+    if (quote === 0n) throw new SdkError("local/BAD_AMOUNT", "Quote is 0, so no protection floor can be derived");
     if (n > quote) {
       throw new SdkError(
         "local/MIN_OUT_ABOVE_QUOTE",
-        `${label}：${ZH["local/MIN_OUT_ABOVE_QUOTE"]}（min=${n} / quote=${quote}）`,
+        `${label}: ${MESSAGES["local/MIN_OUT_ABOVE_QUOTE"]} (min=${n} / quote=${quote})`,
       );
     }
     const floor = (quote * (BPS - MAX_SLIPPAGE_BPS)) / BPS;
     if (n < floor) {
       throw new SdkError(
         "local/SLIPPAGE_TOO_LOOSE",
-        `${label}：${ZH["local/SLIPPAGE_TOO_LOOSE"]}（min=${n} < 报价×95%=${floor}）`,
+        `${label}: ${MESSAGES["local/SLIPPAGE_TOO_LOOSE"]} (min=${n} < quote×95%=${floor})`,
       );
     }
     return n;
   }
 
-  /** 由报价 + 滑点算出保护价（四舍五入向下，永远对用户更保守的那一侧） */
+  /** Derive the protection floor from quote + slippage, rounding down — always the side that favours the user */
   static minOutFromQuote(quote: bigint, slippageBps: bigint | number): bigint {
     const bps = typeof slippageBps === "bigint" ? slippageBps : BigInt(Math.trunc(slippageBps));
     if (bps < MIN_SLIPPAGE_BPS || bps > MAX_SLIPPAGE_BPS) {
-      throw new SdkError("local/SLIPPAGE_OUT_OF_RANGE", ZH["local/SLIPPAGE_OUT_OF_RANGE"]);
+      throw new SdkError("local/SLIPPAGE_OUT_OF_RANGE", MESSAGES["local/SLIPPAGE_OUT_OF_RANGE"]);
     }
     return (quote * (BPS - bps)) / BPS;
   }
 
-  /* ---------------------------- 建盘 ---------------------------- */
+  /* ---------------------------- Create market ---------------------------- */
 
   /**
-   * 建盘。`meta.category` 存在 → 走 createMarketWithMeta（4 参），否则走 createMarket（3 参）。
-   * 新引擎没有「6 参 createMarket」（那是旧工厂），签名对照见 docs/CENTRAL-SDK-GUIDE.md。
+   * Create a market. With `meta.category` present this routes to createMarketWithMeta (4 args),
+   * otherwise to createMarket (3 args). The new engine has no 6-arg createMarket (that was the old
+   * factory); see docs/CENTRAL-SDK-GUIDE.md for the signature table.
    */
   async buildCreateMarket(input: {
     marketId: Hex;
@@ -983,16 +989,16 @@ export class CentralPredictionSDK {
     resolutionTime: bigint | number;
     meta?: { category?: string };
   }): Promise<TxPlan> {
-    if (!isBytes32(input.marketId)) throw new SdkError("local/BAD_BYTES32", ZH["local/BAD_BYTES32"]);
+    if (!isBytes32(input.marketId)) throw new SdkError("local/BAD_BYTES32", MESSAGES["local/BAD_BYTES32"]);
     const qBytes = utf8Length(input.question);
     if (qBytes < 8 || qBytes > 280) {
-      throw new SdkError("local/QUESTION_LENGTH", `${ZH["local/QUESTION_LENGTH"]}（当前 ${qBytes} 字节）`);
+      throw new SdkError("local/QUESTION_LENGTH", `${MESSAGES["local/QUESTION_LENGTH"]} (currently ${qBytes} bytes)`);
     }
     const category = input.meta?.category;
     if (category !== undefined) {
       const cBytes = utf8Length(category);
       if (cBytes < 1 || cBytes > 32) {
-        throw new SdkError("local/CATEGORY_LENGTH", `${ZH["local/CATEGORY_LENGTH"]}（当前 ${cBytes} 字节）`);
+        throw new SdkError("local/CATEGORY_LENGTH", `${MESSAGES["local/CATEGORY_LENGTH"]} (currently ${cBytes} bytes)`);
       }
     }
 
@@ -1002,13 +1008,13 @@ export class CentralPredictionSDK {
       this.canCreate(account),
       this.constants(),
     ]);
-    if (core.exists) throw new SdkError("local/MARKET_EXISTS", ZH["local/MARKET_EXISTS"]);
-    if (!canCreate) throw new SdkError("local/NOT_CREATOR", ZH["local/NOT_CREATOR"]);
+    if (core.exists) throw new SdkError("local/MARKET_EXISTS", MESSAGES["local/MARKET_EXISTS"]);
+    if (!canCreate) throw new SdkError("local/NOT_CREATOR", MESSAGES["local/NOT_CREATOR"]);
 
     const resolutionTime = BigInt(input.resolutionTime);
     const now = await this.chainNow();
     if (resolutionTime <= now + k.minTradingWindow || resolutionTime > now + k.maxTradingWindow) {
-      throw new SdkError("local/RESOLUTION_TIME_RANGE", ZH["local/RESOLUTION_TIME_RANGE"]);
+      throw new SdkError("local/RESOLUTION_TIME_RANGE", MESSAGES["local/RESOLUTION_TIME_RANGE"]);
     }
 
     let data: Hex;
@@ -1044,7 +1050,7 @@ export class CentralPredictionSDK {
       data,
       value: "0x0",
       method,
-      summary: `创建盘口「${input.question}」，结算时间 ${new Date(Number(resolutionTime) * 1000).toISOString()}`,
+      summary: `Create market "${input.question}", resolution time ${new Date(Number(resolutionTime) * 1000).toISOString()}`,
       meta: {
         marketId: input.marketId,
         question: input.question,
@@ -1055,13 +1061,13 @@ export class CentralPredictionSDK {
     };
   }
 
-  /* ---------------------------- 买入 ---------------------------- */
+  /* ---------------------------- Buy ---------------------------- */
 
   /**
-   * 买入份额。
-   *  - `slippageBps`：推荐用法，保护价由报价现算（1~500 bps）
-   *  - `minSharesOut`：显式传入时也必须落在 [报价×95%, 报价] 内，否则直接拒
-   *  两者都给时，取更严格的那个（更大的 minSharesOut）。
+   * Buy shares.
+   *  - `slippageBps`: the recommended path; the floor is derived from the live quote (1..500 bps)
+   *  - `minSharesOut`: when passed explicitly it must still land inside [quote×95%, quote]
+   *  When both are supplied, the stricter (larger) minSharesOut wins.
    */
   async buildBuyShares(input: {
     marketId: Hex;
@@ -1075,7 +1081,7 @@ export class CentralPredictionSDK {
     if (input.minSharesOut === undefined && input.slippageBps === undefined) {
       throw new SdkError(
         "local/MIN_OUT_REQUIRED",
-        "必须提供 minSharesOut 或 slippageBps —— 不设保护会被夹子按任意价格成交",
+        "Provide minSharesOut or slippageBps — without a floor a sandwicher fills you at any price",
       );
     }
 
@@ -1086,33 +1092,33 @@ export class CentralPredictionSDK {
       this.constants(),
       this.previewBuy(input.marketId, input.outcome, amountIn),
     ]);
-    if (!core.exists) throw new SdkError("local/MARKET_NOT_FOUND", ZH["local/MARKET_NOT_FOUND"]);
-    if (core.resolved) throw new SdkError("local/MARKET_RESOLVED", ZH["local/MARKET_RESOLVED"]);
+    if (!core.exists) throw new SdkError("local/MARKET_NOT_FOUND", MESSAGES["local/MARKET_NOT_FOUND"]);
+    if (core.resolved) throw new SdkError("local/MARKET_RESOLVED", MESSAGES["local/MARKET_RESOLVED"]);
     const now = await this.chainNow();
-    if (now >= core.resolutionTime) throw new SdkError("local/TRADING_CLOSED", ZH["local/TRADING_CLOSED"]);
-    if (paused) throw new SdkError("local/MARKET_PAUSED", ZH["local/MARKET_PAUSED"]);
-    if (amountIn < k.minBet) throw new SdkError("chain/BELOW_MIN_BET", `低于最低下注额（${k.minBet} 个最小单位）`);
-    if (amountIn > k.maxBet) throw new SdkError("chain/ABOVE_MAX_BET", `高于单笔上限（${k.maxBet} 个最小单位）`);
+    if (now >= core.resolutionTime) throw new SdkError("local/TRADING_CLOSED", MESSAGES["local/TRADING_CLOSED"]);
+    if (paused) throw new SdkError("local/MARKET_PAUSED", MESSAGES["local/MARKET_PAUSED"]);
+    if (amountIn < k.minBet) throw new SdkError("chain/BELOW_MIN_BET", `Below the minimum bet (${k.minBet} base units)`);
+    if (amountIn > k.maxBet) throw new SdkError("chain/ABOVE_MAX_BET", `Above the per-trade cap (${k.maxBet} base units)`);
 
     const depth = core.yesReserve + core.noReserve;
     const impactCap = mulDivDown(depth, MAX_IMPACT_BPS, BPS);
     if (amountIn > impactCap) {
       throw new SdkError(
         "chain/IMPACT_TOO_HIGH",
-        `${ZH["chain/IMPACT_TOO_HIGH"]}（本笔 ${amountIn} > 上限 ${impactCap}）`,
+        `${MESSAGES["chain/IMPACT_TOO_HIGH"]} (this order ${amountIn} > cap ${impactCap})`,
       );
     }
     const impactBps = depth === 0n ? 0n : (amountIn * BPS) / depth;
 
-    // 本地同公式复算，抓 ABI/模型漂移
+    // Recompute locally with the same formula to catch ABI/model drift
     const localQuote = previewBuyOffline({ yesReserve: core.yesReserve, noReserve: core.noReserve }, input.outcome, amountIn, k.tradeFeeBps);
     if (localQuote !== onchainQuote) {
       throw new SdkError(
         "local/QUOTE_MISMATCH",
-        `${ZH["local/QUOTE_MISMATCH"]}（本地 ${localQuote} / 链上 ${onchainQuote}）`,
+        `${MESSAGES["local/QUOTE_MISMATCH"]} (local ${localQuote} / on-chain ${onchainQuote})`,
       );
     }
-    if (onchainQuote === 0n) throw new SdkError("chain/ZERO_SHARES", ZH["chain/ZERO_SHARES"]);
+    if (onchainQuote === 0n) throw new SdkError("chain/ZERO_SHARES", MESSAGES["chain/ZERO_SHARES"]);
 
     const candidates: bigint[] = [];
     if (input.slippageBps !== undefined) {
@@ -1133,7 +1139,7 @@ export class CentralPredictionSDK {
         uintWord(minSharesOut),
       value: "0x0",
       method: "buyShares",
-      summary: `买入 ${input.outcome === OUTCOME_YES ? "YES" : "NO"}，支付 ${formatUsdc(amountIn)} USDC，最少拿到 ${minSharesOut.toString()} 份（报价 ${onchainQuote.toString()}）`,
+      summary: `Buy ${input.outcome === OUTCOME_YES ? "YES" : "NO"}: pay ${formatUsdc(amountIn)} USDC, receive at least ${minSharesOut.toString()} shares (quote ${onchainQuote.toString()})`,
       meta: {
         marketId: input.marketId,
         outcome: input.outcome === OUTCOME_YES ? "YES" : "NO",
@@ -1149,7 +1155,7 @@ export class CentralPredictionSDK {
     };
   }
 
-  /* ---------------------------- 卖出 ---------------------------- */
+  /* ---------------------------- Sell ---------------------------- */
 
   async buildSellShares(input: {
     marketId: Hex;
@@ -1163,7 +1169,7 @@ export class CentralPredictionSDK {
     if (input.minAmountOut === undefined && input.slippageBps === undefined) {
       throw new SdkError(
         "local/MIN_OUT_REQUIRED",
-        "必须提供 minAmountOut 或 slippageBps —— 不设保护会被夹子按任意价格成交",
+        "Provide minAmountOut or slippageBps — without a floor a sandwicher fills you at any price",
       );
     }
 
@@ -1175,17 +1181,17 @@ export class CentralPredictionSDK {
       this.sharesOf(input.marketId, account),
       this.previewSell(input.marketId, input.outcome, sharesIn),
     ]);
-    if (!core.exists) throw new SdkError("local/MARKET_NOT_FOUND", ZH["local/MARKET_NOT_FOUND"]);
-    if (core.resolved) throw new SdkError("local/MARKET_RESOLVED", ZH["local/MARKET_RESOLVED"]);
+    if (!core.exists) throw new SdkError("local/MARKET_NOT_FOUND", MESSAGES["local/MARKET_NOT_FOUND"]);
+    if (core.resolved) throw new SdkError("local/MARKET_RESOLVED", MESSAGES["local/MARKET_RESOLVED"]);
     const now = await this.chainNow();
-    if (now >= core.resolutionTime) throw new SdkError("local/TRADING_CLOSED", ZH["local/TRADING_CLOSED"]);
-    if (paused) throw new SdkError("local/MARKET_PAUSED", ZH["local/MARKET_PAUSED"]);
+    if (now >= core.resolutionTime) throw new SdkError("local/TRADING_CLOSED", MESSAGES["local/TRADING_CLOSED"]);
+    if (paused) throw new SdkError("local/MARKET_PAUSED", MESSAGES["local/MARKET_PAUSED"]);
 
     const held = input.outcome === OUTCOME_YES ? holdings.yes : holdings.no;
     if (sharesIn > held) {
       throw new SdkError(
         "local/INSUFFICIENT_SHARES",
-        `${ZH["local/INSUFFICIENT_SHARES"]}（持仓 ${held}，想卖 ${sharesIn}）`,
+        `${MESSAGES["local/INSUFFICIENT_SHARES"]} (holding ${held}, trying to sell ${sharesIn})`,
       );
     }
     const depth = core.yesReserve + core.noReserve;
@@ -1194,7 +1200,7 @@ export class CentralPredictionSDK {
     if (sharesIn > impactCap) {
       throw new SdkError(
         "chain/IMPACT_TOO_HIGH",
-        `${ZH["chain/IMPACT_TOO_HIGH"]}（本笔 ${sharesIn} > 上限 ${impactCap}）`,
+        `${MESSAGES["chain/IMPACT_TOO_HIGH"]} (this order ${sharesIn} > cap ${impactCap})`,
       );
     }
 
@@ -1202,10 +1208,10 @@ export class CentralPredictionSDK {
     if (localQuote !== onchainQuote) {
       throw new SdkError(
         "local/QUOTE_MISMATCH",
-        `${ZH["local/QUOTE_MISMATCH"]}（本地 ${localQuote} / 链上 ${onchainQuote}）`,
+        `${MESSAGES["local/QUOTE_MISMATCH"]} (local ${localQuote} / on-chain ${onchainQuote})`,
       );
     }
-    if (onchainQuote === 0n) throw new SdkError("chain/ZERO_SHARES", ZH["chain/ZERO_SHARES"]);
+    if (onchainQuote === 0n) throw new SdkError("chain/ZERO_SHARES", MESSAGES["chain/ZERO_SHARES"]);
 
     const candidates: bigint[] = [];
     if (input.slippageBps !== undefined) {
@@ -1226,7 +1232,7 @@ export class CentralPredictionSDK {
         uintWord(minAmountOut),
       value: "0x0",
       method: "sellShares",
-      summary: `卖出 ${sharesIn.toString()} 份 ${input.outcome === OUTCOME_YES ? "YES" : "NO"}，最少换回 ${formatUsdc(minAmountOut)} USDC（报价 ${formatUsdc(onchainQuote)}）`,
+      summary: `Sell ${sharesIn.toString()} ${input.outcome === OUTCOME_YES ? "YES" : "NO"} shares for at least ${formatUsdc(minAmountOut)} USDC (quote ${formatUsdc(onchainQuote)})`,
       meta: {
         marketId: input.marketId,
         outcome: input.outcome === OUTCOME_YES ? "YES" : "NO",
@@ -1242,7 +1248,7 @@ export class CentralPredictionSDK {
     };
   }
 
-  /* ---------------------------- 提现 ---------------------------- */
+  /* ---------------------------- Redeem ---------------------------- */
 
   async buildRedeem(input: { marketId: Hex }): Promise<TxPlan> {
     const account = this.requireAccount();
@@ -1253,31 +1259,31 @@ export class CentralPredictionSDK {
       this.paused(),
       this.constants(),
     ]);
-    if (!core.exists) throw new SdkError("local/MARKET_NOT_FOUND", ZH["local/MARKET_NOT_FOUND"]);
-    if (!state.resolved) throw new SdkError("local/MARKET_NOT_RESOLVED", ZH["local/MARKET_NOT_RESOLVED"]);
+    if (!core.exists) throw new SdkError("local/MARKET_NOT_FOUND", MESSAGES["local/MARKET_NOT_FOUND"]);
+    if (!state.resolved) throw new SdkError("local/MARKET_NOT_RESOLVED", MESSAGES["local/MARKET_NOT_RESOLVED"]);
     if (!state.finalized) {
       const endsAt = new Date(Number(state.disputeEndsAt) * 1000).toISOString();
       throw new SdkError(
         "chain/DISPUTE_WINDOW_OPEN",
-        `${ZH["chain/DISPUTE_WINDOW_OPEN"]}（争议期至 ${endsAt}，Safe 仍可改判）`,
+        `${MESSAGES["chain/DISPUTE_WINDOW_OPEN"]} (window ends ${endsAt}; the Safe can still override)`,
       );
     }
     if (holdings.yes === 0n && holdings.no === 0n) {
-      throw new SdkError("chain/NOTHING_TO_REDEEM", ZH["chain/NOTHING_TO_REDEEM"]);
+      throw new SdkError("chain/NOTHING_TO_REDEEM", MESSAGES["chain/NOTHING_TO_REDEEM"]);
     }
     if (paused) {
       const now = await this.chainNow();
-      // 与合约 redeemGuard 一致：结算 + 7 天后无视暂停
-      if (now < core.resolutionTime + k.refundDelay) throw new SdkError("local/MARKET_PAUSED", ZH["local/MARKET_PAUSED"]);
+      // Matches the contract's redeemGuard: past resolution + 7 days, the pause is ignored
+      if (now < core.resolutionTime + k.refundDelay) throw new SdkError("local/MARKET_PAUSED", MESSAGES["local/MARKET_PAUSED"]);
     }
 
-    const label = state.outcome === OUTCOME_INVALID ? "无效盘口（各赔 0.5）" : state.outcome === OUTCOME_YES ? "YES 赢家" : "NO 赢家";
+    const label = state.outcome === OUTCOME_INVALID ? "INVALID market (pays 0.5 per side)" : state.outcome === OUTCOME_YES ? "YES winner" : "NO winner";
     return {
       to: this.engine,
       data: SEL.redeem + bytes32Word(input.marketId),
       value: "0x0",
       method: "redeem",
-      summary: `提取 ${label}：YES ${holdings.yes.toString()} / NO ${holdings.no.toString()} 份`,
+      summary: `Redeem ${label}: YES ${holdings.yes.toString()} / NO ${holdings.no.toString()} shares`,
       meta: {
         marketId: input.marketId,
         outcome: state.outcome,
@@ -1288,7 +1294,7 @@ export class CentralPredictionSDK {
     };
   }
 
-  /* ---------------------------- 裁决 ---------------------------- */
+  /* ---------------------------- Resolution ---------------------------- */
 
   async buildResolveMarket(input: { marketId: Hex; outcome: Outcome }): Promise<TxPlan> {
     this.assertOutcome(input.outcome);
@@ -1299,13 +1305,13 @@ export class CentralPredictionSDK {
       this.canOracle(account),
       this.chainNow(),
     ]);
-    if (!core.exists) throw new SdkError("local/MARKET_NOT_FOUND", ZH["local/MARKET_NOT_FOUND"]);
-    if (!canOracle) throw new SdkError("local/NOT_ORACLE", ZH["local/NOT_ORACLE"]);
-    if (state.resolved) throw new SdkError("local/MARKET_RESOLVED", ZH["local/MARKET_RESOLVED"]);
+    if (!core.exists) throw new SdkError("local/MARKET_NOT_FOUND", MESSAGES["local/MARKET_NOT_FOUND"]);
+    if (!canOracle) throw new SdkError("local/NOT_ORACLE", MESSAGES["local/NOT_ORACLE"]);
+    if (state.resolved) throw new SdkError("local/MARKET_RESOLVED", MESSAGES["local/MARKET_RESOLVED"]);
     if (now < core.resolutionTime) {
       throw new SdkError(
         "chain/TOO_EARLY_TO_RESOLVE",
-        `${ZH["chain/TOO_EARLY_TO_RESOLVE"]}（结算时间 ${new Date(Number(core.resolutionTime) * 1000).toISOString()}）`,
+        `${MESSAGES["chain/TOO_EARLY_TO_RESOLVE"]} (resolution time ${new Date(Number(core.resolutionTime) * 1000).toISOString()})`,
       );
     }
 
@@ -1315,7 +1321,7 @@ export class CentralPredictionSDK {
       data: SEL.resolveMarket + bytes32Word(input.marketId) + uintWord(BigInt(input.outcome)),
       value: "0x0",
       method: "resolveMarket",
-      summary: `裁定结果 ${outcomeLabel(input.outcome)}；提交后进入 ${k.disputeWindow / 3600n} 小时争议期，期间不可提现`,
+      summary: `Resolve as ${outcomeLabel(input.outcome)}; this opens a ${k.disputeWindow / 3600n}-hour dispute window during which redemption is locked`,
       meta: {
         marketId: input.marketId,
         outcome: input.outcome,
@@ -1333,21 +1339,21 @@ export class CentralPredictionSDK {
       this.resolutionState(input.marketId),
       this.admin(),
     ]);
-    if (!core.exists) throw new SdkError("local/MARKET_NOT_FOUND", ZH["local/MARKET_NOT_FOUND"]);
+    if (!core.exists) throw new SdkError("local/MARKET_NOT_FOUND", MESSAGES["local/MARKET_NOT_FOUND"]);
     if (account.toLowerCase() !== admin.toLowerCase()) {
-      throw new SdkError("local/NOT_ADMIN", `${ZH["local/NOT_ADMIN"]}（admin=${admin}）`);
+      throw new SdkError("local/NOT_ADMIN", `${MESSAGES["local/NOT_ADMIN"]} (admin=${admin})`);
     }
-    if (!state.resolved) throw new SdkError("local/MARKET_NOT_RESOLVED", ZH["local/MARKET_NOT_RESOLVED"]);
-    if (state.finalized) throw new SdkError("local/ALREADY_FINAL", ZH["local/ALREADY_FINAL"]);
-    if (!state.disputing) throw new SdkError("local/NOT_DISPUTING", ZH["local/NOT_DISPUTING"]);
-    if (state.outcome === input.newOutcome) throw new SdkError("local/SAME_OUTCOME", ZH["local/SAME_OUTCOME"]);
+    if (!state.resolved) throw new SdkError("local/MARKET_NOT_RESOLVED", MESSAGES["local/MARKET_NOT_RESOLVED"]);
+    if (state.finalized) throw new SdkError("local/ALREADY_FINAL", MESSAGES["local/ALREADY_FINAL"]);
+    if (!state.disputing) throw new SdkError("local/NOT_DISPUTING", MESSAGES["local/NOT_DISPUTING"]);
+    if (state.outcome === input.newOutcome) throw new SdkError("local/SAME_OUTCOME", MESSAGES["local/SAME_OUTCOME"]);
 
     return {
       to: this.engine,
       data: SEL.overrideResolution + bytes32Word(input.marketId) + uintWord(BigInt(input.newOutcome)),
       value: "0x0",
       method: "overrideResolution",
-      summary: `争议期改判：${outcomeLabel(state.outcome)} → ${outcomeLabel(input.newOutcome)}（窗口不会被延长）`,
+      summary: `Override inside the dispute window: ${outcomeLabel(state.outcome)} → ${outcomeLabel(input.newOutcome)} (the window is not extended)`,
       meta: {
         marketId: input.marketId,
         fromOutcome: state.outcome,
@@ -1358,11 +1364,12 @@ export class CentralPredictionSDK {
     };
   }
 
-  /* ---------------------------- 报价新鲜度 ---------------------------- */
+  /* ---------------------------- Quote freshness ---------------------------- */
 
   /**
-   * 二次确认：签名/发送前重新拉一次报价，若价格已经跑到保护价之外，直接中止（不发交易）。
-   * 这是防夹子的第二道闸 —— 第一道是 minSharesOut 本身。
+   * Second gate: re-fetch the quote immediately before signing/sending and abort if the price has
+   * already fallen outside the protection floor (nothing is sent). This is the anti-sandwich backstop;
+   * the first line of defence remains minSharesOut itself.
    */
   async confirmQuoteStillValid(plan: TxPlan, maxAgeMs = 2_000): Promise<void> {
     if (plan.method !== "buyShares" && plan.method !== "sellShares") return;
@@ -1372,7 +1379,7 @@ export class CentralPredictionSDK {
     if (stamped && Date.now() - stamped > maxAgeMs) {
       throw new SdkError(
         "local/SLIPPAGE_TOO_LOOSE",
-        `报价已过期（${Date.now() - stamped}ms > ${maxAgeMs}ms），请重新报价后再签名`,
+        `Quote expired (${Date.now() - stamped}ms > ${maxAgeMs}ms). Refresh the quote before signing.`,
       );
     }
     if (plan.method === "buyShares") {
@@ -1382,7 +1389,7 @@ export class CentralPredictionSDK {
       if (fresh < minSharesOut) {
         throw new SdkError(
           "chain/SLIPPAGE_EXCEEDED",
-          `价格已变动：当前只能拿到 ${fresh} 份，低于保护价 ${minSharesOut}，已中止`,
+          `Price moved: only ${fresh} shares available now, below the protection floor ${minSharesOut}. Aborted.`,
         );
       }
     } else {
@@ -1392,17 +1399,17 @@ export class CentralPredictionSDK {
       if (fresh < minAmountOut) {
         throw new SdkError(
           "chain/SLIPPAGE_EXCEEDED",
-          `价格已变动：当前只能换回 ${fresh}，低于保护价 ${minAmountOut}，已中止`,
+          `Price moved: the sell would now return only ${fresh} base units, below the protection floor ${minAmountOut}. Aborted.`,
         );
       }
     }
   }
 
-  /* ---------------------------- 时间 ---------------------------- */
+  /* ---------------------------- Time ---------------------------- */
 
   /**
-   * 链上时间。合约里所有时间比较都用 block.timestamp，本地墙钟可能与链上不一致
-   * （测试链快进、节点时钟漂移），因此这里优先问链。
+   * On-chain time. Every time comparison in the contract uses block.timestamp while the local wall
+   * clock can disagree (fast-forwarded test chains, drifting node clocks), so ask the chain first.
    */
   private async chainNow(): Promise<bigint> {
     if (this.transport.now) {
@@ -1410,20 +1417,20 @@ export class CentralPredictionSDK {
         const v = await this.transport.now();
         return BigInt(v);
       } catch {
-        /* 落到墙钟 */
+        /* fall back to the wall clock */
       }
     }
     return BigInt(Math.floor(Date.now() / 1000));
   }
 }
 
-/* ============================== 小工具 ============================== */
+/* ============================== Utilities ============================== */
 
 export function outcomeLabel(o: number): string {
   return o === OUTCOME_YES ? "YES" : o === OUTCOME_NO ? "NO" : "INVALID";
 }
 
-/** 6 位小数 USDC → 人类可读 */
+/** 6-decimal USDC base units → human-readable amount */
 export function formatUsdc(v: bigint, decimals = 6): string {
   const s = v.toString().padStart(decimals + 1, "0");
   const int = s.slice(0, s.length - decimals);
@@ -1431,19 +1438,19 @@ export function formatUsdc(v: bigint, decimals = 6): string {
   return frac ? `${int}.${frac}` : int;
 }
 
-/** 人类可读 USDC → 最小单位（拒绝小数超过 6 位） */
+/** Human-readable USDC → base units (rejects more than 6 decimals) */
 export function parseUsdc(v: string | number, decimals = 6): bigint {
   const str = typeof v === "number" ? v.toFixed(decimals) : v.trim();
-  if (!/^\d+(\.\d+)?$/.test(str)) throw new SdkError("local/BAD_AMOUNT", `无法解析的 USDC 金额：${str}`);
+  if (!/^\d+(\.\d+)?$/.test(str)) throw new SdkError("local/BAD_AMOUNT", `Unparseable USDC amount: ${str}`);
   const [int, frac = ""] = str.split(".");
-  if (frac.length > decimals) throw new SdkError("local/BAD_AMOUNT", `USDC 最多 ${decimals} 位小数`);
+  if (frac.length > decimals) throw new SdkError("local/BAD_AMOUNT", `USDC supports at most ${decimals} decimals`);
   return BigInt(int + frac.padEnd(decimals, "0"));
 }
 
 
 /* ============================== Multicall3 ============================== */
 
-/** Base / 所有主流链同一个地址的 Multicall3 */
+/** Multicall3, deployed at the same address on Base and every major chain */
 export const MULTICALL3: Address = "0xcA11bde05977b3631167028862bE2a173976CA11";
 /** aggregate3((address,bool,bytes)[]) */
 export const SEL_AGGREGATE3: Hex = "0x82ad56cb";
@@ -1459,16 +1466,16 @@ export interface MulticallResult {
   data: Hex;
 }
 
-/** 一个盘口的全部「列表页需要」字段，一次 RPC 拿齐 */
+/** Every field a list page needs for one market, fetched in a single RPC */
 export interface MarketSnapshot {
   marketId: Hex;
   exists: boolean;
-  /** 1e18 精度，直接 ×100 就是百分比 */
+  /** 1e18 fixed point: multiply by 100 to get a percentage */
   priceYes: bigint;
   priceNo: bigint;
-  /** yesReserve + noReserve（6 位 USDC 最小单位） */
+  /** yesReserve + noReserve, in 6-decimal USDC base units */
   depth: bigint;
-  /** 池子两侧储备，前端做离线报价要用 */
+  /** Both pool reserves; the frontend needs them for offline pricing */
   yesReserve: bigint;
   noReserve: bigint;
   resolved: boolean;
@@ -1481,12 +1488,12 @@ export interface MarketSnapshot {
   owed: bigint;
   totalVolume: bigint;
   tradingOpen: boolean;
-  /** withMeta: true 时才有 */
+  /** Only present when withMeta: true */
   question?: string;
   category?: string;
 }
 
-/** 编码 `aggregate3([(address,bool,bytes)...])` —— 数组元素是动态 tuple，注意两级偏移 */
+/** Encode `aggregate3([(address,bool,bytes)...])` — the array holds dynamic tuples, so mind both offset levels */
 export function encodeAggregate3(calls: MulticallCall[]): Hex {
   const head: string[] = [];
   const bodies: string[] = [];
@@ -1494,10 +1501,10 @@ export function encodeAggregate3(calls: MulticallCall[]): Hex {
     const bytesHex = strip0x(c.data);
     const len = bytesHex.length / 2;
     const padded = bytesHex.padEnd(Math.ceil(bytesHex.length / 64) * 64, "0");
-    // tuple 内部：address, bool, offset-to-bytes(=0x60)
+    // Inside the tuple: address, bool, offset-to-bytes (=0x60)
     bodies.push(addressWord(c.target) + uintWord(c.allowFailure ? 1n : 0n) + uintWord(96n) + uintWord(BigInt(len)) + padded);
   }
-  // 数组元素的偏移是相对「长度字之后」起算
+  // Element offsets are relative to the start of the array body (after the length word)
   let cursor = 32 * calls.length;
   for (const b of bodies) {
     head.push(uintWord(BigInt(cursor)));
@@ -1506,13 +1513,13 @@ export function encodeAggregate3(calls: MulticallCall[]): Hex {
   return (SEL_AGGREGATE3 + uintWord(32n) + uintWord(BigInt(calls.length)) + head.join("") + bodies.join("")) as Hex;
 }
 
-/** 解码 aggregate3 的返回值 `(bool,bytes)[]` */
+/** Decode the `(bool,bytes)[]` return value of aggregate3 */
 export function decodeAggregate3Result(raw: string): MulticallResult[] {
   const body = strip0x(raw);
   if (body.length < 64) return [];
   const arrOff = Number(BigInt("0x" + body.slice(0, 64))) * 2;
   const n = Number(BigInt("0x" + body.slice(arrOff, arrOff + 64)));
-  const offsetsBase = arrOff + 64; // 元素偏移相对这里起算
+  const offsetsBase = arrOff + 64; // element offsets are relative to here
   const out: MulticallResult[] = [];
   for (let i = 0; i < n; i += 1) {
     const rel = Number(BigInt("0x" + body.slice(offsetsBase + i * 64, offsetsBase + (i + 1) * 64))) * 2;
@@ -1586,11 +1593,11 @@ function decodeResolution(raw: string): {
   };
 }
 
-/* ============================== 事件解码 ============================== */
+/* ============================== Event decoding ============================== */
 
 /**
- * 引擎全部 19 个事件的 topic0 —— 全部由 `cast keccak "<signature>"` 实算，
- * 测试里逐条重算比对（不手抄）。
+ * topic0 of all 19 engine events — each computed with `cast keccak "<signature>"` and re-derived
+ * per event in the suite (nothing here is hand-copied).
  */
 export const EVENT_TOPICS = {
   MarketCreated: "0x3d0c3bb1f9482c4ad3a5509d3d6d54de6d32d5a1b985684b26c87f30397a1444",
@@ -1730,18 +1737,18 @@ export interface DecodedEvent {
   name: EventName;
   topic: Hex;
   args: Record<string, EventArg>;
-  /** 原日志里的 logIndex，便于排序/去重 */
+  /** logIndex from the raw log, for ordering and de-duplication */
   logIndex?: number;
   blockNumber?: number;
   transactionHash?: string;
 }
 
-/** 已知事件名 → topic0 */
+/** Known event name → topic0 */
 export function eventTopic(name: EventName): Hex {
   return EVENT_TOPICS[name];
 }
 
-/** 反查：topic0 → 事件名（不区分大小写） */
+/** Reverse lookup: topic0 → event name (case-insensitive) */
 export function eventNameOf(topic: string): EventName | null {
   const t = topic.toLowerCase();
   for (const [name, tp] of Object.entries(EVENT_TOPICS)) {
@@ -1760,8 +1767,9 @@ export interface RawLog {
 }
 
 /**
- * 解一条日志。不是本引擎的事件（或未知 topic）返回 null —— 不抛错，
- * 因为前端拿到的 receipt 里本来就混着别的合约的日志（USDC Transfer 等）。
+ * Decode one log. Anything that is not this engine's event (or an unknown topic) returns null rather
+ * than throwing, because a frontend receipt legitimately carries other contracts' logs (USDC Transfer
+ * and friends).
  */
 export function decodeLog(log: RawLog): DecodedEvent | null {
   const name = log.topics[0] ? eventNameOf(log.topics[0]) : null;
@@ -1805,7 +1813,7 @@ export function decodeLog(log: RawLog): DecodedEvent | null {
   };
 }
 
-/** 批量解日志：自动丢掉不认识的（USDC Transfer、别的合约的事件） */
+/** Decode logs in bulk, silently dropping anything unrecognised (USDC Transfer, other contracts) */
 export function decodeLogs(logs: RawLog[]): DecodedEvent[] {
   const out: DecodedEvent[] = [];
   for (const log of logs) {

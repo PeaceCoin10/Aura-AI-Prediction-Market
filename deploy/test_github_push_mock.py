@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""scripts/github_push.sh 的离线自测：mock GitHub API + 本地 bare 仓库。
+"""Offline self-test for scripts/github_push.sh: a mock GitHub API plus a local bare repo.
 
-证明脚本确实会：校验 PAT → 查/建仓库 → 提交 → add remote → 真推送 → 回读 SHA 校验。
-全程不出网，不需要真 token。
+Proves the script really does: validate the PAT → look up/create the repo → commit → add remote → real push → read back and verify the SHA.
+Fully offline; no real token needed.
 """
 import json
 import os
@@ -97,7 +97,7 @@ def main() -> int:
         and "README.md" in tracked
         and CALLS["user"] >= 1
         and CALLS["commits"] >= 1
-        and "远端 HEAD 已对上" in r.stdout
+        and "remote HEAD verified" in r.stdout
     )
     print(f"local={local_head[:8]} remote={remote_head[:8]} tracked={len(tracked)} calls={CALLS}")
     print("RESULT:", "ALL PASS" if ok else "FAIL")

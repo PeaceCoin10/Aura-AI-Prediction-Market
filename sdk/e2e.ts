@@ -1,11 +1,12 @@
 /**
- * PredictionSDK — 链上端到端验证（anvil）
+ * PredictionSDK — on-chain end-to-end verification (anvil)
  *
- * 证明两件事：
- *   1. SDK 算出的 minSharesOut 恰好是「合约能接受的最小值」：原样能成交，+1 wei 就 revert
- *   2. SDK 的 previewBuy 与链上真实成交份额完全一致
+ * Proves two things:
+ *   1. The minSharesOut the SDK computes is exactly "the smallest value the contract will accept": the same
+ *      calldata fills, and +1 wei reverts.
+ *   2. The SDK's previewBuy matches the real on-chain fill size exactly.
  *
- * 运行：node dist/e2e.js   （需要 RPC_URL / VAULT / PRIVATE_KEY 环境变量）
+ * Run: node dist/e2e.js   (requires the RPC_URL / VAULT / PRIVATE_KEY environment variables)
  */
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
@@ -23,7 +24,7 @@ function pass(msg: string) {
   console.log(`✅ PASS  ${msg}`);
 }
 
-/** 极简 JSON-RPC 传输层（零依赖） */
+/** Minimal JSON-RPC transport (zero dependencies) */
 const transport: EthCallTransport = {
   async ethCall(to, data) {
     const res = await fetch(RPC, {
@@ -42,7 +43,7 @@ function cast(args: string[]): string {
   return execFileSync(CAST, args, { encoding: "utf8", timeout: 60_000 }).trim();
 }
 
-/** cast 会把 uint 打印成 "4903402962 [4.9e9]"，只取数字部分 */
+/** cast prints uints as "4903402962 [4.9e9]", so take only the numeric part */
 function castUint(args: string[]): bigint {
   const out = cast(args);
   return BigInt(out.split(/\s+/)[0]);
@@ -54,7 +55,7 @@ async function main() {
 
   const sdk = new PredictionSDK(transport, { vault: VAULT });
 
-  /* ---------------- 1. 读取真实盘口状态 ---------------- */
+  /* ---------------- 1. Read the real market state ---------------- */
   const state = await sdk.getMarketState();
   console.log(
     `market: depth=${Number(state.depth) / 1e6} USDC minBet=${Number(state.minBet) / 1e6} ` +
@@ -62,25 +63,25 @@ async function main() {
   );
   assert.equal(state.resolved, false, "market should not be resolved yet");
   assert.ok(state.depth > 0n);
-  pass("SDK 读取链上状态成功");
+  pass("SDK read the on-chain state successfully");
 
-  /* ---------------- 2. previewBuy 与链上一致 ---------------- */
-  const amountIn = state.depth / 40n; // 2.5% 深度，稳稳落在 5% 上限内
+  /* ---------------- 2. previewBuy matches the chain ---------------- */
+  const amountIn = state.depth / 40n; // 2.5% of depth, comfortably inside the 5% cap
   const quoted = await sdk.previewBuy(1, amountIn);
-  const minOut = await sdk.calculateMinSharesOut(1, amountIn, 100); // 1% 滑点
+  const minOut = await sdk.calculateMinSharesOut(1, amountIn, 100); // 1% slippage
 
   assert.ok(quoted > 0n, "previewBuy returned 0");
   assert.ok(minOut < quoted, "minSharesOut must be below the quote");
   console.log(`quote: ${amountIn} USDC -> ${quoted} shares, minSharesOut(1%) = ${minOut}`);
-  pass("SDK previewBuy 返回非零报价，minSharesOut 严格低于报价");
+  pass("SDK previewBuy returned a non-zero quote and minSharesOut is strictly below it");
 
-  /* ---------------- 3. 构造交易计划（不改链上状态） ---------------- */
+  /* ---------------- 3. Build a trade plan (does not touch chain state) ---------------- */
   const plan = await sdk.buildBuy({ outcome: 1, amountIn, slippageBps: 100 });
   assert.equal(plan.data.slice(0, 10), "0xf6d956df");
-  pass("SDK 生成合法 calldata（selector buy(uint8,uint256,uint256)）");
+  pass("SDK produced valid calldata (selector buy(uint8,uint256,uint256))");
 
-  /* ---------------- 4. minSharesOut + 1 wei 必须 revert ---------------- */
-  // 先测这个：revert 不改状态，所以后面的正常成交仍用同一份报价
+  /* ---------------- 4. minSharesOut + 1 wei must revert ---------------- */
+  // Test this first: a revert does not change state, so the normal fill below can still use the same quote
   let reverted = false;
   try {
     cast([
@@ -89,7 +90,7 @@ async function main() {
       "buy(uint8,uint256,uint256)",
       "1",
       amountIn.toString(),
-      (quoted + 1n).toString(), // 用「理论精确值 + 1 wei」做边界，才验证得了报价的精确性
+      (quoted + 1n).toString(), // only "theoretical exact value + 1 wei" proves the quote's precision
       "--private-key",
       PK,
       "--rpc-url",
@@ -101,9 +102,9 @@ async function main() {
     assert.match(msg, /SlippageExceeded|revert/i, `unexpected error: ${msg.slice(0, 200)}`);
   }
   assert.ok(reverted, "quoted+1 should have reverted");
-  pass("previewBuy 报价 + 1 wei 被合约拒绝（证明报价精确到 1 wei，无有利舍入）");
+  pass("the contract rejects the previewBuy quote + 1 wei (proving the quote is exact to 1 wei, with no favourable rounding)");
 
-  /* ---------------- 5. 用 SDK 的报价真实成交，且份额与报价完全一致 ---------------- */
+  /* ---------------- 5. Fill for real with the SDK quote; shares must match exactly ---------------- */
   const before = castUint(["call", VAULT, "yesReserve()(uint256)", "--rpc-url", RPC]);
   const receipt = cast([
     "send",
@@ -124,10 +125,10 @@ async function main() {
 
   const actualShares = before - after;
   assert.equal(actualShares, quoted, "SDK quote != on-chain fill");
-  pass(`SDK 报价 == 链上实际成交份额 (${actualShares})`);
+  pass(`SDK quote == actual on-chain fill (${actualShares})`);
 
-  /* ---------------- 6. 前端层拦截：超上限 / 裸奔 ---------------- */
-  // 6a. 超绝对上限（10,000 USDC）
+  /* ---------------- 6. Front-end gating: over the cap / unprotected ---------------- */
+  // 6a. Above the absolute cap (10,000 USDC)
   let blocked = false;
   let code = "";
   try {
@@ -137,22 +138,22 @@ async function main() {
     blocked = code === "ABOVE_MAX_BET";
   }
   assert.ok(blocked, `SDK should block above-max-bet locally, got ${code}`);
-  pass("SDK 在本地拦截超过 10,000 USDC 绝对上限的大单");
+  pass("SDK blocked an oversized order above the 10,000 USDC absolute cap locally");
 
-  // 6b. 额度内但超 5% 深度（用最新状态：前面的成交已经改变了池深）
+  // 6b. Within the cap but above 5% of depth (use fresh state: the earlier fill already moved pool depth)
   const fresh = await sdk.getMarketState();
   const impactCap = (fresh.depth * fresh.maxImpactBps) / 10_000n;
   assert.ok(impactCap < fresh.maxBet, "test pool should be impact-bound");
   blocked = false;
   code = "";
   try {
-    await sdk.buildBuy({ outcome: 1, amountIn: impactCap + impactCap / 5n, slippageBps: 100 }); // 超上限 20%
+    await sdk.buildBuy({ outcome: 1, amountIn: impactCap + impactCap / 5n, slippageBps: 100 }); // 20% over the cap
   } catch (e) {
     code = (e as { code?: string }).code ?? "";
     blocked = code === "IMPACT_TOO_HIGH";
   }
   assert.ok(blocked, `SDK should block impact cap locally, got ${code}`);
-  pass(`SDK 在本地拦截超 5% 影响上限的大单（池深 ${Number(state.depth) / 1e6} USDC -> 上限 ${Number(impactCap) / 1e6} USDC）`);
+  pass(`SDK blocked an oversized order above the 5% impact cap locally (pool depth ${Number(state.depth) / 1e6} USDC -> cap ${Number(impactCap) / 1e6} USDC)`);
 
   blocked = false;
   try {
@@ -161,16 +162,16 @@ async function main() {
     blocked = (e as { code?: string }).code === "SLIPPAGE_NOT_SET";
   }
   assert.ok(blocked, "SDK should refuse slippage=0");
-  pass("SDK 拒绝 slippage=0（从代码层杜绝裸奔）");
+  pass("SDK refused slippage=0 (unprotected orders are impossible by construction)");
 
-  /* ---------------- 7. 6 参 createMarket：SDK 编码 -> 链上真建盘 ---------------- */
+  /* ---------------- 7. 6-param createMarket: SDK encoding -> market really created on-chain ---------------- */
   assert.ok(FACTORY, "FACTORY env required");
   const factorySdk = new PredictionSDK(transport, { vault: VAULT, factory: FACTORY });
   const deployer = cast(["wallet", "address", "--private-key", PK]);
 
   const countBefore = castUint(["call", FACTORY, "marketCount()(uint256)", "--rpc-url", RPC]);
 
-  // 用时间戳 + 随机数造一个唯一 conditionId
+  // Derive a unique conditionId from a timestamp plus random noise
   const cid =
     "0x" +
     Buffer.from(`${Date.now()}-${Math.random()}`).toString("hex").padEnd(64, "0").slice(0, 64);
@@ -204,9 +205,9 @@ async function main() {
   assert.equal(g("admin()(address)").toLowerCase(), deployer.toLowerCase());
   assert.equal(g("MAX_BET_CEILING()(uint256)"), "10000000000");
   assert.equal(g("paused()(bool)"), "false");
-  pass(`6 参 createMarket 建盘成功，参数原样落库 (vault=${newVault})`);
+  pass(`6-param createMarket created the market and the parameters persisted verbatim (vault=${newVault})`);
 
-  /* ---------------- 8. 熔断开关：pause 拦住交易 + 错误映射 ---------------- */
+  /* ---------------- 8. Circuit breaker: pause blocks trading + error mapping ---------------- */
   cast(["send", VAULT, "pause()", "--private-key", PK, "--rpc-url", RPC]);
   assert.equal(
     cast(["call", VAULT, "paused()(bool)", "--rpc-url", RPC]).split(/\s+/)[0],
@@ -218,7 +219,7 @@ async function main() {
     "false",
   );
 
-  // 暂停期间下单必须被合约拒绝
+  // Orders must be rejected by the contract while paused
   let pauseRevert = "";
   try {
     cast([
@@ -230,15 +231,15 @@ async function main() {
   }
   assert.ok(pauseRevert.length > 0, "buy must revert while paused");
 
-  // 从真实 revert 里取出 4 字节 selector，走 SDK 的映射层
+  // Pull the 4-byte selector out of the real revert and run it through the SDK's mapping layer
   const selectorMatch = pauseRevert.match(/0x[0-9a-fA-F]{8}/);
   assert.ok(selectorMatch, `no revert selector in: ${pauseRevert.slice(0, 160)}`);
   const mapped = PredictionSDK.mapRevert(selectorMatch[0]);
   assert.equal(mapped.code, "TRADING_PAUSED", `mapped to ${mapped.code}`);
-  assert.match(mapped.message, /暂停/);
-  pass(`暂停期间下单被拒，SDK 映射为「${mapped.message}」`);
+  assert.match(mapped.message, /paused/i);
+  pass(`the order was rejected while paused and the SDK mapped it to "${mapped.message}"`);
 
-  // 解除暂停后恢复交易
+  // Trading resumes once the pause is lifted
   cast(["send", VAULT, "unpause()", "--private-key", PK, "--rpc-url", RPC]);
   assert.equal(
     cast(["call", VAULT, "paused()(bool)", "--rpc-url", RPC]).split(/\s+/)[0],
@@ -248,7 +249,7 @@ async function main() {
     "send", VAULT, "buy(uint8,uint256,uint256)", "1", "5000000", "0",
     "--private-key", PK, "--rpc-url", RPC,
   ]);
-  pass("unpause 后交易恢复（5 USDC 起投额实拍成交）");
+  pass("trading resumed after unpause (a real 5 USDC minimum-size fill went through)");
 
   console.log(`\nE2E: ${results.length} checks passed`);
 }

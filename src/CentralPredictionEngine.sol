@@ -8,55 +8,56 @@ import {FixedPoint} from "./libraries/FixedPoint.sol";
 
 /**
  * @title CentralPredictionEngine
- * @notice 单合约承载无限盘口的二元预测市场（Multi-Market Single Contract）。
+ * @notice Binary prediction markets for an unbounded number of markets in a single contract.
  *
- *  与「一盘口一合约」的差别：
- *    - 一个合约 = 一个 USDC 金库 + N 个独立账本（`mapping(bytes32 => Market)`）；
- *    - 每个盘口有自己的 CPMM 储备、用户 YES/NO 份额、cash 账面与应付（owed）账面；
- *    - 部署成本与运维面从「每盘一次部署」降到「每盘一条 createMarket」。
+ *  Differences from one-contract-per-market:
+ *    - one contract = one USDC vault + N independent ledgers (`mapping(bytes32 => Market)`);
+ *    - every market carries its own CPMM reserves, user YES/NO shares, cash book and owed book;
+ *    - deployment and ops cost drop from one deploy per market to one `createMarket` call.
  *
- *  CPMM（与 PredictionVault 同一套数学，已通过不变式测试）：
- *      池内持有 y 份 YES、n 份 NO，k = y * n 恒定。
- *      买 YES（净额 net，已扣 1.5%）：n' = n + net，y' = ceil(y*n/n')，out = y - y'
- *      卖 YES（sharesIn）：            y' = y + sharesIn，n' = ceil(y*n/y')，out = n - n'
+ *  CPMM (same math as PredictionVault, pinned by invariant tests):
+ *      the pool holds y YES and n NO, with k = y * n constant.
+ *      buy YES (net amount, after the 1.5% fee): n' = n + net, y' = ceil(y*n/n'), out = y - y'
+ *      sell YES (sharesIn):                      y' = y + sharesIn, n' = ceil(y*n/y'), out = n - n'
  *
- *  资金安全（每个盘口独立成立，且被 invariant 测试钉住）：
- *      A1  cash >= owed                    —— 已承诺但未领取的赔付永远有足额现金
- *      A2  cash >= max(yesSupply, noSupply) —— 结算前任何时刻都偿付得起单边全赢
- *      A3  owed 在争议期结束后只减不增（每笔 redeem 递减）；
- *          争议期内 admin 可改判一次/多次，每次改判后仍强制 cash >= owed
+ *  Fund safety (per market, pinned by invariant tests):
+ *      A1  cash >= owed                     — every promised payout stays fully backed
+ *      A2  cash >= max(yesSupply, noSupply) — either side is payable in full at any time before settlement
+ *      A3  owed only decreases after the dispute window closes (one decrement per redeem);
+ *          inside the window an admin may re-rule, and each re-rule re-asserts cash >= owed
  *
- *  结算后池内库存直接作废（做市方的对手盘风险），剩余现金 = cash - owed 是
- *  做市利润，只能由 admin 扫给 treasury，永远动不到 owed 那一份。
+ *  After settlement the pool inventory is written off (that is the market maker's risk);
+ *  the leftover cash - owed is market-maker profit that only the admin may sweep to treasury,
+ *  and it can never touch the owed slice.
  */
 contract CentralPredictionEngine is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    /* ------------------------------ 常量 ------------------------------ */
+    /* ----------------------------- Constants ---------------------------- */
 
     uint256 public constant BPS_DENOMINATOR = 10_000;
-    /// @notice 交易抽成 1.5%，成交瞬间直接进 FeeVault
+    /// @notice 1.5% trading fee, forwarded to the FeeVault on every fill
     uint256 public constant TRADE_FEE_BPS = 150;
-    /// @notice 赢家赎回抽成 0.5%
+    /// @notice 0.5% fee on winning redemptions
     uint256 public constant SETTLE_FEE_BPS = 50;
-    /// @notice 单笔最低下注 5 USDC
+    /// @notice minimum stake per trade: 5 USDC
     uint256 public constant MIN_BET = 5e6;
-    /// @notice 单笔最高下注 10,000 USDC
+    /// @notice maximum stake per trade: 10,000 USDC
     uint256 public constant MAX_BET = 10_000e6;
-    /// @notice 单笔价格影响硬上限 5%
+    /// @notice hard cap on price impact per trade: 5%
     uint256 public constant MAX_IMPACT_BPS_CAP = 500;
-    /// @notice 结算超时自动退款窗口：7 天
+    /// @notice emergency refund window after the resolution time: 7 days
     uint256 public constant REFUND_DELAY = 7 days;
-    /// @notice 盘口最短存活时间（防「建盘即可退款」套利）
+    /// @notice shortest market lifetime (blocks create-then-refund arbitrage)
     uint256 public constant MIN_TRADING_WINDOW = 1 hours;
-    /// @notice 盘口最长存续时间
+    /// @notice longest market lifetime
     uint256 public constant MAX_TRADING_WINDOW = 365 days;
-    /// @notice 做市种子下限（防 0 深度盘口被一次买穿）
+    /// @notice floor for the market-making seed (a zero-depth book must not be bought out in one trade)
     uint256 public constant MIN_SEED = 10e6;
     /**
-     * @notice 裁决争议缓冲期：预言机提交结果后的 1 小时。
-     *         期间禁止 redeem / sweep，admin（Safe 多签）可一键改判；
-     *         窗口一过自动生效，不需要任何人再发交易。
+     * @notice Ruling dispute buffer: 1 hour after the oracle submits a result.
+     *         redeem / sweep are frozen during the window and the admin (Safe multisig)
+     *         may re-rule; once it lapses the result applies with no further transaction.
      */
     uint256 public constant DISPUTE_WINDOW = 1 hours;
 
@@ -64,7 +65,7 @@ contract CentralPredictionEngine is ReentrancyGuard {
     uint8 public constant OUTCOME_YES = 1;
     uint8 public constant OUTCOME_INVALID = 2;
 
-    /* ------------------------------ 结构 ------------------------------ */
+    /* ----------------------------- Structs ------------------------------ */
 
     struct Market {
         string question;
@@ -72,30 +73,30 @@ contract CentralPredictionEngine is ReentrancyGuard {
         uint256 resolutionTime;
         uint256 createdAt;
         address creator;
-        /// @notice 池内 YES / NO 库存（AMM 定价用）
+        /// @notice YES / NO inventory held by the pool (drives AMM pricing)
         uint256 yesReserve;
         uint256 noReserve;
-        /// @notice 本盘口专属现金账面（USDC）
+        /// @notice market-scoped cash book (USDC)
         uint256 cash;
-        /// @notice 已承诺但尚未领取的赔付（含结算费之前的毛额）
+        /// @notice payouts promised but not yet redeemed (gross, before the settlement fee)
         uint256 owed;
-        /// @notice 累计成交额（对账用）
+        /// @notice cumulative traded volume (reconciliation)
         uint256 totalVolume;
         uint8 outcome;
         bool resolved;
         bool exists;
-        /// @notice 争议期结束时间戳（0 = 尚未裁决）
+        /// @notice dispute window end timestamp (0 = not yet ruled)
         uint64 disputeEndsAt;
-        /// @notice 是否已终结（争议期自然结束或被 finalize/紧急退款确认）
+        /// @notice whether the market is final (window lapsed, or finalize / emergency refund)
         bool finalized;
-        /// @notice 结果被 admin 覆盖的次数（审计用）
+        /// @notice how many times the admin overrode the result (audit trail)
         uint8 disputes;
-        /// @notice 结算瞬间的用户侧份额（改判时重算 owed 的唯一依据）
+        /// @notice user-side shares at settlement (the only input for recomputing owed on a re-rule)
         uint256 yesUserAtSettle;
         uint256 noUserAtSettle;
     }
 
-    /// @notice 盘口核心数值快照（不含字符串，方便链上/前端一次读完）
+    /// @notice numeric snapshot of a market (no strings, so chain and UI state read in one call)
     struct Core {
         uint256 yesReserve;
         uint256 noReserve;
@@ -110,9 +111,9 @@ contract CentralPredictionEngine is ReentrancyGuard {
         bool exists;
     }
 
-    /* ------------------------------ 状态 ------------------------------ */
+    /* ------------------------------ State ------------------------------- */
 
-    /// @notice 抵押品（USDC），部署后不可改
+    /// @notice collateral (USDC), immutable after deployment
     IERC20 public immutable collateral;
     address public feeVault;
     address public treasury;
@@ -120,26 +121,26 @@ contract CentralPredictionEngine is ReentrancyGuard {
     address public admin;
     address public pendingAdmin;
 
-    /// @notice 被授权建盘的 AI / Keeper
+    /// @notice AI / keeper allowed to create markets
     mapping(address => bool) public creators;
-    /// @notice 被授权裁决的预言机（Hermes）
+    /// @notice oracle allowed to rule (Hermes)
     mapping(address => bool) public oracles;
 
     bool public paused;
 
-    /// @notice 全部盘口
+    /// @notice every market
     mapping(bytes32 => Market) public markets;
-    /// @notice 建盘顺序（前端/大脑遍历用）
+    /// @notice creation order (front end and agent iterators)
     bytes32[] public marketIds;
 
-    /// @notice 每个盘口的份额总账
+    /// @notice share supply per market
     mapping(bytes32 => uint256) public yesSupply;
     mapping(bytes32 => uint256) public noSupply;
-    /// @notice 用户份额账本
+    /// @notice per-user share ledger
     mapping(bytes32 => mapping(address => uint256)) public yesOf;
     mapping(bytes32 => mapping(address => uint256)) public noOf;
 
-    /* ------------------------------ 事件 ------------------------------ */
+    /* ----------------------------- Events ------------------------------- */
 
     event MarketCreated(
         bytes32 indexed marketId,
@@ -196,7 +197,7 @@ contract CentralPredictionEngine is ReentrancyGuard {
     event AdminTransferStarted(address indexed currentAdmin, address indexed pendingAdmin);
     event AdminTransferred(address indexed oldAdmin, address indexed newAdmin);
 
-    /* ------------------------------ 错误 ------------------------------ */
+    /* ----------------------------- Errors ------------------------------- */
 
     error ZeroAddress();
     error NotContract();
@@ -229,7 +230,7 @@ contract CentralPredictionEngine is ReentrancyGuard {
     error DisputeWindowClosed();
     error SameOutcome();
 
-    /* ------------------------------ 修饰器 ------------------------------ */
+    /* --------------------------- Modifiers ------------------------------ */
 
     modifier onlyAdmin() {
         if (msg.sender != admin) revert OnlyAdmin();
@@ -252,8 +253,8 @@ contract CentralPredictionEngine is ReentrancyGuard {
     }
 
     /**
-     * @dev 赎回闸：暂停期间禁止赎回，但「结算时间 + 7 天」之后无视暂停强制放行。
-     *      管理员不能拥有永久冻结用户本金的能力。
+     * @dev Redemption gate: paused blocks redemption, but any market past resolution + 7 days
+     *      bypasses the pause. An admin can never freeze principal forever.
      */
     modifier redeemGuard(bytes32 marketId) {
         if (paused) {
@@ -275,13 +276,13 @@ contract CentralPredictionEngine is ReentrancyGuard {
         emit AdminTransferred(address(0), admin_);
     }
 
-    /* ---------------------------- 建盘（AI 入口） ---------------------------- */
+    /* ------------------------ Create (AI entry) -------------------------- */
 
     /**
-     * @notice 新增盘口：授权 AI / Keeper 可随时发车
-     * @param marketId 业务主键（通常 keccak256(question)，由大脑生成）
-     * @param question 人类可读问题（8~280 字节）
-     * @param resolutionTime 结算时间戳（必须 > now + 1h 且 < now + 365d）
+     * @notice Create a market: any authorised AI / keeper may open one at any time
+     * @param marketId business key (usually keccak256(question), produced by the agent)
+     * @param question human-readable question (8..280 bytes)
+     * @param resolutionTime settlement timestamp (must be > now + 1h and < now + 365d)
      */
     function createMarket(bytes32 marketId, string memory question, uint256 resolutionTime)
         external
@@ -292,7 +293,7 @@ contract CentralPredictionEngine is ReentrancyGuard {
         return true;
     }
 
-    /// @notice 带分类的建盘（同一条逻辑，供大脑标注 crypto/sports/politics…）
+    /// @notice Create a market with a category (same path; the agent tags crypto/sports/politics)
     function createMarketWithMeta(bytes32 marketId, string memory question, string memory category, uint256 resolutionTime)
         external
         onlyCreator
@@ -326,7 +327,7 @@ contract CentralPredictionEngine is ReentrancyGuard {
         emit MarketCreated(marketId, msg.sender, question, category, resolutionTime);
     }
 
-    /// @notice 建盘者/预言机可在结算前修正分类标签
+    /// @notice creator / oracle may correct the category tag before settlement
     function setCategory(bytes32 marketId, string memory category) external {
         Market storage m = _market(marketId);
         if (msg.sender != admin && msg.sender != m.creator && !oracles[msg.sender]) revert OnlyCreator();
@@ -336,12 +337,12 @@ contract CentralPredictionEngine is ReentrancyGuard {
         emit MarketCategoryUpdated(marketId, category);
     }
 
-    /* ---------------------------- 做市（种子流动性） ---------------------------- */
+    /* --------------------- Market making (seed liquidity) ---------------- */
 
     /**
-     * @notice 注入做市资金：铸出等量 YES/NO 库存进池（1 份对 = 1 USDC）
-     * @dev 这笔钱是做市方的对手盘风险，结算后不退还；剩余现金（cash - owed）由 admin
-     *      扫给 treasury。允许在建盘后、结算前追加。
+     * @notice Seed liquidity: mint an equal amount of YES/NO inventory into the pool (1 pair = 1 USDC)
+     * @dev This capital is the market maker's risk and is not returned at settlement; leftover cash
+     *      (cash - owed) is swept to treasury by the admin. Top-ups are allowed before settlement.
      */
     function seedLiquidity(bytes32 marketId, uint256 amount) external onlyCreator nonReentrant {
         Market storage m = _market(marketId);
@@ -359,13 +360,13 @@ contract CentralPredictionEngine is ReentrancyGuard {
         collateral.safeTransferFrom(msg.sender, address(this), amount);
     }
 
-    /* ---------------------------- 交易 ---------------------------- */
+    /* ----------------------------- Trading ------------------------------- */
 
     /**
-     * @notice 买入份额
+     * @notice Buy shares
      * @param outcome 0 = NO, 1 = YES
-     * @param amountIn 支付毛额（含 1.5% 抽成，抽成当场转给 FeeVault）
-     * @param minSharesOut 滑点保护
+     * @param amountIn gross payment (the 1.5% fee is charged here and forwarded to the FeeVault)
+     * @param minSharesOut slippage guard
      */
     function buyShares(bytes32 marketId, uint8 outcome, uint256 amountIn, uint256 minSharesOut)
         external
@@ -387,15 +388,15 @@ contract CentralPredictionEngine is ReentrancyGuard {
         uint256 net = amountIn - fee;
         if (net == 0) revert ZeroShares();
 
-        // 经济模型：net 拆成 net 对（net YES + net NO，1 对 = 1 USDC 抵押），
-        // net NO 进池子，池子按 CPMM 放出 dy 份 YES —— 用户合计拿到 net + dy。
-        // 这样 50% 概率下 1 USDC 能买到 ~2 份（赢则赔 ~2 倍），报价与赔付才一致。
+        // Economics: net is split into net pairs (net YES + net NO, 1 pair = 1 USDC of collateral),
+        // the net NO leg enters the pool and the pool releases dy YES via CPMM — the user gets net + dy.
+        // That is why 1 USDC buys ~2 shares at 50%, keeping price and payout consistent.
         sharesOut = _applyBuy(m, marketId, outcome, net);
 
         if (sharesOut == 0) revert ZeroShares();
         if (sharesOut < minSharesOut) revert SlippageExceeded();
 
-        // ---- 落账 + 事件 ----
+        // ---- book the fill + emit ----
         m.cash += net;
         m.totalVolume += amountIn;
         if (outcome == OUTCOME_YES) yesOf[marketId][msg.sender] += sharesOut;
@@ -403,13 +404,13 @@ contract CentralPredictionEngine is ReentrancyGuard {
 
         emit SharesBought(marketId, msg.sender, outcome, amountIn, fee, sharesOut, _priceYes(m));
 
-        // ---- 外部调用放最后（CEI）----
+        // ---- external calls last (CEI) ----
         collateral.safeTransferFrom(msg.sender, address(this), amountIn);
         if (fee > 0) collateral.safeTransfer(feeVault, fee);
     }
 
     /**
-     * @notice 卖出份额换回抵押品（同样收 1.5%）
+     * @notice Sell shares back for collateral (same 1.5% fee)
      */
     function sellShares(bytes32 marketId, uint8 outcome, uint256 sharesIn, uint256 minAmountOut)
         external
@@ -429,8 +430,8 @@ contract CentralPredictionEngine is ReentrancyGuard {
             revert ImpactTooHigh();
         }
 
-        // 卖出 = 把 sharesIn 份 YES（或 NO）连同等量对手份额合并销毁（1 对 = 1 USDC），
-        // 用户按本次成交的平均价拿走现金，价差留作池子（= 对手方）收益。
+        // Selling = burn sharesIn YES (or NO) plus an equal amount of the opposite leg (1 pair = 1 USDC);
+        // the user is paid at the average execution price and the spread stays in the pool.
         uint256 grossOut = _quoteSell(m, outcome, sharesIn);
         if (grossOut == 0) revert ZeroShares();
         if (grossOut > m.cash) revert InsufficientLiquidity();
@@ -450,7 +451,7 @@ contract CentralPredictionEngine is ReentrancyGuard {
         collateral.safeTransfer(msg.sender, amountOut);
     }
 
-    /// @dev 买入的状态搬运：mint net 对、池子放出 got、用户净得 net + got
+    /// @dev Buy transition: mint net pairs, the pool releases got, the user nets net + got
     function _applyBuy(Market storage m, bytes32 marketId, uint8 outcome, uint256 net)
         internal
         returns (uint256 sharesOut)
@@ -472,7 +473,7 @@ contract CentralPredictionEngine is ReentrancyGuard {
         noSupply[marketId] += net;
     }
 
-    /// @dev 卖出报价：取「成交前价格 + 成交后价格」的中点，保证买一卖一必亏手续费
+    /// @dev Sell quote: midpoint of pre- and post-trade price, so round-tripping always loses the fee
     function _quoteSell(Market storage m, uint8 outcome, uint256 sharesIn) internal view returns (uint256 gross) {
         uint256 d = m.yesReserve + m.noReserve;
         if (d == 0) return 0;
@@ -490,7 +491,7 @@ contract CentralPredictionEngine is ReentrancyGuard {
         gross = FixedPoint.mulDivDown(sharesIn, pBefore + pAfter, 2e18);
     }
 
-    /// @dev 卖出的状态搬运：双边供应各减 sharesIn，池子烧掉等量对手库存
+    /// @dev Sell transition: both sides of the supply shrink by sharesIn, the pool burns the matching inventory
     function _applySell(Market storage m, bytes32 marketId, uint8 outcome, uint256 sharesIn, uint256) internal {
         if (outcome == OUTCOME_YES) {
             yesOf[marketId][msg.sender] -= sharesIn;
@@ -503,12 +504,12 @@ contract CentralPredictionEngine is ReentrancyGuard {
         noSupply[marketId] -= sharesIn;
     }
 
-    /* ---------------------------- 结算 ---------------------------- */
+    /* --------------------------- Settlement ----------------------------- */
 
     /**
-     * @notice 预言机裁定结果（必须已到结算时间）
-     * @param outcome 0 = NO, 1 = YES, 2 = INVALID（各赔 0.5）
-     * @dev 结算瞬间把池内库存作废，并把「用户侧份额应得的赔付」定死进 owed。
+     * @notice Oracle rules on the outcome (only after the resolution time)
+     * @param outcome 0 = NO, 1 = YES, 2 = INVALID (pays 0.5 to each side)
+     * @dev Settlement writes off the pool inventory and locks the user-side payout into owed.
      */
     function resolveMarket(bytes32 marketId, uint8 outcome) external onlyOracle {
         Market storage m = _market(marketId);
@@ -520,7 +521,7 @@ contract CentralPredictionEngine is ReentrancyGuard {
     }
 
     /**
-     * @notice 超时兜底：结算时间 + 7 天仍未裁定，任何人可触发，按 0.5/0.5 退款
+     * @notice Timeout fallback: no ruling by resolution + 7 days lets anyone trigger a 0.5/0.5 refund
      */
     function emergencyRefund(bytes32 marketId) external {
         Market storage m = _market(marketId);
@@ -531,9 +532,9 @@ contract CentralPredictionEngine is ReentrancyGuard {
     }
 
     function _settle(bytes32 marketId, Market storage m, uint8 outcome, bool emergency) internal {
-        // 用户侧份额 = 总供应 - 池内库存（池内那部分属于做市方，结算即作废）。
-        // 这两个数在结算瞬间快照下来，争议期内 admin 改判时用它重算 owed，
-        // 避免「池内库存已清零」之后算出错误金额。
+        // user-side shares = total supply - pool inventory (the pool leg belongs to the market maker
+        // and is written off at settlement). Both numbers are snapshotted here so a re-rule inside
+        // the dispute window recomputes owed correctly even after the pool has been zeroed.
         uint256 userYes = yesSupply[marketId] - m.yesReserve;
         uint256 userNo = noSupply[marketId] - m.noReserve;
 
@@ -545,11 +546,11 @@ contract CentralPredictionEngine is ReentrancyGuard {
         m.yesReserve = 0;
         m.noReserve = 0;
 
-        // A1：结算是资金安全的最后一道闸 —— 现金必须覆盖全部应付
+        // A1: settlement is the last safety gate — cash must cover every promised payout
         require(m.cash >= m.owed, "INSOLVENT");
 
         if (emergency) {
-            // 超时退款是「兜底」：没有可争议的裁定，直接终结
+            // a timeout refund is a fallback: there is no ruling to dispute, so the market closes directly
             m.disputeEndsAt = uint64(block.timestamp);
             m.finalized = true;
         } else {
@@ -561,23 +562,23 @@ contract CentralPredictionEngine is ReentrancyGuard {
         emit DisputeWindowOpened(marketId, outcome, m.disputeEndsAt, m.owed);
     }
 
-    /// @dev 某个结果下应付总额（只由结算瞬间的用户份额决定）
+    /// @dev total payout for one outcome (driven only by user-side shares at settlement)
     function _owedFor(Market storage m, uint8 outcome) internal view returns (uint256) {
         if (outcome == OUTCOME_INVALID) return (m.yesUserAtSettle + m.noUserAtSettle) / 2;
         if (outcome == OUTCOME_YES) return m.yesUserAtSettle;
         return m.noUserAtSettle;
     }
 
-    /// @dev 是否已终结（争议期自然到期，或被显式终结）
+    /// @dev whether the market is final (window lapsed or explicitly finalised)
     function _isFinal(Market storage m) internal view returns (bool) {
         if (!m.resolved) return false;
         return m.finalized || block.timestamp >= m.disputeEndsAt;
     }
 
     /**
-     * @notice 争议期内一键改判（仅 admin / Safe 多签）
-     * @dev 争议期内 redeem 全封，因此 owed 可以被安全重算；改判后仍强制 cash >= owed。
-     *      窗口不因改判而延长，避免 admin 无限拖延。
+     * @notice Re-rule inside the dispute window (admin / Safe multisig only)
+     * @dev redeem is frozen for the whole window, so owed can be recomputed safely; the window
+     *      is never extended by a re-rule, which keeps an admin from stalling indefinitely.
      */
     function overrideResolution(bytes32 marketId, uint8 newOutcome) external onlyAdmin {
         Market storage m = _market(marketId);
@@ -598,8 +599,8 @@ contract CentralPredictionEngine is ReentrancyGuard {
     }
 
     /**
-     * @notice 争议期结束后把盘口标记为终结（任何人可调，只为给索引器一条明确日志）
-     * @dev 赎回不依赖它 —— 到期后 redeem 自动可用的判断基于时间戳，不存在「没人调就卡死」。
+     * @notice Mark the market final once the dispute window has lapsed (anyone may call; emits an indexer hint)
+     * @dev Redemption does not depend on it — after the window redeem is timestamp-gated, so a market cannot wedge.
      */
     function finalize(bytes32 marketId) external {
         Market storage m = _market(marketId);
@@ -612,7 +613,7 @@ contract CentralPredictionEngine is ReentrancyGuard {
     }
 
     /**
-     * @notice 兑换：赢家按 1.0 赔付并扣 0.5%；INVALID 下 YES/NO 各赔 0.5、不收费
+     * @notice Redeem: winners get 1.0 minus the 0.5% fee; under INVALID both sides get 0.5 fee-free
      */
     function redeem(bytes32 marketId)
         external
@@ -622,7 +623,7 @@ contract CentralPredictionEngine is ReentrancyGuard {
     {
         Market storage m = _market(marketId);
         if (!m.resolved) revert NotResolved();
-        // 争议缓冲期：结果可能被 Safe 覆盖，此时提现会把钱按错的结果付出去
+        // dispute buffer: the result may still be overridden, paying out now could pay the wrong outcome
         if (!_isFinal(m)) revert DisputeWindowOpen();
 
         uint256 yesBal = yesOf[marketId][msg.sender];
@@ -643,7 +644,7 @@ contract CentralPredictionEngine is ReentrancyGuard {
         }
         if (gross == 0 || gross > m.owed) revert InsufficientLiquidity();
 
-        // ---- 落账：份额清零、owed 递减、cash 递减 ----
+        // ---- book it: zero the shares, decrement owed and cash ----
         yesOf[marketId][msg.sender] = 0;
         noOf[marketId][msg.sender] = 0;
         m.owed -= gross;
@@ -656,13 +657,13 @@ contract CentralPredictionEngine is ReentrancyGuard {
     }
 
     /**
-     * @notice 扫走做市残余（= cash - owed），只能进 treasury
-     * @dev 永远动不到「已承诺但未领取」的那一份；结算前不可调用。
+     * @notice Sweep the market-making leftover (= cash - owed); treasury only
+     * @dev Never touches the promised-but-unclaimed slice; not callable before settlement.
      */
     function sweepResidual(bytes32 marketId) external onlyAdmin nonReentrant returns (uint256 amount) {
         Market storage m = _market(marketId);
         if (!m.resolved) revert NotResolved();
-        // 争议期内 owed 还可能变，先扫走会让账面失去 owed 兜底
+        // owed may still move during the dispute window; sweeping early would break the owed backstop
         if (!_isFinal(m)) revert DisputeWindowOpen();
 
         amount = m.cash - m.owed;
@@ -673,7 +674,7 @@ contract CentralPredictionEngine is ReentrancyGuard {
         collateral.safeTransfer(treasury, amount);
     }
 
-    /* ---------------------------- 管理 ---------------------------- */
+    /* ---------------------------- Admin -------------------------------- */
 
     function pause() external onlyAdmin {
         paused = true;
@@ -724,13 +725,13 @@ contract CentralPredictionEngine is ReentrancyGuard {
         emit AdminTransferred(old, msg.sender);
     }
 
-    /* ---------------------------- 视图 ---------------------------- */
+    /* ----------------------------- Views ------------------------------- */
 
     function marketCount() external view returns (uint256) {
         return marketIds.length;
     }
 
-    /// @notice 单个盘口的数值快照（字符串另用 marketQuestion / marketCategory 取）
+    /// @notice numeric snapshot of one market (strings live in marketQuestion / marketCategory)
     function marketCore(bytes32 marketId) external view returns (Core memory) {
         Market storage m = markets[marketId];
         return Core({
@@ -756,7 +757,7 @@ contract CentralPredictionEngine is ReentrancyGuard {
         return markets[marketId].category;
     }
 
-    /// @notice YES 价格（1e18）
+    /// @notice YES price (1e18)
     function priceYes(bytes32 marketId) external view returns (uint256) {
         return _priceYes(markets[marketId]);
     }
@@ -788,7 +789,7 @@ contract CentralPredictionEngine is ReentrancyGuard {
         return markets[marketId].resolutionTime + REFUND_DELAY;
     }
 
-    /// @notice 结算后可扫的残余（cash - owed）；争议期内恒为 0
+    /// @notice sweepable leftover after settlement (cash - owed); always 0 during the dispute window
     function sweepable(bytes32 marketId) external view returns (uint256) {
         Market storage m = markets[marketId];
         if (!_isFinal(m)) return 0;
@@ -796,13 +797,13 @@ contract CentralPredictionEngine is ReentrancyGuard {
     }
 
     /**
-     * @notice 裁决与争议状态一次读完（前端/大脑/索引器用）
-     * @return resolved 是否已有裁定（含争议中）
-     * @return finalized 是否已终结（可提现）
-     * @return disputing 是否正处在争议缓冲期
-     * @return outcome 当前结果（0 NO / 1 YES / 2 INVALID）
-     * @return disputeEndsAt 争议期结束时间戳（0 = 未裁决）
-     * @return owed 当前应付总额
+     * @notice Ruling and dispute state in one call (front end / agent / indexer)
+     * @return resolved whether a result exists (including during the dispute)
+     * @return finalized whether the market is final (redeemable)
+     * @return disputing whether the dispute buffer is active
+     * @return outcome current outcome (0 NO / 1 YES / 2 INVALID)
+     * @return disputeEndsAt dispute window end timestamp (0 = not ruled)
+     * @return owed current total payout due
      */
     function resolutionState(bytes32 marketId)
         external
@@ -818,7 +819,7 @@ contract CentralPredictionEngine is ReentrancyGuard {
         owed = m.owed;
     }
 
-    /// @notice 是否已经可以提现
+    /// @notice whether redemption is allowed yet
     function isFinal(bytes32 marketId) external view returns (bool) {
         return _isFinal(markets[marketId]);
     }

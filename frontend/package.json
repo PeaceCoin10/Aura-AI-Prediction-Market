@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "AI 预测市场网页客户端（Base 主网 · CentralPredictionEngine）",
+  "description": "Web client for the AI prediction markets (Base mainnet, CentralPredictionEngine)",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 5173",
     "build": "vite build",

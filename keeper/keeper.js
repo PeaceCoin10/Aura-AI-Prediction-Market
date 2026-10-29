@@ -1,21 +1,21 @@
 #!/usr/bin/env node
 /**
- * Prediction Market Keeper — 无人值守守护机器人
+ * Prediction Market Keeper -- unattended watchdog
  *
- * 职责：
- *   1. 轮询工厂下所有 Vault 盘口状态
- *   2. 到点未结算 -> 立即预警，并生成 multisig（Safe）可直接执行的结算交易提案
- *   3. 超过 7 天退款窗口 -> 可自动触发 emergencyRefund()（无需权限）
- *   4. pendingFees 超过阈值 -> 自动调用 ProtocolFeeVault.autoDistributeFee()
+ * Responsibilities:
+ *   1. Poll the state of every vault market the factory knows about
+ *   2. Past resolution time and still unresolved -> alert and write a Safe-executable resolve proposal
+ *   3. Past the 7-day refund window -> optionally call emergencyRefund() (permissionless)
+ *   4. pendingFees above the threshold -> call ProtocolFeeVault.autoDistributeFee()
  *
- * 设计原则：
- *   - 结算权在 admin 多签手里，keeper 只「提醒 + 生成提案」，绝不持有 admin 权限
- *   - 只有 permissionless 的动作（autoDistributeFee / emergencyRefund）才会自己签名发交易
- *   - 重复告警去重，避免每 30 秒刷一次屏
+ * Design rules:
+ *   - Resolution authority belongs to the admin multisig; the keeper only alerts and prepares proposals
+ *   - Only permissionless actions (autoDistributeFee / emergencyRefund) are signed by the keeper
+ *   - Alerts are de-duplicated so a 30s loop does not spam the log
  *
- * 用法：
- *   node keeper.js --config config.json          # 常驻
- *   node keeper.js --config config.json --once   # 跑一轮就退出（用于 cron / 测试）
+ * Usage:
+ *   node keeper.js --config config.json          # long-running
+ *   node keeper.js --config config.json --once   # single pass then exit (cron / tests)
  *   node keeper.js --config config.json --dry-run
  */
 "use strict";
@@ -52,7 +52,7 @@ const FEE_VAULT_ABI = [
   "function autoDistributeFee() returns (uint256)",
 ];
 
-/* -------------------------------- 工具函数 -------------------------------- */
+/* -------------------------------- helpers -------------------------------- */
 
 const OUTCOME_LABEL = { 0: "NO", 1: "YES", 2: "INVALID" };
 
@@ -85,7 +85,7 @@ function log(level, msg, extra) {
   else console.log(line);
 }
 
-/* --------------------------------- 配置 ---------------------------------- */
+/* --------------------------------- config --------------------------------- */
 
 function loadConfig(argv) {
   const args = new Set(argv.slice(2));
@@ -108,11 +108,11 @@ function loadConfig(argv) {
     feeVault: process.env.KEEPER_FEE_VAULT || fileCfg.feeVault,
     privateKey: process.env.KEEPER_PRIVATE_KEY || fileCfg.privateKey || "",
     intervalMs: Number(process.env.KEEPER_INTERVAL_MS || fileCfg.intervalMs || 30_000),
-    // 手续费自动分发的触发阈值（USDC 6 位）
+    // auto-distribution trigger threshold (USDC, 6 decimals)
     feeThreshold: BigInt(process.env.KEEPER_FEE_THRESHOLD || fileCfg.feeThreshold || "1000000"), // 1 USDC
-    // 是否自动执行 permissionless 的 emergencyRefund
+    // whether to execute the permissionless emergencyRefund
     autoRefund: process.env.KEEPER_AUTO_REFUND === "1" || fileCfg.autoRefund === true,
-    // 告警 webhook（钉钉/飞书/Slack 通用 JSON POST）
+    // alert webhook (any JSON POST endpoint: DingTalk / Feishu / Slack)
     webhookUrl: process.env.KEEPER_WEBHOOK || fileCfg.webhookUrl || "",
     proposalDir: fileCfg.proposalDir || path.join(__dirname, "proposals"),
     dryRun: args.has("--dry-run"),
@@ -137,11 +137,11 @@ class Keeper {
     this.factory = new ethers.Contract(cfg.factory, FACTORY_ABI, this.provider);
     this.feeVault = cfg.feeVault ? new ethers.Contract(cfg.feeVault, FEE_VAULT_ABI, this.provider) : null;
 
-    this.alerted = new Set(); // 去重
+    this.alerted = new Set(); // de-duplication
     this.stats = { polls: 0, alerts: 0, refunds: 0, feeDistributions: 0, errors: 0 };
   }
 
-  /* ------------------------------ 单轮扫描 ------------------------------ */
+  /* ------------------------------ one scan ------------------------------ */
 
   async tick() {
     this.stats.polls++;
@@ -163,10 +163,10 @@ class Keeper {
       if (st.now >= st.refundAvailableAt) {
         refundable.push(st);
         expired.push(st);
-        log("WARN", `${st.address} 已过退款窗口 (${humanDuration(st.now - st.refundAvailableAt)} ago) 仍未结算`);
+        log("WARN", `${st.address} past refund window (${humanDuration(st.now - st.refundAvailableAt)} ago) and still unresolved`);
       } else if (st.now >= st.resolutionTime) {
         expired.push(st);
-        log("WARN", `${st.address} 已到结算时间 ${humanDuration(st.now - st.resolutionTime)} 仍未结算`);
+        log("WARN", `${st.address} past resolution time by ${humanDuration(st.now - st.resolutionTime)} and still unresolved`);
       } else {
         log("INFO", `${st.address} trading | resolve in ${humanDuration(st.resolutionTime - st.now)}`);
       }
@@ -213,16 +213,16 @@ class Keeper {
     };
   }
 
-  /* ------------------------------ 到点告警 ------------------------------ */
+  /* ------------------------------ expiry alert ------------------------------ */
 
   async _alertExpired(st) {
     const inRefundWindow = st.now >= st.refundAvailableAt;
     const key = inRefundWindow ? `${st.address}:refund` : `${st.address}:expired`;
-    if (this.alerted.has(key)) return; // 已告警过，不刷屏
+    if (this.alerted.has(key)) return; // already alerted; do not repeat
     this.alerted.add(key);
     this.stats.alerts++;
 
-    // 生成 multisig 可直接执行的结算提案（admin 是多签地址）
+    // build resolution proposals the multisig can execute directly (admin is the multisig)
     const vault = new ethers.Contract(st.address, VAULT_ABI, this.provider);
     const proposals = [0, 1, 2].map((o) => ({
       safe: st.admin,
@@ -245,8 +245,8 @@ class Keeper {
       priceYes: st.priceYes.toFixed(4),
       depthUsdc: fmtUsdc(BigInt(Math.round(st.depthUsdc * 1e6))),
       action: urgent
-        ? "任何人可调用 emergencyRefund()；或由多签立即 resolve()"
-        : "由 admin 多签调用 resolve(uint8 outcome)",
+        ? "Anyone may call emergencyRefund(); or the multisig can resolve() immediately"
+        : "The admin multisig calls resolve(uint8 outcome)",
       proposals,
     };
 
@@ -288,7 +288,7 @@ class Keeper {
     }
   }
 
-  /* --------------------------- 超时自动退款 --------------------------- */
+  /* --------------------------- auto refund --------------------------- */
 
   async _maybeRefund(st) {
     if (!this.cfg.autoRefund) {
@@ -312,7 +312,7 @@ class Keeper {
     }
   }
 
-  /* ------------------------- 手续费自动分发 ------------------------- */
+  /* ------------------------- fee auto-distribution ------------------------- */
 
   async _maybeDistributeFees() {
     if (!this.feeVault) return;
@@ -343,8 +343,8 @@ class Keeper {
   }
 
   /**
-   * Gas 策略：用网络建议价，但绝不超过上限。
-   * 超过上限时直接放弃这一轮（宁可晚一点分账，也不要在高费时被打爆）。
+   * Gas strategy: use the network suggestion, but never above the cap.
+   * Above the cap the round is skipped (a later distribution beats being drained during a fee spike).
    */
   async _gasOverrides() {
     const fee = await this.provider.getFeeData();
@@ -359,7 +359,7 @@ class Keeper {
     };
   }
 
-  /* -------------------------------- 主循环 -------------------------------- */
+  /* -------------------------------- main loop -------------------------------- */
 
   async run() {
     log("INFO", "=== Prediction Keeper started ===");
@@ -394,7 +394,7 @@ class Keeper {
   }
 }
 
-/* --------------------------------- 入口 ---------------------------------- */
+/* --------------------------------- entry ---------------------------------- */
 
 async function main() {
   let cfg;

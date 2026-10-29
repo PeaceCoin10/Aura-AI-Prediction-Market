@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""长等待版 Basescan 网页验证：Turnstile 若在 180s 内出 token 就提交，否则退出码 3。
+"""Long-wait variant of the Basescan web verification: submit if Turnstile yields a token within 180s, otherwise exit with code 3.
 
-用法: xvfb-run -a python3 deploy/basescan_pw_wait.py <address> <sjis.json> <ctor_hex> <label>
+Usage: xvfb-run -a python3 deploy/basescan_pw_wait.py <address> <sjis.json> <ctor_hex> <label>
 """
 import os
 import sys
@@ -63,7 +63,7 @@ def main():
             if tok:
                 break
             if i % 10 == 5:
-                # 点一下 widget 区域，触发交互式校验
+                # click the widget area to trigger the interactive challenge
                 try:
                     pg.mouse.click(720, 760)
                 except Exception:

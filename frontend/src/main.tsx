@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import { ToastProvider } from "./hooks/useToasts";
 import { ModeProvider } from "./lib/mode";
+import { ReferralProvider } from "./lib/referral";
 import { I18nProvider } from "./lib/i18n";
 import "./index.css";
 
@@ -14,7 +15,9 @@ createRoot(el).render(
     <I18nProvider>
       <ToastProvider>
         <ModeProvider>
-          <App />
+          <ReferralProvider>
+            <App />
+          </ReferralProvider>
         </ModeProvider>
       </ToastProvider>
     </I18nProvider>

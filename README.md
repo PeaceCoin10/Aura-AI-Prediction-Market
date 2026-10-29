@@ -248,36 +248,108 @@ python3 scripts/e2e_local.py     # 11 real-chain assertions against anvil (see d
 ## SDK
 
 ```ts
-import { CentralPredictionSDK, parseUnits } from "@aura/prediction-sdk";
+import { CentralPredictionSDK, SLIPPAGE_NORMAL, parseUsdc } from "@sdk";
 
-const sdk = new CentralPredictionSDK({
-  rpcUrl: "https://mainnet.base.org",
-  engine: "0xE6056Bc6700F6d7E6fF8779B212655284dc1631C",
-});
+// The SDK is transport-agnostic: you hand it one `eth_call` function.
+const sdk = new CentralPredictionSDK(
+  { ethCall: (to, data) => publicClient.call({ to, data }).then((r) => r.data!) },
+  { engine: "0xE6056Bc6700F6d7E6fF8779B212655284dc1631C", chainId: 8453, account },
+);
 
-// One RPC round-trip for the whole board (Multicall3 aggregate3)
-const ids = await sdk.allMarketIds();
+// One RPC round-trip for the whole board (Multicall3 aggregate3, 4 views per market)
+const count = await sdk.marketCount();
+const ids = await Promise.all([...Array(count).keys()].map((i) => sdk.marketId(i)));
 const markets = await sdk.marketSnapshots(ids, { withMeta: true });
 
 // Offline quote — identical maths to the contract, zero RPC
-const shares = sdk.previewBuyOffline(markets[0], /* outcome */ 1, parseUnits("25", 6));
+const shares = previewBuyOffline(markets[0], 1, parseUsdc("25"));
 
-// Real trade: build, then send with the user's wallet
-const tx = sdk.buildBuyShares({
+// Real trade: the plan is preflighted locally before anything is signed
+const plan = await sdk.buildBuyShares({
   marketId: markets[0].marketId,
-  outcome: 1,                       // 0 = NO, 1 = YES  (contract order — not UI order)
-  amountIn: parseUnits("25", 6),
-  minSharesOut: (shares * 99n) / 100n,
-  recipient: account,
+  outcome: 1,                        // 0 = NO, 1 = YES  (contract order — not UI order)
+  amountIn: parseUsdc("25"),
+  slippageBps: SLIPPAGE_NORMAL,      // 1%: a hard 1…500 bps bound, never "0"
 });
-await wallet.sendTransaction(tx);
+await wallet.sendTransaction({ to: plan.to, data: plan.data });
 
 // Decode what actually happened
-const logs = sdk.decodeReceiptLogs(receipt.logs);
+const events = sdk.decodeReceiptLogs(receipt.logs);
 ```
+
+Full API tables: [`docs/CENTRAL-SDK-GUIDE.md`](docs/CENTRAL-SDK-GUIDE.md).
 
 > **Outcome encoding caveat:** the contract uses `0 = NO, 1 = YES`; the UI's side index is the reverse
 > (`0 = YES`). The mapping lives in exactly one place — `frontend/src/lib/paper.ts` — and is covered by tests.
+
+---
+
+## Distribution: Telegram Mini App
+
+The dApp is the Mini App — the same bundle runs in a browser and inside a Telegram chat.
+
+| Surface | Implementation |
+| --- | --- |
+| Host chrome | `frontend/src/lib/telegram.ts` reads `themeParams`, exposes them as `--tg-theme-*`, pushes the app background into `setHeaderColor` / `setBackgroundColor` so the nav bar never flashes white |
+| Layout | `initTelegram()` pins the shell to `viewportStableHeight`, applies `safeAreaInset` + `contentSafeAreaInset`, disables vertical swipes and bumps form fields to 16px so iOS does not zoom |
+| Back button | the host Back button is bound to the open sheet (market detail / affiliate panel) via `bindBackButton` |
+| Deep links | every market card, market detail and share modal renders a **Telegram** button: `https://t.me/<bot>/app?startapp=market_<id>` |
+| Referral links | `?startapp=ref_<address>` survives the Telegram hop and is captured by the referral provider |
+| Haptics | `haptic("tap" / "success")` on copy and fill actions, silent outside the host |
+
+Set `VITE_TG_BOT` (and optionally `VITE_TG_APP`) to your registered bot to mint links for it.
+
+## Zero-friction entry: social login + sponsored gas (ERC-4337)
+
+No extension, no seed phrase, no ETH on Base.
+
+- **Google / email login** — the connect modal offers both. `loginWithSocial()` opens the Web3Auth
+  modal and returns an EIP-1193 provider plus the smart-account address; the wallet context
+  registers it as a normal provider, so approval, trading and log decoding all reuse the same path.
+- **Paymaster** — set `VITE_PAYMASTER_URL` (Pimlico / Biconomy / Alchemy) and `VITE_BUNDLER_URL`; they
+  are handed to Web3Auth as `bundlerConfig` / `paymasterConfig`, which wraps every
+  `eth_sendTransaction` in a sponsored user operation. `gaslessReady()` is the switch; without it
+  the same account behaves as a plain EOA, and the UI says so instead of failing at signing time.
+
+Builds without credentials still work: both integrations are lazily imported, so nothing is
+downloaded and no button lies about what it can do.
+
+## Affiliate program (real attribution, real payouts)
+
+1. **Capture** — `?ref=0x…` or `startapp=ref_0x…`; the first referrer wins and is persisted in
+   `localStorage` (`frontend/src/lib/referral.tsx`).
+2. **Attribution** — each attributed order appends `"auraref1" || referrer` to its calldata. Solidity
+   decoders stop at the declared parameters, so the engine fills the trade exactly as if the tag were
+   absent — proven by `testReferralTagDoesNotDisturbTheOrder` — while the indexer can recover the
+   referrer from the transaction input.
+3. **Settlement** — `hermes/referral_indexer.py` reads the engine's `SharesBought` / `SharesSold`
+   events, recovers the tag, and calls `ReferralLedger.accrue()` as the operator. Rebate is 20% of
+   the 1.5% trading fee, deduplicated per trade id.
+4. **Payout** — `ReferralLedger.claim()` transfers USDC from the rebate pool. The affiliate drawer
+   shows the invite link, invites opened, attributed volume, and — once `VITE_REFERRAL_LEDGER` is
+   set — the on-chain claimable balance with a working Claim button.
+
+```bash
+python3 hermes/referral_indexer.py                      # dry run: what would be credited
+REFERRAL_OPERATOR_KEY=0x… python3 hermes/referral_indexer.py --post --ledger 0x…
+```
+
+The ledger is **not deployed yet** (the deploy script is ready: `script/DeployReferralLedger.s.sol`).
+Until it is, the drawer labels its numbers as a local estimate and renders no claim button.
+
+## Growth bot: X (Twitter)
+
+`hermes/x_marketing_bot.py` ranks the catalogue by volume-per-hour-left, writes a sub-280-character
+post leading with the live probability, renders a 1200×675 poster in the dApp's visual language, and
+queues both as JSONL.
+
+```bash
+python3 hermes/x_marketing_bot.py --limit 3      # queue + render, no credentials needed
+X_USER_ACCESS_TOKEN=… python3 hermes/x_marketing_bot.py --post   # publish what it queued
+python3 hermes/x_marketing_bot.py --loop 3600 --limit 1          # one post an hour
+```
+
+Without credentials it prints `[dry]` and never claims a tweet went out.
 
 ---
 
@@ -287,7 +359,7 @@ const logs = sdk.decodeReceiptLogs(receipt.logs);
 | --- | --- |
 | Static analysis (Slither 0.10.0) | **0 High, 0 Medium**, 12 Low (`block.timestamp`, intended), 7 Informational |
 | Invariant testing | 512 runs × depth 200 = **102,400 handler calls, 0 invariant breaks** |
-| Unit + integration | 46 forge tests |
+| Unit + integration | 62 forge tests (46 engine + 16 referral ledger) |
 | Settlement | 3×30s sampling for price markets; official results only for sports/esports; news never auto-resolves |
 | Dispute | 1-hour window, withdrawals locked, Safe multisig can override resolution |
 | Escape hatch | after 7 days unsettled → permissionless `emergencyRefund` |
@@ -315,8 +387,11 @@ GITHUB_TOKEN=ghp_xxx ./scripts/github_push.sh   # add --force to rewrite remote 
 and `.nojekyll`), enables Pages over REST, polls until the build is live, then verifies the page **and** the
 hashed bundle return 200.
 
-CI is kept at [`docs/ci.yml`](docs/ci.yml): copy it to `.github/workflows/ci.yml` once your token has the
-`workflow` scope (a `public_repo`-only token is refused for workflow files by design).
+CI runs from [`.github/workflows/ci.yml`](.github/workflows/ci.yml) on every push to `main` and every
+pull request: contracts (forge + invariant stress), SDK (TypeScript), agent (unittest), dApp
+(typecheck + build + headless UI e2e). A `public_repo`-only PAT is refused for workflow files by
+design, so the file was published over an SSH deploy key instead; day-to-day pushes need nothing
+special.
 
 Both hosts build the whole repo (`cd frontend && npm run build`), so the `@sdk` path alias resolves.
 The agent is a long-running Python process — it is not part of the static deployment.
@@ -329,10 +404,10 @@ Guides: [`docs/GITHUB-PUSH.md`](docs/GITHUB-PUSH.md) · [`docs/DEPLOY-PERMANENT.
 ## Repository layout
 
 ```
-src/                Solidity: engine, fee vault, CPMM library
-test/               forge tests + invariant handlers
+src/                Solidity: engine, fee vault, referral ledger, CPMM library
+test/               forge tests + invariant handlers (62)
 sdk/                TypeScript SDK (Multicall3, offline quotes, log decoding)
-hermes/             agent: planners, verticals, insights writer
+hermes/             agent: planners, verticals, insights, referral indexer, X bot
 frontend/           dApp (Vite + React + Tailwind + viem)
   src/locales/en/   message tree — one namespace per surface
 deploy/             gh-pages / vercel / netlify / tunnel / basescan verification
@@ -346,6 +421,7 @@ assets/             brand: logo, banner
 ## Roadmap
 
 - [ ] Fund the agent wallet (≥100 USDC) so it seeds markets on mainnet automatically
+- [ ] Deploy `ReferralLedger` on Base and fund the rebate pool (script + 16 tests are ready)
 - [ ] Move the debate wall off `localStorage` (indexer or on-chain)
 - [ ] Hand `admin` to a Safe multisig (currently a single EOA)
 - [ ] Independent audit

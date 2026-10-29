@@ -490,3 +490,43 @@ body::after {
 @media (prefers-reduced-motion: reduce) {
   .ticker-track { animation: none; }
 }
+
+
+/* Telegram Mini App container: keep the shell inside the host viewport and
+   respect the chat header / safe area instead of relying on 100vh. */
+:root.tg-app body {
+  min-height: var(--tg-viewport, 100vh);
+  height: var(--tg-viewport, 100vh);
+  overflow-y: auto;
+  overscroll-behavior-y: none;
+  padding-top: calc(var(--tg-safe-top, 0px) + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(var(--tg-safe-bottom, 0px) + var(--tg-content-bottom, 0px) + env(safe-area-inset-bottom, 0px));
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  /* 16px is the smallest size iOS will not zoom into when a field takes focus */
+  -webkit-text-size-adjust: 100%;
+}
+:root.tg-app input,
+:root.tg-app select,
+:root.tg-app textarea {
+  font-size: 16px;
+}
+:root.tg-app .sticky {
+  top: 0;
+}
+:root.tg-app a[href^="https://t.me/"] {
+  text-decoration: none;
+}
+/* The host palette is available as --tg-theme-*; use it only where blending in is better than brand */
+:root.tg-app .tg-host-surface {
+  background: var(--tg-theme-bg-color, #05060a);
+  color: var(--tg-theme-text-color, #e2e8f0);
+}
+:root.tg-app .tg-host-hint {
+  color: var(--tg-theme-hint-color, #94a3b8);
+}
+/* Full-bleed sheets (trade panel, affiliate drawer) must not slide under the host header */
+:root.tg-app .glass-panel,
+:root.tg-app .card {
+  max-height: 100%;
+}

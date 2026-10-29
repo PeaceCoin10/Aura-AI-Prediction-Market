@@ -8,17 +8,17 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 
 /**
  * @title ProtocolFeeVault
- * @notice 平台手续费金库：接收交易费（1.5%）与结算费（0.5%）。
+ * @notice Protocol fee vault: collects the trading fee (1.5%) and the settlement fee (0.5%).
  *
- *  无人值守提现：autoDistributeFee() 允许**任何地址**触发，
- *  把金库内全部 USDC 一次性划转到管理员指定的 treasury 钱包。
- *  触发者既不获得任何权限，也不能指定收款地址 —— 收款地址只能是
- *  owner 预先设定的 treasury，因此"任何人可触发"不构成资金风险，
- *  只解决"管理员私钥不在线时费用无法结算"的运维问题。
+ *  Unattended distribution: autoDistributeFee() may be called by **any address** and moves the whole
+ *  USDC balance to the treasury wallet chosen by the admin.
+ *  The caller gains no privilege and cannot choose the recipient — the recipient is always the
+ *  treasury set by the owner, so "anyone can trigger" carries no fund risk; it only removes the
+ *  operational dependency on the admin key being online.
  *
- *  所有权：OZ Ownable2Step（transferOwnership 只登记 pendingOwner，
- *  必须由新所有者 acceptOwnership 才生效），并关闭 renounceOwnership
- *  —— 误renounce 会让 setTreasury 永久失效、手续费永远打进旧地址。
+ *  Ownership: OZ Ownable2Step (transferOwnership only records pendingOwner, the new owner must call
+ *  acceptOwnership), and renounceOwnership is disabled — an accidental renounce would permanently
+ *  break setTreasury and pin fees to a stale address.
  */
 contract ProtocolFeeVault is Ownable2Step, ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -34,7 +34,7 @@ contract ProtocolFeeVault is Ownable2Step, ReentrancyGuard {
     IERC20 public immutable collateral;
     address public treasury;
 
-    /// @notice 累计分发总额（仅统计）
+    /// @notice cumulative distributed amount (accounting only)
     uint256 public totalDistributed;
 
     constructor(address collateral_, address treasury_, address owner_) Ownable(owner_) {
@@ -45,18 +45,18 @@ contract ProtocolFeeVault is Ownable2Step, ReentrancyGuard {
         emit TreasuryUpdated(address(0), treasury_);
     }
 
-    /// @notice 关闭 renounce：owner 归零会永久锁死 setTreasury
+    /// @notice renounce disabled: a zero owner would permanently lock setTreasury
     function renounceOwnership() public pure override {
         revert RenounceDisabled();
     }
 
-    /// @notice 拒绝把所有权移交给零地址（Ownable2Step 自身不校验）
+    /// @notice refuse transferring ownership to the zero address (Ownable2Step does not check itself)
     function transferOwnership(address newOwner) public override onlyOwner {
         if (newOwner == address(0)) revert ZeroAddress();
         super.transferOwnership(newOwner);
     }
 
-    /// @notice 更新收款钱包（仅 owner）
+    /// @notice update the treasury wallet (owner only)
     function setTreasury(address treasury_) external onlyOwner {
         if (treasury_ == address(0)) revert ZeroAddress();
         emit TreasuryUpdated(treasury, treasury_);
@@ -64,13 +64,13 @@ contract ProtocolFeeVault is Ownable2Step, ReentrancyGuard {
     }
 
     /**
-     * @notice 无人值守提现：任何人可调用，全部余额划转至 treasury
-     * @dev 不引入任何参数，避免"调用者指定收款地址"的越权面
+     * @notice Unattended distribution: anyone may call, the full balance goes to treasury
+     * @dev No parameters, so there is no "caller picks the recipient" surface
      */
     function autoDistributeFee() external nonReentrant returns (uint256 amount) {
         if (treasury == address(0)) revert TreasuryNotSet();
         amount = collateral.balanceOf(address(this));
-        // 纯早退守卫：等于 0 才是"无事可做"，比较结果不影响任何状态分支，也无法被构造获利
+        // pure early exit: only zero means nothing to do; the comparison cannot steer state or be gamed
         // slither-disable-next-line incorrect-equality
         if (amount == 0) revert NoFeesToDistribute();
 
@@ -80,7 +80,7 @@ contract ProtocolFeeVault is Ownable2Step, ReentrancyGuard {
         emit FeeDistributed(msg.sender, treasury, amount);
     }
 
-    /// @notice 当前待分发金额
+    /// @notice amount currently pending distribution
     function pendingFees() external view returns (uint256) {
         return collateral.balanceOf(address(this));
     }

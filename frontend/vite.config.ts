@@ -6,14 +6,14 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      // 前端直接复用工作区里的 SDK，不复制一份（单一事实来源）
+      // Reuse the workspace SDK in place; never copy it (single source of truth)
       "@sdk": resolve(__dirname, "../sdk/CentralPredictionSDK.ts"),
     },
   },
   server: {
     port: 5173,
     host: "0.0.0.0",
-    // SDK 在项目父目录，需要放行
+    // The SDK lives in the parent directory, so it must be allowed
     fs: { allow: [resolve(__dirname), resolve(__dirname, "..")] },
   },
   build: { outDir: "dist", sourcemap: false, target: "es2020" },

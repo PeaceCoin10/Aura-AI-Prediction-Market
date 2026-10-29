@@ -8,6 +8,7 @@ import { Countdown } from "./ui";
 import { AIInsights } from "./AIInsights";
 import { PaperPanel } from "./PaperPanel";
 import { ShareButton } from "./ShareButton";
+import { TelegramShare } from "./TelegramShare";
 import { useMode } from "../lib/mode";
 import { useT } from "../lib/i18n";
 
@@ -59,6 +60,7 @@ export function MarketDetail({
               {market.question || t.trade.market.untitled}
             </h2>
           </div>
+          <TelegramShare marketId={market.marketId} question={market.question ?? market.marketId} />
           <ShareButton
             input={{
               question: market.question ?? t.trade.market.shareFallbackQuestion,

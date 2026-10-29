@@ -39,3 +39,19 @@ export const MAX_IMPACT_BPS = 500n;
 export const IMPACT_WARN_BPS = 400n;
 
 export const CATEGORIES = ["crypto", "macro", "sports", "tech", "politics", "general"] as const;
+
+/**
+ * ReferralLedger: accrues and pays affiliate rebates (20% of the 1.5% trading fee).
+ * Unset until the ledger is deployed for this chain — the affiliate panel then shows accrual
+ * without offering a claim button, instead of pretending a payout exists.
+ */
+export const REFERRAL_LEDGER = (import.meta.env.VITE_REFERRAL_LEDGER ?? "") as `0x${string}` | "";
+
+export function hasReferralLedger(): boolean {
+  return /^0x[0-9a-fA-F]{40}$/.test(REFERRAL_LEDGER);
+}
+
+/** Share of the trading fee paid to the referrer, mirrors ReferralLedger.rebateBps() */
+export const REBATE_SHARE = 0.2;
+/** Protocol trading fee, mirrors CentralPredictionEngine.TRADE_FEE_BPS */
+export const TRADE_FEE = 0.015;

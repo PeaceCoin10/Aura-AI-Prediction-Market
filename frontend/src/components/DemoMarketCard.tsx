@@ -14,6 +14,7 @@ import { useLivePool } from "../lib/demoLive";
 import { brainInsight, localInsight, refreshInsights, type Insight, type InsightTone } from "../lib/insights";
 import { format, useT } from "../lib/i18n";
 import { MarketArt } from "./MarketArt";
+import { TelegramShare } from "./TelegramShare";
 
 const CAT_STYLE: Record<string, string> = {
   crypto: "border-amber-400/30 bg-amber-400/10 text-amber-300",
@@ -211,6 +212,9 @@ export function DemoMarketCard({ market, onOpen }: { market: DemoMarket; onOpen:
 
       <div className="flex items-center justify-between border-t border-white/5 pt-2">
         <span className="text-[10px] text-slate-600">{t.paper.card.tickNote}</span>
+        <div className="absolute bottom-3 left-3">
+          <TelegramShare marketId={market.id} question={market.question} />
+        </div>
         <ShareButton
           compact
           input={{

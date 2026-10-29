@@ -1,16 +1,18 @@
 /**
- * CentralPredictionSDK 单元测试
+ * CentralPredictionSDK unit tests
  *
- * 运行：cd sdk && npm test        （或 npx tsc -p tsconfig.json && node dist/CentralPredictionSDK.test.js）
+ * Run: cd sdk && npm test        (or npx tsc -p tsconfig.json && node dist/CentralPredictionSDK.test.js)
  *
- * 两层验证：
- *   1) **calldata 逐字节对齐**：SDK 手工编码的结果，直接跟 `cast calldata`（Solidity 自己的编码器）比对，
- *      任何一个字节不同就算失败。选择器表也逐条跟 `cast sig` 比对 —— 不信任手抄的常量。
- *   2) **预检与错误映射**：用 MockTransport 造出各种链上状态（未到时间、争议期、暂停、越权…），
- *      断言 SDK 在本地就拦下来，以及链上 revert data → 中文文案的映射。
+ * Two layers of verification:
+ *   1) **Byte-exact calldata**: every hand-rolled encoding is diffed against `cast calldata` (Solidity's
+ *      own encoder); one differing byte fails the test. Selector tables are checked against `cast sig` the
+ *      same way — hand-copied constants are never trusted.
+ *   2) **Preflight and error mapping**: MockTransport manufactures on-chain states (too early, dispute
+ *      window, paused, unauthorized...), asserting that the SDK blocks locally and that revert data maps
+ *      to the English message attached to each error code.
  *
- * 离线定价用的是**真链数据**生成的夹具（anvil 上部署真合约、seed 10,000 USDC 后实测），
- * 生成命令见文件末尾注释。
+ * Offline pricing uses fixtures generated from **real chain data** (a real contract deployed on anvil with
+ * 10,000 USDC of seeded liquidity, then measured); the generation commands are noted at the end of the file.
  */
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
@@ -49,7 +51,7 @@ import {
   type Transport,
 } from "./CentralPredictionSDK";
 
-/* ------------------------------- 测试运行器 ------------------------------- */
+/* ------------------------------- Test runner ------------------------------- */
 
 const cases: Array<[string, () => void | Promise<void>]> = [];
 function test(name: string, fn: () => void | Promise<void>): void {
@@ -57,36 +59,36 @@ function test(name: string, fn: () => void | Promise<void>): void {
 }
 
 function eq(actual: unknown, expected: unknown, what: string): void {
-  assert.deepEqual(actual, expected, `${what}: 期望 ${String(expected)}，实际 ${String(actual)}`);
+  assert.deepEqual(actual, expected, `${what}: expected ${String(expected)}, got ${String(actual)}`);
 }
 
 async function expectThrow(fn: () => Promise<unknown>, code: string, contains?: string): Promise<SdkError> {
   try {
     await fn();
   } catch (err) {
-    assert.ok(err instanceof SdkError, `期望 SdkError，实际 ${String(err)}`);
+    assert.ok(err instanceof SdkError, `expected an SdkError, got ${String(err)}`);
     const e = err as SdkError;
-    eq(e.code, code, "错误码");
-    if (contains) assert.ok(e.message.includes(contains), `文案应包含「${contains}」，实际「${e.message}」`);
+    eq(e.code, code, "error code");
+    if (contains) assert.ok(e.message.includes(contains), `message should contain "${contains}", got "${e.message}"`);
     return e;
   }
-  throw new Error(`期望抛出 ${code}，但调用成功了`);
+  throw new Error(`expected ${code} to be thrown, but the call succeeded`);
 }
 
-/* ------------------------------- cast 作为基准 ------------------------------- */
+/* ------------------------------- cast as the reference ------------------------------- */
 
 const CAST_ENV = { ...process.env, PATH: `/opt/foundry:${process.env.PATH ?? ""}` };
 
 function cast(args: string[]): string {
   const r = spawnSync("cast", args, { encoding: "utf8", env: CAST_ENV });
-  if (r.status !== 0) throw new Error(`cast ${args.join(" ")} 失败：${r.stderr || r.stdout}`);
+  if (r.status !== 0) throw new Error(`cast ${args.join(" ")} failed: ${r.stderr || r.stdout}`);
   return r.stdout.trim();
 }
 
 const castCalldata = (sig: string, args: string[]): Hex => cast(["calldata", sig, ...args]) as Hex;
 const castSig = (sig: string): Hex => cast(["sig", sig]) as Hex;
 
-/* ------------------------------- Mock 链 ------------------------------- */
+/* ------------------------------- Mock chain ------------------------------- */
 
 const ENGINE = "0x00000000000000000000000000000000000e0e0e" as Address;
 const ACCOUNT = "0x00000000000000000000000000000000000acc01" as Address;
@@ -113,7 +115,7 @@ interface MockState {
   yesOf: bigint;
   noOf: bigint;
   nowTs: bigint;
-  quoteSkew: bigint; // 故意让链上报价与本地算的不一致（测试模型漂移拦截）
+  quoteSkew: bigint; // deliberately skews the on-chain quote so drift detection can be exercised
 }
 
 function baseState(): MockState {
@@ -145,7 +147,7 @@ function words(...vals: (bigint | string)[]): Hex {
   return ("0x" + vals.map((v) => (typeof v === "bigint" ? uintWord(v) : v)).join("")) as Hex;
 }
 
-/** ABI 编码一个 string 返回值（offset=32 / len / UTF-8 bytes） */
+/** ABI-encode a string return value (offset=32 / len / UTF-8 bytes) */
 function stringWord(text: string): Hex {
   const hex = Buffer.from(text, "utf8").toString("hex");
   const body = hex.padEnd(Math.ceil(hex.length / 64) * 64, "0");
@@ -219,7 +221,7 @@ function makeTransport(state: MockState): Transport & { calls: string[] } {
         case SEL.marketIds:
           return words("11".repeat(32));
         case SEL.marketQuestion:
-          return stringWord("BTC 能否在 24 小时内突破 82,000？");
+          return stringWord("Will BTC break 82,000 within 24 hours?");
         case SEL.marketCategory:
           return stringWord("crypto");
         case SEL.priceYes:
@@ -241,7 +243,7 @@ function makeTransport(state: MockState): Transport & { calls: string[] } {
           return words(previewSellOffline({ yesReserve: state.yesReserve, noReserve: state.noReserve }, outcome as 0 | 1, sharesIn) + state.quoteSkew);
         }
         default:
-          throw new Error(`MockTransport 未实现的选择器 ${sel}`);
+          throw new Error(`MockTransport has no handler for selector ${sel}`);
       }
     },
   };
@@ -252,7 +254,7 @@ function sdkFor(state: MockState, account: Address | undefined = ACCOUNT): Centr
   return new CentralPredictionSDK(makeTransport(state), { engine: ENGINE, chainId: 8453, account });
 }
 
-/* ============================ A. 选择器与 ABI 对齐 ============================ */
+/* ============================ A. Selectors and ABI alignment ============================ */
 
 const SIG_MAP: Record<keyof typeof SEL, string> = {
   createMarket: "createMarket(bytes32,string,uint256)",
@@ -290,13 +292,13 @@ const SIG_MAP: Record<keyof typeof SEL, string> = {
   settleFeeBps: "SETTLE_FEE_BPS()",
 };
 
-test("选择器表 28 条全部与 cast sig 一致（编译器 ABI）", () => {
+test("all 28 selectors match cast sig (compiler ABI)", () => {
   for (const [key, sig] of Object.entries(SIG_MAP)) {
     eq(SEL[key as keyof typeof SEL], castSig(sig), `${key} ${sig}`);
   }
 });
 
-test("错误选择器表与 cast sig 一致（36 个自定义错误全量比对）", () => {
+test("error selector table matches cast sig (all 36 custom errors)", () => {
   const errs: Array<[string, string]> = [
     ["0x5688ffb3", "BelowMinBet()"],
     ["0xb8ab88d4", "AboveMaxBet()"],
@@ -335,23 +337,23 @@ test("错误选择器表与 cast sig 一致（36 个自定义错误全量比对�
   ];
   for (const [sel, sig] of errs) {
     eq(sel, castSig(sig), `${sig}`);
-    assert.ok(ERROR_SELECTORS[sel], `${sig} 未收录进 ERROR_SELECTORS`);
+    assert.ok(ERROR_SELECTORS[sel], `${sig} is missing from ERROR_SELECTORS`);
   }
-  // 用户给的三条必须逐字命中
-  eq(ERROR_SELECTORS["0x5688ffb3"]?.code, "chain/BELOW_MIN_BET", "BelowMinBet 映射");
-  eq(ERROR_SELECTORS["0xb8ab88d4"]?.code, "chain/ABOVE_MAX_BET", "AboveMaxBet 映射");
-  eq(ERROR_SELECTORS["0x22410594"]?.code, "chain/IMPACT_TOO_HIGH", "ImpactTooHigh 映射");
+  // The three customer-supplied entries must hit exactly
+  eq(ERROR_SELECTORS["0x5688ffb3"]?.code, "chain/BELOW_MIN_BET", "BelowMinBet mapping");
+  eq(ERROR_SELECTORS["0xb8ab88d4"]?.code, "chain/ABOVE_MAX_BET", "AboveMaxBet mapping");
+  eq(ERROR_SELECTORS["0x22410594"]?.code, "chain/IMPACT_TOO_HIGH", "ImpactTooHigh mapping");
 });
 
-/* ============================ B. calldata 逐字节对齐 ============================ */
+/* ============================ B. Byte-exact calldata ============================ */
 
-const Q = "BTC 能否在 24 小时内突破 82,000？"; // 含中文，验证 UTF-8 编码
-/** 建盘用的结算时间：夹具里 nowTs = 1_800_000_000，取「+24 小时」落在合法区间内 */
+const Q = "Will BTC break 82,000 within 24 hours?"; // non-ASCII, exercises the UTF-8 path
+/** Resolution time used for market creation: the fixture's nowTs is 1_800_000_000, so +24h lands in range */
 const RT = 1_800_000_000n + 86_400n;
 
-test("buildCreateMarket(3 参) → createMarket(bytes32,string,uint256) calldata 与 cast 完全一致", async () => {
+test("buildCreateMarket (3 args) → createMarket(bytes32,string,uint256) calldata is byte-identical to cast", async () => {
   const state = baseState();
-  state.exists = false; // 建盘前盘口必然还不存在
+  state.exists = false; // the market cannot exist before it is created
   const sdk = sdkFor(state);
   const plan = await sdk.buildCreateMarket({ marketId: MARKET, question: Q, resolutionTime: RT });
   eq(plan.method, "createMarket", "method");
@@ -360,7 +362,7 @@ test("buildCreateMarket(3 参) → createMarket(bytes32,string,uint256) calldata
   eq(plan.value, "0x0", "value");
 });
 
-test("buildCreateMarket(带 meta.category) → createMarketWithMeta calldata 与 cast 完全一致", async () => {
+test("buildCreateMarket (with meta.category) → createMarketWithMeta calldata is byte-identical to cast", async () => {
   const fresh = baseState();
   fresh.exists = false;
   const sdk = sdkFor(fresh);
@@ -378,16 +380,16 @@ test("buildCreateMarket(带 meta.category) → createMarketWithMeta calldata 与
   );
 });
 
-test("buildBuyShares → buyShares calldata 与 cast 完全一致", async () => {
+test("buildBuyShares → buyShares calldata is byte-identical to cast", async () => {
   const sdk = sdkFor(baseState());
   const plan = await sdk.buildBuyShares({ marketId: MARKET, outcome: OUTCOME_YES, amountIn: 100_000_000n, slippageBps: 100 });
   const minSharesOut = String(plan.meta.minSharesOut);
   eq(plan.data, castCalldata("buyShares(bytes32,uint8,uint256,uint256)", [MARKET, "1", "100000000", minSharesOut]), "calldata");
-  // 100 bps = 1%，报价 196,039,238 → 保护价 194,078,845
+  // 100 bps = 1%: quote 196,039,238 → floor 194,078,845
   eq(minSharesOut, "194078845", "minSharesOut");
 });
 
-test("buildSellShares → sellShares calldata 与 cast 完全一致", async () => {
+test("buildSellShares → sellShares calldata is byte-identical to cast", async () => {
   const state = baseState();
   state.yesOf = 1_000_000_000n;
   const sdk = sdkFor(state);
@@ -395,7 +397,7 @@ test("buildSellShares → sellShares calldata 与 cast 完全一致", async () =
   eq(plan.data, castCalldata("sellShares(bytes32,uint8,uint256,uint256)", [MARKET, "1", "1000000000", String(plan.meta.minAmountOut)]), "calldata");
 });
 
-test("buildRedeem → redeem calldata 与 cast 完全一致", async () => {
+test("buildRedeem → redeem calldata is byte-identical to cast", async () => {
   const state = baseState();
   state.resolved = true;
   state.finalized = true;
@@ -406,7 +408,7 @@ test("buildRedeem → redeem calldata 与 cast 完全一致", async () => {
   eq(plan.data, castCalldata("redeem(bytes32)", [MARKET]), "calldata");
 });
 
-test("buildResolveMarket → resolveMarket calldata 与 cast 完全一致", async () => {
+test("buildResolveMarket → resolveMarket calldata is byte-identical to cast", async () => {
   const state = baseState();
   state.nowTs = 2_000_000_001n;
   const sdk = sdkFor(state);
@@ -414,7 +416,7 @@ test("buildResolveMarket → resolveMarket calldata 与 cast 完全一致", asyn
   eq(plan.data, castCalldata("resolveMarket(bytes32,uint8)", [MARKET, "0"]), "calldata");
 });
 
-test("buildOverrideResolution → overrideResolution calldata 与 cast 完全一致", async () => {
+test("buildOverrideResolution → overrideResolution calldata is byte-identical to cast", async () => {
   const state = baseState();
   state.resolved = true;
   state.disputing = true;
@@ -424,9 +426,9 @@ test("buildOverrideResolution → overrideResolution calldata 与 cast 完全一
   eq(plan.data, castCalldata("overrideResolution(bytes32,uint8)", [MARKET, "2"]), "calldata");
 });
 
-/* ============================ C. 防夹与保护价强校验 ============================ */
+/* ============================ C. Anti-sandwich and protection-floor checks ============================ */
 
-test("minSharesOut=0 直接拒（禁止裸奔）", async () => {
+test("minSharesOut=0 is rejected outright (no unprotected orders)", async () => {
   const sdk = sdkFor(baseState());
   await expectThrow(
     () => sdk.buildBuyShares({ marketId: MARKET, outcome: 1, amountIn: 100_000_000n, minSharesOut: 0n }),
@@ -435,7 +437,7 @@ test("minSharesOut=0 直接拒（禁止裸奔）", async () => {
   );
 });
 
-test("既不传 minSharesOut 也不传 slippageBps 直接拒", async () => {
+test("omitting both minSharesOut and slippageBps is rejected", async () => {
   const sdk = sdkFor(baseState());
   await expectThrow(
     () => sdk.buildBuyShares({ marketId: MARKET, outcome: 1, amountIn: 100_000_000n }),
@@ -443,7 +445,7 @@ test("既不传 minSharesOut 也不传 slippageBps 直接拒", async () => {
   );
 });
 
-test("minSharesOut 高于报价直接拒（这笔必然失败）", async () => {
+test("minSharesOut above the quote is rejected (the trade cannot fill)", async () => {
   const sdk = sdkFor(baseState());
   await expectThrow(
     () => sdk.buildBuyShares({ marketId: MARKET, outcome: 1, amountIn: 100_000_000n, minSharesOut: 999_999_999n }),
@@ -451,7 +453,7 @@ test("minSharesOut 高于报价直接拒（这笔必然失败）", async () => {
   );
 });
 
-test("minSharesOut 低于报价 95% 直接拒（容差过松=没保护）", async () => {
+test("minSharesOut below 95% of the quote is rejected (loose tolerance means no protection)", async () => {
   const sdk = sdkFor(baseState());
   await expectThrow(
     () => sdk.buildBuyShares({ marketId: MARKET, outcome: 1, amountIn: 100_000_000n, minSharesOut: 1n }),
@@ -459,7 +461,7 @@ test("minSharesOut 低于报价 95% 直接拒（容差过松=没保护）", asyn
   );
 });
 
-test("滑点容差超范围（0 / 501 bps）拒", async () => {
+test("out-of-range slippage (0 / 501 bps) is rejected", async () => {
   const sdk = sdkFor(baseState());
   await expectThrow(
     () => sdk.buildBuyShares({ marketId: MARKET, outcome: 1, amountIn: 100_000_000n, slippageBps: 0 }),
@@ -471,44 +473,44 @@ test("滑点容差超范围（0 / 501 bps）拒", async () => {
   );
 });
 
-test("同时给 minSharesOut 与 slippageBps 时取更严格的那个", async () => {
+test("supplying both minSharesOut and slippageBps picks the stricter one", async () => {
   const sdk = sdkFor(baseState());
   const plan = await sdk.buildBuyShares({
     marketId: MARKET,
     outcome: 1,
     amountIn: 100_000_000n,
-    slippageBps: 500, // 保护价 = 报价 × 95% = 186,237,276
-    minSharesOut: 190_000_000n, // 更严格
+    slippageBps: 500, // floor = quote × 95% = 186,237,276
+    minSharesOut: 190_000_000n, // the stricter of the two
   });
-  eq(plan.meta.minSharesOut, "190000000", "取更严格值");
+  eq(plan.meta.minSharesOut, "190000000", "stricter value wins");
 });
 
-test("confirmQuoteStillValid：报价没变 → 通过", async () => {
+test("confirmQuoteStillValid: quote unchanged → passes", async () => {
   const sdk = sdkFor(baseState());
   const plan = await sdk.buildBuyShares({ marketId: MARKET, outcome: 1, amountIn: 100_000_000n, slippageBps: 100 });
   await sdk.confirmQuoteStillValid(plan, 60_000);
 });
 
-test("confirmQuoteStillValid：池子被砸、报价跌穿保护价 → 中止", async () => {
+test("confirmQuoteStillValid: pool dumped and quote falls through the floor → aborts", async () => {
   const state = baseState();
   const sdk = sdkFor(state);
   const plan = await sdk.buildBuyShares({ marketId: MARKET, outcome: 1, amountIn: 100_000_000n, slippageBps: 100 });
-  // 攻击者把小池子砸歪：yesReserve 大幅下降
+  // The attacker dumps into the small pool: yesReserve collapses
   state.yesReserve = 1_000_000_000n;
   state.noReserve = 19_000_000_000n;
-  await expectThrow(() => sdk.confirmQuoteStillValid(plan, 60_000), "chain/SLIPPAGE_EXCEEDED", "价格已变动");
+  await expectThrow(() => sdk.confirmQuoteStillValid(plan, 60_000), "chain/SLIPPAGE_EXCEEDED", "Price moved");
 });
 
-test("confirmQuoteStillValid：报价太旧 → 中止", async () => {
+test("confirmQuoteStillValid: stale quote → aborts", async () => {
   const sdk = sdkFor(baseState());
   const plan = await sdk.buildBuyShares({ marketId: MARKET, outcome: 1, amountIn: 100_000_000n, slippageBps: 100 });
   await new Promise((r) => setTimeout(r, 5));
-  await expectThrow(() => sdk.confirmQuoteStillValid(plan, 1), "local/SLIPPAGE_TOO_LOOSE", "报价已过期");
+  await expectThrow(() => sdk.confirmQuoteStillValid(plan, 1), "local/SLIPPAGE_TOO_LOOSE", "Quote expired");
 });
 
-/* ============================ D. preflight 各种链上状态 ============================ */
+/* ============================ D. Preflight across on-chain states ============================ */
 
-test("盘口不存在", async () => {
+test("market does not exist", async () => {
   const state = baseState();
   state.exists = false;
   await expectThrow(
@@ -517,14 +519,14 @@ test("盘口不存在", async () => {
   );
 });
 
-test("低于最低下注（5 USDC）", async () => {
+test("below the minimum bet (5 USDC)", async () => {
   await expectThrow(
     () => sdkFor(baseState()).buildBuyShares({ marketId: MARKET, outcome: 1, amountIn: 4_999_999n, slippageBps: 100 }),
     "chain/BELOW_MIN_BET",
   );
 });
 
-test("高于单笔上限（10,000 USDC）", async () => {
+test("above the per-trade cap (10,000 USDC)", async () => {
   const state = baseState();
   state.yesReserve = 10_000_000_000_000n;
   state.noReserve = 10_000_000_000_000n;
@@ -534,15 +536,15 @@ test("高于单笔上限（10,000 USDC）", async () => {
   );
 });
 
-test("价格冲击超过池子 5%", async () => {
-  // 池深 20,000 USDC → 上限 1,000 USDC，下 1,001 USDC 应被拦
+test("price impact above 5% of the pool", async () => {
+  // Depth 20,000 USDC → cap 1,000 USDC, so a 1,001 USDC order must be blocked
   await expectThrow(
     () => sdkFor(baseState()).buildBuyShares({ marketId: MARKET, outcome: 1, amountIn: 1_001_000_000n, slippageBps: 100 }),
     "chain/IMPACT_TOO_HIGH",
   );
 });
 
-test("已过结算时间 → 交易关闭", async () => {
+test("past resolution time → trading closed", async () => {
   const state = baseState();
   state.resolutionTime = state.nowTs - 1n;
   await expectThrow(
@@ -551,7 +553,7 @@ test("已过结算时间 → 交易关闭", async () => {
   );
 });
 
-test("已结算 / 暂停 都被拦", async () => {
+test("resolved / paused are both blocked", async () => {
   const resolved = baseState();
   resolved.resolved = true;
   await expectThrow(
@@ -567,7 +569,7 @@ test("已结算 / 暂停 都被拦", async () => {
   );
 });
 
-test("本地报价与链上不一致 → 拦（ABI/模型漂移）", async () => {
+test("local quote disagreeing with the chain is blocked (ABI/model drift)", async () => {
   const state = baseState();
   state.quoteSkew = 1n;
   await expectThrow(
@@ -576,7 +578,7 @@ test("本地报价与链上不一致 → 拦（ABI/模型漂移）", async () =>
   );
 });
 
-test("卖出超过持仓", async () => {
+test("selling more than the position holds", async () => {
   const state = baseState();
   state.yesOf = 100n;
   await expectThrow(
@@ -585,12 +587,12 @@ test("卖出超过持仓", async () => {
   );
 });
 
-test("建盘：题目太短 / 分类太长 / 结算时间越界", async () => {
+test("create market: question too short / category too long / resolution time out of range", async () => {
   const fresh = baseState();
   fresh.exists = false;
   const sdk = sdkFor(fresh);
   await expectThrow(
-    () => sdk.buildCreateMarket({ marketId: MARKET, question: "短", resolutionTime: RT }),
+    () => sdk.buildCreateMarket({ marketId: MARKET, question: "Shrt", resolutionTime: RT }),
     "local/QUESTION_LENGTH",
   );
   await expectThrow(
@@ -613,7 +615,7 @@ test("建盘：题目太短 / 分类太长 / 结算时间越界", async () => {
   );
 });
 
-test("建盘：盘口已存在 / 无建盘权限", async () => {
+test("create market: market exists / no creation permission", async () => {
   const exists = baseState();
   await expectThrow(
     () => sdkFor(exists).buildCreateMarket({ marketId: MARKET, question: Q, resolutionTime: RT }),
@@ -628,7 +630,7 @@ test("建盘：盘口已存在 / 无建盘权限", async () => {
   );
 });
 
-test("裁决：未到时间 / 无权限 / 已结算", async () => {
+test("resolve: too early / no permission / already resolved", async () => {
   const early = baseState();
   early.nowTs = 1_900_000_000n;
   await expectThrow(
@@ -647,17 +649,17 @@ test("裁决：未到时间 / 无权限 / 已结算", async () => {
   await expectThrow(() => sdkFor(done).buildResolveMarket({ marketId: MARKET, outcome: 1 }), "local/MARKET_RESOLVED");
 });
 
-test("提现：争议期内被拦（并给出窗口截止时间）", async () => {
+test("redeem: blocked inside the dispute window (the window end is reported)", async () => {
   const state = baseState();
   state.resolved = true;
   state.disputing = true;
   state.outcome = 1;
   state.yesOf = 1_000n;
-  const err = await expectThrow(() => sdkFor(state).buildRedeem({ marketId: MARKET }), "chain/DISPUTE_WINDOW_OPEN", "争议期");
-  assert.ok(err.message.includes("T"), "文案里应带争议期截止时间");
+  const err = await expectThrow(() => sdkFor(state).buildRedeem({ marketId: MARKET }), "chain/DISPUTE_WINDOW_OPEN", "dispute window");
+  assert.ok(err.message.includes("T"), "message should carry the dispute-window deadline");
 });
 
-test("提现：未结算 / 无持仓 / 暂停（未过 7 天）都被拦", async () => {
+test("redeem: not resolved / nothing held / paused (under 7 days) are all blocked", async () => {
   await expectThrow(() => sdkFor(baseState()).buildRedeem({ marketId: MARKET }), "local/MARKET_NOT_RESOLVED");
 
   const empty = baseState();
@@ -670,11 +672,11 @@ test("提现：未结算 / 无持仓 / 暂停（未过 7 天）都被拦", async
   paused.finalized = true;
   paused.paused = true;
   paused.yesOf = 1n;
-  paused.resolutionTime = paused.nowTs - 3600n; // 还没到「结算+7天」，暂停有效
+  paused.resolutionTime = paused.nowTs - 3600n; // not yet resolution+7d, so the pause still bites
   await expectThrow(() => sdkFor(paused).buildRedeem({ marketId: MARKET }), "local/MARKET_PAUSED");
 });
 
-test("提现：暂停但已过「结算 + 7 天」→ 与合约一致，放行", async () => {
+test("redeem: paused but past resolution + 7 days → allowed, matching the contract", async () => {
   const state = baseState();
   state.resolved = true;
   state.finalized = true;
@@ -685,7 +687,7 @@ test("提现：暂停但已过「结算 + 7 天」→ 与合约一致，放行",
   eq(plan.method, "redeem", "method");
 });
 
-test("改判：非 admin / 已终结 / 非争议期 / 同结果 都被拦", async () => {
+test("override: non-admin / finalized / outside the dispute window / same outcome are all blocked", async () => {
   const notAdmin = baseState();
   notAdmin.resolved = true;
   notAdmin.disputing = true;
@@ -720,9 +722,9 @@ test("改判：非 admin / 已终结 / 非争议期 / 同结果 都被拦", asyn
   );
 });
 
-/* ============================ E. 错误解码 ============================ */
+/* ============================ E. Error decoding ============================ */
 
-test("decodeRevert：你给的三条 selector 映射成中文", () => {
+test("decodeRevert: the three customer-supplied selectors map to English messages", () => {
   const e1 = decodeRevert({ data: "0x5688ffb3" });
   eq(e1.code, "chain/BELOW_MIN_BET", "BelowMinBet");
   assert.ok(e1.message.includes("5 USDC"));
@@ -736,22 +738,22 @@ test("decodeRevert：你给的三条 selector 映射成中文", () => {
   assert.ok(e3.message.includes("5%"));
 });
 
-test("decodeRevert：DisputeWindowOpen / 权限类 都映射成中文", () => {
+test("decodeRevert: DisputeWindowOpen and the role errors map to English messages", () => {
   eq(decodeRevert({ data: "0x87920b43" }).code, "chain/DISPUTE_WINDOW_OPEN", "DisputeWindowOpen");
   for (const sel of ["0x47bc7cc8", "0x80fee105", "0x47556579"]) {
     const e = decodeRevert({ data: sel });
-    eq(e.code, "chain/NOT_AUTHORIZED_ROLE", `权限错误 ${sel}`);
-    assert.ok(e.message.includes("权限"));
+    eq(e.code, "chain/NOT_AUTHORIZED_ROLE", `role error ${sel}`);
+    assert.ok(e.message.includes("not authorized"));
   }
 });
 
-test("decodeRevert：Error(string) 原样透出 / Panic 带 code / 未知 selector 兜底", () => {
+test("decodeRevert: Error(string) passes through / Panic carries its code / unknown selector falls back", () => {
   const reason = "insufficient allowance";
   const hex = Buffer.from(reason, "utf8").toString("hex").padEnd(64, "0");
   const data = "0x08c379a0" + uintWord(32n) + uintWord(BigInt(reason.length)) + hex;
   const e = decodeRevert({ data });
   eq(e.code, "chain/REVERT_STRING", "Error(string)");
-  eq(e.message, reason, "透出原始 reason");
+  eq(e.message, reason, "surfaces the raw reason");
 
   const p = decodeRevert({ data: "0x4e487b71" + uintWord(0x11n) });
   eq(p.code, "chain/PANIC", "panic");
@@ -762,26 +764,26 @@ test("decodeRevert：Error(string) 原样透出 / Panic 带 code / 未知 select
   assert.ok(u.message.includes("0xdeadbeef"));
 
   const bare = decodeRevert(new Error("execution reverted"));
-  eq(bare.code, "chain/UNKNOWN", "无 data");
+  eq(bare.code, "chain/UNKNOWN", "no data");
 });
 
-test("decodeRevert：嵌套的 provider 错误也能扒出 revert data", () => {
+test("decodeRevert: digs revert data out of a nested provider error", () => {
   const nested = { error: { data: { data: "0x87920b43" } } };
-  eq(decodeRevert(nested).code, "chain/DISPUTE_WINDOW_OPEN", "嵌套 error.data.data");
+  eq(decodeRevert(nested).code, "chain/DISPUTE_WINDOW_OPEN", "nested error.data.data");
 });
 
-/* ============================ F. 离线定价（真链夹具） ============================ */
+/* ============================ F. Offline pricing (real-chain fixtures) ============================ */
 
 /**
- * 夹具来源：anvil 上部署真合约、createMarket + seedLiquidity(10,000 USDC) 后实测：
+ * Fixture source: a real contract deployed on anvil, then createMarket + seedLiquidity(10,000 USDC):
  *   previewBuy(YES, 100e6)  = 196039238
  *   previewBuy(NO,  100e6)  = 196039238
  *   previewSell(YES, 1000e6)= 479539473
- * 再 buy YES 100e6 之后（yesReserve=9902460762, noReserve=10098500000）：
+ * then after buying 100e6 of YES (yesReserve=9902460762, noReserve=10098500000):
  *   previewBuy(YES, 50e6)   = 97309539
  *   previewSell(YES, 50e6)  = 24835806
  */
-test("previewBuyOffline 与真链 previewBuy 完全一致", () => {
+test("previewBuyOffline matches on-chain previewBuy exactly", () => {
   const pool = { yesReserve: 10_000_000_000n, noReserve: 10_000_000_000n };
   eq(previewBuyOffline(pool, OUTCOME_YES, 100_000_000n), 196_039_238n, "previewBuy(YES,100)");
   eq(previewBuyOffline(pool, OUTCOME_NO, 100_000_000n), 196_039_238n, "previewBuy(NO,100)");
@@ -790,7 +792,7 @@ test("previewBuyOffline 与真链 previewBuy 完全一致", () => {
   eq(previewBuyOffline(after, OUTCOME_YES, 50_000_000n), 97_309_539n, "previewBuy(YES,50) after");
 });
 
-test("previewSellOffline 与真链 previewSell 完全一致", () => {
+test("previewSellOffline matches on-chain previewSell exactly", () => {
   const pool = { yesReserve: 10_000_000_000n, noReserve: 10_000_000_000n };
   eq(previewSellOffline(pool, OUTCOME_YES, 1_000_000_000n), 479_539_473n, "previewSell(YES,1000)");
 
@@ -798,44 +800,44 @@ test("previewSellOffline 与真链 previewSell 完全一致", () => {
   eq(previewSellOffline(after, OUTCOME_YES, 50_000_000n), 24_835_806n, "previewSell(YES,50) after");
 });
 
-test("买一卖一必亏（手续费 + 冲击），不存在白套利", () => {
+test("buy-then-sell always loses (fee + impact); there is no free arbitrage", () => {
   const pool = { yesReserve: 10_000_000_000n, noReserve: 10_000_000_000n };
   const amountIn = 100_000_000n;
   const shares = previewBuyOffline(pool, OUTCOME_YES, amountIn);
-  // 买入后的池子
+  // Pool right after the buy
   const net = amountIn - (amountIn * 150n + 9999n) / 10_000n;
   const newYes = 10_000_000_000n - (shares - net);
   const after = { yesReserve: newYes, noReserve: 10_000_000_000n + net };
   const back = previewSellOffline(after, OUTCOME_YES, shares);
-  assert.ok(back < amountIn, `卖出应少于本金：${back} < ${amountIn}`);
+  assert.ok(back < amountIn, `selling back must return less than principal: ${back} < ${amountIn}`);
 });
 
-test("priceYes 初始 50%，买 YES 后上升（价格=概率）", () => {
+test("priceYes starts at 50% and rises after buying YES (price = probability)", () => {
   const pool = { yesReserve: 10_000_000_000n, noReserve: 10_000_000_000n };
-  eq(priceYesOffline(pool), 500_000_000_000_000_000n, "初始 0.5");
+  eq(priceYesOffline(pool), 500_000_000_000_000_000n, "initial 0.5");
   const after = { yesReserve: 9_902_460_762n, noReserve: 10_098_500_000n };
-  assert.ok(priceYesOffline(after) > 500_000_000_000_000_000n, "买 YES 后价格上升");
+  assert.ok(priceYesOffline(after) > 500_000_000_000_000_000n, "price rises after buying YES");
 });
 
-/* ============================ G. 小工具 ============================ */
+/* ============================ G. Utilities ============================ */
 
-test("formatUsdc / parseUsdc 往返", () => {
+test("formatUsdc / parseUsdc round-trip", () => {
   eq(formatUsdc(196_039_238n), "196.039238", "format");
-  eq(formatUsdc(5_000_000n), "5", "整数");
-  eq(formatUsdc(1n), "0.000001", "最小单位");
+  eq(formatUsdc(5_000_000n), "5", "whole number");
+  eq(formatUsdc(1n), "0.000001", "smallest unit");
   eq(parseUsdc("5"), 5_000_000n, "parse 5");
   eq(parseUsdc("10,000".replace(",", "")), 10_000_000_000n, "parse 10000");
-  assert.throws(() => parseUsdc("1.1234567"), SdkError, "超过 6 位小数应报错");
+  assert.throws(() => parseUsdc("1.1234567"), SdkError, "more than 6 decimals must throw");
 });
 
-test("构造 SDK：非法 engine 地址直接报错", () => {
+test("constructing the SDK: an invalid engine address throws", () => {
   assert.throws(
     () => new CentralPredictionSDK(makeTransport(baseState()), { engine: "0x1234" }),
     (err: unknown) => err instanceof SdkError && (err as SdkError).code === "local/NOT_CONNECTED",
   );
 });
 
-test("需要账户的操作在未配置 account 时报错", async () => {
+test("account-dependent actions throw when no account is configured", async () => {
   const sdk = new CentralPredictionSDK(makeTransport(baseState()), { engine: ENGINE });
   await expectThrow(
     () => sdk.buildBuyShares({ marketId: MARKET, outcome: 1, amountIn: 100_000_000n, slippageBps: 100 }),
@@ -844,64 +846,64 @@ test("需要账户的操作在未配置 account 时报错", async () => {
 });
 
 
-test("列表页读取：marketCount / marketIds / 题目 / 分类（中文 UTF-8）", async () => {
+test("list-page reads: marketCount / marketIds / question / category (non-ASCII UTF-8)", async () => {
   const sdk = sdkFor(baseState());
   eq(await sdk.marketCount(), 1, "marketCount");
   eq(await sdk.marketId(0), ("0x" + "11".repeat(32)) as Hex, "marketIds(0)");
-  eq(await sdk.marketQuestion(MARKET), "BTC 能否在 24 小时内突破 82,000？", "中文题目");
-  eq(await sdk.marketCategory(MARKET), "crypto", "分类");
+  eq(await sdk.marketQuestion(MARKET), "Will BTC break 82,000 within 24 hours?", "non-ASCII question");
+  eq(await sdk.marketCategory(MARKET), "crypto", "category");
 });
 
-test("列表页读取：priceYes / depthOf / isFinal / tradingOpen", async () => {
+test("list-page reads: priceYes / depthOf / isFinal / tradingOpen", async () => {
   const state = baseState();
   state.resolved = true;
   state.finalized = true;
   const sdk = sdkFor(state);
-  eq(await sdk.priceYes(MARKET), 500_000_000_000_000_000n, "价格 50%");
-  eq(await sdk.depthOf(MARKET), 20_000_000_000n, "池深");
-  eq(await sdk.isFinal(MARKET), true, "已终结");
-  eq(await sdk.tradingOpen(MARKET), false, "已结算 → 不可交易（与合约 tradingOpen 一致）");
+  eq(await sdk.priceYes(MARKET), 500_000_000_000_000_000n, "price 50%");
+  eq(await sdk.depthOf(MARKET), 20_000_000_000n, "depth");
+  eq(await sdk.isFinal(MARKET), true, "finalized");
+  eq(await sdk.tradingOpen(MARKET), false, "resolved → not tradeable (matches the contract's tradingOpen)");
 });
 
-test("decodeString 处理空串与超长中文", () => {
-  eq(decodeString(stringWord("")), "", "空串");
-  const long = "预".repeat(50);
-  eq(decodeString(stringWord(long)), long, "150 字节中文");
-  eq(decodeString("0x"), "", "无数据");
+test("decodeString handles empty and long multibyte payloads", () => {
+  eq(decodeString(stringWord("")), "", "empty string");
+  const long = "€".repeat(50);
+  eq(decodeString(stringWord(long)), long, "150 bytes of multibyte text");
+  eq(decodeString("0x"), "", "no data");
 });
 
-/* ============================ H. 滑点档位与冲击预警 ============================ */
+/* ============================ H. Slippage presets and impact warnings ============================ */
 
-test("滑点档位预设：0.5% / 1% / 3%，都在硬边界内", () => {
+test("slippage presets: 0.5% / 1% / 3%, all inside the hard bounds", () => {
   eq(SLIPPAGE_CONSERVATIVE, 50n, "CONSERVATIVE");
   eq(SLIPPAGE_NORMAL, 100n, "NORMAL");
   eq(SLIPPAGE_DEGEN, 300n, "DEGEN");
-  eq(IMPACT_WARN_BPS, 400n, "预警线 = 上限 80%");
+  eq(IMPACT_WARN_BPS, 400n, "warning line = 80% of the cap");
   for (const p of [SLIPPAGE_CONSERVATIVE, SLIPPAGE_NORMAL, SLIPPAGE_DEGEN]) {
-    assert.ok(p >= 1n && p <= 500n, `档位 ${p} 必须在 1~500 bps`);
+    assert.ok(p >= 1n && p <= 500n, `preset ${p} must be within 1..500 bps`);
   }
 });
 
-test("用 SLIPPAGE_NORMAL 下单：保护价 = 报价 × 99%", async () => {
+test("ordering with SLIPPAGE_NORMAL: floor = quote × 99%", async () => {
   const sdk = sdkFor(baseState());
   const plan = await sdk.buildBuyShares({ marketId: MARKET, outcome: OUTCOME_YES, amountIn: 100_000_000n, slippageBps: SLIPPAGE_NORMAL });
   const quote = BigInt(String(plan.meta.quote));
   eq(BigInt(String(plan.meta.minSharesOut)), (quote * 99n) / 100n, "minSharesOut");
-  eq(plan.warning, undefined, "100 USDC / 20,000 池 = 0.5% 冲击，不该预警");
+  eq(plan.warning, undefined, "100 USDC against a 20,000 pool = 0.5% impact, so no warning");
 });
 
-test("冲击接近 5% 上限（≥4%）→ 返回 warning='impact_near_limit'", async () => {
-  const sdk = sdkFor(baseState()); // 池深 20,000 USDC → 5% 上限 = 1,000 USDC
+test("impact near the 5% cap (≥4%) → warning='impact_near_limit'", async () => {
+  const sdk = sdkFor(baseState()); // depth 20,000 USDC → 5% cap = 1,000 USDC
   const plan = await sdk.buildBuyShares({ marketId: MARKET, outcome: OUTCOME_YES, amountIn: 900_000_000n, slippageBps: SLIPPAGE_CONSERVATIVE });
   eq(plan.meta.impactBps, "450", "900/20000 = 450 bps");
-  eq(plan.warning, "impact_near_limit", "应预警");
+  eq(plan.warning, "impact_near_limit", "warning expected");
 });
 
-test("冲击低于 4% 不预警；超过 5% 直接拒（预警不是豁免）", async () => {
+test("impact under 4% does not warn; over 5% is rejected outright (a warning is not an exemption)", async () => {
   const sdk = sdkFor(baseState());
   const ok = await sdk.buildBuyShares({ marketId: MARKET, outcome: OUTCOME_YES, amountIn: 790_000_000n, slippageBps: SLIPPAGE_DEGEN });
-  eq(ok.meta.impactBps, "395", "395 bps < 400 不预警");
-  eq(ok.warning, undefined, "无预警");
+  eq(ok.meta.impactBps, "395", "395 bps < 400, so no warning");
+  eq(ok.warning, undefined, "no warning");
 
   await expectThrow(
     () => sdk.buildBuyShares({ marketId: MARKET, outcome: OUTCOME_YES, amountIn: 1_001_000_000n, slippageBps: SLIPPAGE_DEGEN }),
@@ -909,15 +911,15 @@ test("冲击低于 4% 不预警；超过 5% 直接拒（预警不是豁免）", 
   );
 });
 
-test("卖出同样带冲击预警", async () => {
+test("sells carry the impact warning too", async () => {
   const state = baseState();
   state.yesOf = 900_000_000n;
   const plan = await sdkFor(state).buildSellShares({ marketId: MARKET, outcome: OUTCOME_YES, sharesIn: 900_000_000n, slippageBps: SLIPPAGE_CONSERVATIVE });
-  eq(plan.meta.impactBps, "450", "卖出冲击 bps");
-  eq(plan.warning, "impact_near_limit", "卖出也预警");
+  eq(plan.meta.impactBps, "450", "sell impact bps");
+  eq(plan.warning, "impact_near_limit", "sells warn too");
 });
 
-/* ============================ I. 事件解码 ============================ */
+/* ============================ I. Event decoding ============================ */
 
 const CORE_EVENTS: Array<[string, string]> = [
   ["MarketCreated", "MarketCreated(bytes32,address,string,string,uint256)"],
@@ -941,21 +943,21 @@ const CORE_EVENTS: Array<[string, string]> = [
   ["AdminTransferred", "AdminTransferred(address,address)"],
 ];
 
-test("19 个事件 topic0 全部与 cast keccak 一致", () => {
-  eq(Object.keys(EVENT_TOPICS).length, 19, "事件数量");
+test("all 19 event topic0 values match cast keccak", () => {
+  eq(Object.keys(EVENT_TOPICS).length, 19, "event count");
   for (const [name, sig] of CORE_EVENTS) {
     eq(EVENT_TOPICS[name as keyof typeof EVENT_TOPICS], cast(["keccak", sig]), `${name} topic0`);
   }
 });
 
-test("eventNameOf / eventTopic 双向反查", () => {
-  eq(eventNameOf(EVENT_TOPICS.SharesBought), "SharesBought", "按 topic 查名");
-  eq(eventNameOf(EVENT_TOPICS.SharesBought.toUpperCase().replace("0X", "0x")), "SharesBought", "大小写不敏感");
-  eq(eventNameOf("0xdeadbeef"), null, "未知 topic 返回 null");
-  eq(eventTopic("DisputeWindowOpened"), EVENT_TOPICS.DisputeWindowOpened, "按名查 topic");
+test("eventNameOf / eventTopic lookup in both directions", () => {
+  eq(eventNameOf(EVENT_TOPICS.SharesBought), "SharesBought", "name from topic");
+  eq(eventNameOf(EVENT_TOPICS.SharesBought.toUpperCase().replace("0X", "0x")), "SharesBought", "case-insensitive");
+  eq(eventNameOf("0xdeadbeef"), null, "unknown topic returns null");
+  eq(eventTopic("DisputeWindowOpened"), EVENT_TOPICS.DisputeWindowOpened, "topic from name");
 });
 
-/** 独立写一个「ABI 日志编码器」，跟 SDK 的解码器互为验证（不是同一份代码） */
+/** An independent ABI log encoder that cross-checks the SDK decoder (deliberately separate code) */
 function encLog(topic: string, indexed: string[], dyn: string[], stat: bigint[]): { topics: string[]; data: string } {
   const head: string[] = [];
   const tails: string[] = [];
@@ -966,7 +968,7 @@ function encLog(topic: string, indexed: string[], dyn: string[], stat: bigint[])
     const hex = Buffer.from(s, "utf8").toString("hex");
     const body = Math.ceil(hex.length / 64) * 64;
     tails.push((hex.padEnd(body, "0")) + "");
-    // 长度字要拼在数据前
+    // the length word goes before the payload
     tails[tails.length - 1] = BigInt(hex.length / 2).toString(16).padStart(64, "0") + hex.padEnd(body, "0");
     tailCursor += 32 + body / 2;
   }
@@ -974,19 +976,19 @@ function encLog(topic: string, indexed: string[], dyn: string[], stat: bigint[])
   return { topics: [topic, ...indexed], data: "0x" + head.join("") + tails.join("") };
 }
 
-test("MarketCreated：两个 indexed（marketId/creator）+ 两个动态字符串 + 一个时间戳", () => {
-  const log = encLog(EVENT_TOPICS.MarketCreated, ["0x" + "11".repeat(32), "0".repeat(24) + ACCOUNT.slice(2).toLowerCase()], ["BTC 能否 24h 破 90k？", "crypto"], [1_800_086_400n]);
+test("MarketCreated: two indexed args (marketId/creator) + two dynamic strings + one timestamp", () => {
+  const log = encLog(EVENT_TOPICS.MarketCreated, ["0x" + "11".repeat(32), "0".repeat(24) + ACCOUNT.slice(2).toLowerCase()], ["Will BTC break 90k in 24h?", "crypto"], [1_800_086_400n]);
   const ev = decodeLog(log);
-  assert.ok(ev, "应当解出来");
-  eq(ev!.name, "MarketCreated", "事件名");
+  assert.ok(ev, "should decode");
+  eq(ev!.name, "MarketCreated", "event name");
   eq(ev!.args.marketId, "0x" + "11".repeat(32), "marketId");
   eq((ev!.args.creator as string).toLowerCase(), ACCOUNT.toLowerCase(), "creator");
-  eq(ev!.args.question, "BTC 能否 24h 破 90k？", "中文题目（UTF-8 往返）");
+  eq(ev!.args.question, "Will BTC break 90k in 24h?", "non-ASCII question (UTF-8 round-trip)");
   eq(ev!.args.category, "crypto", "category");
   eq(ev!.args.resolutionTime, 1_800_086_400n, "resolutionTime");
 });
 
-test("SharesBought：2 indexed + 5 个静态字段，顺序不能错", () => {
+test("SharesBought: 2 indexed + 5 static fields, the order must be exact", () => {
   const log = encLog(
     EVENT_TOPICS.SharesBought,
     ["0x" + "22".repeat(32), "0".repeat(24) + ACCOUNT.slice(2).toLowerCase()],
@@ -1002,7 +1004,7 @@ test("SharesBought：2 indexed + 5 个静态字段，顺序不能错", () => {
   eq(ev.args.priceYes, 500_000_000_000_000_000n, "priceYes");
 });
 
-test("DisputeWindowOpened：争议期截止时间能直接喂给前端倒计时", () => {
+test("DisputeWindowOpened: the window deadline feeds a frontend countdown directly", () => {
   const log = encLog(EVENT_TOPICS.DisputeWindowOpened, ["0x" + "33".repeat(32)], [], [0n, 1_800_003_600n, 12_345_678n]);
   const ev = decodeLog(log)!;
   eq(ev.args.outcome, 0, "NO");
@@ -1010,7 +1012,7 @@ test("DisputeWindowOpened：争议期截止时间能直接喂给前端倒计时"
   eq(ev.args.owed, 12_345_678n, "owed");
 });
 
-test("ResolutionOverridden：old → new 与改判次数", () => {
+test("ResolutionOverridden: old → new plus the override count", () => {
   const log = encLog(EVENT_TOPICS.ResolutionOverridden, ["0x" + "44".repeat(32)], [], [0n, 1n, 12_345_678n, 1n]);
   const ev = decodeLog(log)!;
   eq(ev.args.oldOutcome, 0, "oldOutcome");
@@ -1019,38 +1021,38 @@ test("ResolutionOverridden：old → new 与改判次数", () => {
   eq(ev.args.disputes, 1, "disputes");
 });
 
-test("MarketResolved 的 bool 字段（紧急退款）解成 boolean", () => {
+test("MarketResolved decodes its bool field (emergency refund) into a boolean", () => {
   const log = encLog(EVENT_TOPICS.MarketResolved, ["0x" + "55".repeat(32)], [], [2n, 1_800_003_600n, 1n, 0n]);
   const ev = decodeLog(log)!;
   eq(ev.args.outcome, 2, "INVALID");
   eq(ev.args.emergency, true, "emergency=true");
-  eq(typeof ev.args.emergency, "boolean", "类型应为 boolean");
+  eq(typeof ev.args.emergency, "boolean", "type must be boolean");
 });
 
-test("decodeLogs：混进 USDC Transfer 之类未知日志会被跳过，不抛错", () => {
+test("decodeLogs: unknown logs such as USDC Transfer are skipped, never thrown", () => {
   const known = encLog(EVENT_TOPICS.LiquiditySeeded, ["0x" + "66".repeat(32), "0".repeat(24) + ACCOUNT.slice(2).toLowerCase()], [], [10_000_000_000n]);
   const unknown = { topics: ["0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"], data: "0x" };
   const evs = decodeLogs([unknown, known, unknown]);
-  eq(evs.length, 1, "只留认识的");
-  eq(evs[0].name, "LiquiditySeeded", "事件名");
+  eq(evs.length, 1, "only recognised events kept");
+  eq(evs[0].name, "LiquiditySeeded", "event name");
   eq(evs[0].args.amount, 10_000_000_000n, "amount");
 });
 
-test("decodeReceiptLogs：只解本引擎发出的日志（按 address 过滤）", () => {
+test("decodeReceiptLogs: decodes only this engine's logs (filtered by address)", () => {
   const log = encLog(EVENT_TOPICS.Redeemed, ["0x" + "77".repeat(32), "0".repeat(24) + ACCOUNT.slice(2).toLowerCase()], [], [100n, 0n, 95_000_000n, 500_000n]);
   const sdk = sdkFor(baseState());
   const evs = sdk.decodeReceiptLogs([
     { address: ENGINE, ...log },
     { address: "0x00000000000000000000000000000000000000ff", ...log },
   ]);
-  eq(evs.length, 1, "只留本引擎");
+  eq(evs.length, 1, "only this engine's logs");
   eq(evs[0].args.payout, 95_000_000n, "payout");
   eq(evs[0].args.fee, 500_000n, "fee");
 });
 
-/* ============================ J. Multicall3 批量查询 ============================ */
+/* ============================ J. Multicall3 batch reads ============================ */
 
-/** 独立实现 aggregate3 的返回值编码，用来验证 SDK 的解码器 */
+/** Independent aggregate3 return-value encoder, used to validate the SDK decoder */
 function encAggResult(items: Array<{ success: boolean; data: Hex }>): Hex {
   const bodies: string[] = [];
   for (const it of items) {
@@ -1072,14 +1074,14 @@ function encAggResult(items: Array<{ success: boolean; data: Hex }>): Hex {
   return ("0x" + (32n).toString(16).padStart(64, "0") + BigInt(items.length).toString(16).padStart(64, "0") + heads.join("") + bodies.join("")) as Hex;
 }
 
-test("MULTICALL3 地址与 aggregate3 selector 正确", () => {
-  eq(MULTICALL3, "0xcA11bde05977b3631167028862bE2a173976CA11", "Base Multicall3 地址");
+test("MULTICALL3 address and aggregate3 selector are correct", () => {
+  eq(MULTICALL3, "0xcA11bde05977b3631167028862bE2a173976CA11", "Base Multicall3 address");
   eq(SEL_AGGREGATE3, cast(["sig", "aggregate3((address,bool,bytes)[])"]) as Hex, "aggregate3 selector");
 });
 
-test("encodeAggregate3 与 cast calldata 逐字节一致（1 条 / 2 条）", () => {
+test("encodeAggregate3 is byte-identical to cast calldata (1 and 2 calls)", () => {
   const one = encodeAggregate3([{ target: ENGINE, allowFailure: true, data: "0x313ce567" }]);
-  eq(one, castCalldata("aggregate3((address,bool,bytes)[])", [`[(${ENGINE},true,0x313ce567)]`]), "1 条");
+  eq(one, castCalldata("aggregate3((address,bool,bytes)[])", [`[(${ENGINE},true,0x313ce567)]`]), "1 call");
   const two = encodeAggregate3([
     { target: ENGINE, allowFailure: true, data: "0x313ce567" },
     { target: ACCOUNT, allowFailure: false, data: "0x70a08231" },
@@ -1087,26 +1089,26 @@ test("encodeAggregate3 与 cast calldata 逐字节一致（1 条 / 2 条）", ()
   eq(
     two,
     castCalldata("aggregate3((address,bool,bytes)[])", [`[(${ENGINE},true,0x313ce567),(${ACCOUNT},false,0x70a08231)]`]),
-    "2 条",
+    "2 calls",
   );
 });
 
-test("decodeAggregate3Result 解出 (success, data) 列表", () => {
+test("decodeAggregate3Result yields the (success, data) list", () => {
   const items = [
     { success: true, data: words(7n) as Hex },
     { success: false, data: "0x" as Hex },
     { success: true, data: words(42n) as Hex },
   ];
   const dec = decodeAggregate3Result(encAggResult(items));
-  eq(dec.length, 3, "条数");
-  eq(dec[0].success, true, "第 1 条 success");
-  eq(BigInt(dec[0].data), 7n, "第 1 条值");
-  eq(dec[1].success, false, "第 2 条 success");
-  eq(dec[2].success, true, "第 3 条 success");
-  eq(BigInt(dec[2].data), 42n, "第 3 条值");
+  eq(dec.length, 3, "item count");
+  eq(dec[0].success, true, "item 1 success");
+  eq(BigInt(dec[0].data), 7n, "item 1 value");
+  eq(dec[1].success, false, "item 2 success");
+  eq(dec[2].success, true, "item 3 success");
+  eq(BigInt(dec[2].data), 42n, "item 3 value");
 });
 
-/** 让 MockTransport 会答 aggregate3：按 SDK 编码的调用逐条转发给自身 */
+/** Teach MockTransport to answer aggregate3: decode the SDK-encoded call, then fan it back out one by one */
 function withMulticall(state: MockState): Transport & { calls: string[]; netCalls: string[] } {
   const base = makeTransport(state);
   const netCalls: string[] = [];
@@ -1121,7 +1123,7 @@ function withMulticall(state: MockState): Transport & { calls: string[]; netCall
       netCalls.push(data.slice(0, 10).toLowerCase());
       if (to.toLowerCase() !== MULTICALL3.toLowerCase()) return base.ethCall(to, data);
       t.calls.push(data.slice(0, 10).toLowerCase());
-      // 解析 aggregate3 的入参：长度 + 元素偏移，然后逐条转发
+      // Parse the aggregate3 arguments (length + element offsets), then forward each sub-call
       const body = data.slice(10);
       const n = Number(BigInt("0x" + body.slice(64, 128)));
       const results: Array<{ success: boolean; data: Hex }> = [];
@@ -1145,39 +1147,39 @@ function withMulticall(state: MockState): Transport & { calls: string[]; netCall
   return t as unknown as Transport & { calls: string[]; netCalls: string[] };
 }
 
-test("marketSnapshots：4 个盘口 × 4 个 view 只发 1 次 RPC", async () => {
+test("marketSnapshots: 4 markets × 4 views cost exactly 1 RPC", async () => {
   const state = baseState();
   const t = withMulticall(state);
   const sdk = new CentralPredictionSDK(t, { engine: ENGINE, chainId: 8453, account: ACCOUNT });
   const ids = [1, 2, 3, 4].map((i) => ("0x" + String(i).repeat(64).slice(0, 64)) as Hex);
   const snaps = await sdk.marketSnapshots(ids);
-  eq(snaps.length, 4, "盘口数");
-  eq(t.netCalls.length, 1, `出网调用应只有 1 次，实际 ${t.netCalls.join(",")}`);
-  eq(t.netCalls[0], SEL_AGGREGATE3, "且必须是 aggregate3");
+  eq(snaps.length, 4, "market count");
+  eq(t.netCalls.length, 1, `expected exactly 1 network call, got ${t.netCalls.join(",")}`);
+  eq(t.netCalls[0], SEL_AGGREGATE3, "and it must be aggregate3");
   for (const [i, s] of snaps.entries()) {
-    eq(s.marketId, ids[i], "marketId 对齐");
+    eq(s.marketId, ids[i], "marketId alignment");
     eq(s.exists, true, "exists");
-    eq(s.priceYes, 500_000_000_000_000_000n, "价格 50%");
-    eq(s.priceNo, 500_000_000_000_000_000n, "互补价格");
-    eq(s.depth, 20_000_000_000n, "池深 20,000 USDC");
-    eq(s.tradingOpen, true, "可交易");
-    eq(s.disputing, false, "不在争议期");
+    eq(s.priceYes, 500_000_000_000_000_000n, "price 50%");
+    eq(s.priceNo, 500_000_000_000_000_000n, "complementary price");
+    eq(s.depth, 20_000_000_000n, "depth 20,000 USDC");
+    eq(s.tradingOpen, true, "tradeable");
+    eq(s.disputing, false, "not in a dispute window");
   }
 });
 
-test("marketSnapshots withMeta：题目/分类也进同一次 RPC（仍只 1 次出网）", async () => {
+test("marketSnapshots withMeta: question/category ride the same RPC (still 1 network call)", async () => {
   const t = withMulticall(baseState());
   const sdk = new CentralPredictionSDK(t, { engine: ENGINE, chainId: 8453, account: ACCOUNT });
   const ids = [MARKET, ("0x" + "22".repeat(32)) as Hex];
   const snaps = await sdk.marketSnapshots(ids, { withMeta: true });
-  eq(t.netCalls.length, 1, "仍然只有 1 次出网调用");
-  eq(snaps.length, 2, "盘口数");
-  eq(snaps[0].question, "BTC 能否在 24 小时内突破 82,000？", "中文题目");
-  eq(snaps[0].category, "crypto", "分类");
-  eq(snaps[1].marketId, ids[1], "顺序对齐");
+  eq(t.netCalls.length, 1, "still exactly 1 network call");
+  eq(snaps.length, 2, "market count");
+  eq(snaps[0].question, "Will BTC break 82,000 within 24 hours?", "non-ASCII question");
+  eq(snaps[0].category, "crypto", "category");
+  eq(snaps[1].marketId, ids[1], "order preserved");
 });
 
-test("marketSnapshots：反映争议期与结算状态", async () => {
+test("marketSnapshots: reflects dispute and resolution state", async () => {
   const state = baseState();
   state.resolved = true;
   state.disputing = true;
@@ -1187,23 +1189,23 @@ test("marketSnapshots：反映争议期与结算状态", async () => {
   const [snap] = await sdk.marketSnapshots([MARKET]);
   eq(snap.resolved, true, "resolved");
   eq(snap.disputing, true, "disputing");
-  eq(snap.finalized, false, "未终结");
+  eq(snap.finalized, false, "not finalized");
   eq(snap.outcome, 1, "outcome");
   eq(snap.owed, 123n, "owed");
-  eq(snap.tradingOpen, false, "已结算不可交易");
+  eq(snap.tradingOpen, false, "resolved, so not tradeable");
 });
 
-test("marketSnapshots：multicall=false 时逐条查（N 盘口 × 4 次 RPC）", async () => {
+test("marketSnapshots: multicall=false reads market by market (N markets × 4 RPCs)", async () => {
   const state = baseState();
   const t = makeTransport(state);
   const sdk = new CentralPredictionSDK(t, { engine: ENGINE, chainId: 8453, account: ACCOUNT });
   const snaps = await sdk.marketSnapshots([MARKET, MARKET], { multicall: false });
-  eq(snaps.length, 2, "盘口数");
-  eq(t.calls.filter((c) => c === SEL_AGGREGATE3).length, 0, "没有 aggregate3");
-  assert.ok(t.calls.length >= 8, `应逐条查（≥8 次），实际 ${t.calls.length}`);
+  eq(snaps.length, 2, "market count");
+  eq(t.calls.filter((c) => c === SEL_AGGREGATE3).length, 0, "no aggregate3");
+  assert.ok(t.calls.length >= 8, `expected per-market reads (≥8), got ${t.calls.length}`);
 });
 
-test("marketSnapshots：Multicall 整体失败 → 自动降级为逐条，不报错", async () => {
+test("marketSnapshots: a total Multicall failure degrades to per-market reads without throwing", async () => {
   const state = baseState();
   const base = makeTransport(state);
   const t: Transport = {
@@ -1215,18 +1217,18 @@ test("marketSnapshots：Multicall 整体失败 → 自动降级为逐条，不�
   };
   const sdk = new CentralPredictionSDK(t, { engine: ENGINE, chainId: 8453, account: ACCOUNT });
   const [snap] = await sdk.marketSnapshots([MARKET]);
-  eq(snap.exists, true, "降级后仍然拿到数据");
-  eq(snap.depth, 20_000_000_000n, "池深");
+  eq(snap.exists, true, "data still arrives after degradation");
+  eq(snap.depth, 20_000_000_000n, "depth");
 });
 
-test("marketSnapshots：空数组直接返回空，不发 RPC", async () => {
+test("marketSnapshots: an empty array returns empty without any RPC", async () => {
   const t = makeTransport(baseState());
   const sdk = new CentralPredictionSDK(t, { engine: ENGINE, chainId: 8453, account: ACCOUNT });
-  eq((await sdk.marketSnapshots([])).length, 0, "空");
-  eq(t.calls.length, 0, "零 RPC");
+  eq((await sdk.marketSnapshots([])).length, 0, "empty");
+  eq(t.calls.length, 0, "zero RPC");
 });
 
-/* ------------------------------- 执行 ------------------------------- */
+/* ------------------------------- Execution ------------------------------- */
 
 (async () => {
   let pass = 0;
@@ -1243,7 +1245,7 @@ test("marketSnapshots：空数组直接返回空，不发 RPC", async () => {
   }
   console.log(`\n${pass}/${cases.length} passed, ${failures.length} failed`);
   if (failures.length) {
-    console.error(`失败用例：\n  - ${failures.join("\n  - ")}`);
+    console.error(`Failed cases:\n  - ${failures.join("\n  - ")}`);
     process.exit(1);
   }
 })();

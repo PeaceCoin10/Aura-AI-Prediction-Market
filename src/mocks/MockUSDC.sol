@@ -3,7 +3,7 @@ pragma solidity 0.8.24;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-/// @notice 测试用 USDC（Base 真实 USDC 为 6 位小数）
+/// @notice Test USDC (real Base USDC uses 6 decimals)
 contract MockUSDC is ERC20 {
     constructor() ERC20("USD Coin", "USDC") {}
 

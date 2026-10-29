@@ -1,6 +1,6 @@
 /**
- * PredictionSDK 单元测试（离线，MockTransport）
- * 运行：npm test
+ * PredictionSDK unit tests (offline, MockTransport)
+ * Run: npm test
  */
 import assert from "node:assert/strict";
 import {
@@ -26,7 +26,7 @@ const {
   mevProtectedRoute,
 } = __internals;
 
-/* ------------------------------- 测试夹具 ------------------------------- */
+/* ------------------------------- Test fixtures ------------------------------- */
 
 const VAULT = "0x00000000000000000000000000000000000Va017".replace("Va017", "aa017");
 
@@ -84,7 +84,7 @@ function pack(...words: string[]): string {
   return "0x" + words.join("");
 }
 
-/** 复刻合约的 previewBuy 数学，供 mock 使用 */
+/** Replicates the contract's previewBuy math for use by the mock */
 function mockPreview(s: MockState, outcome: number, amountIn: bigint): bigint {
   const fee = ceilDiv(amountIn * s.tradeFeeBps, BPS);
   const net = amountIn - fee;
@@ -143,7 +143,7 @@ class MockTransport implements EthCallTransport {
         // 0x...00ad
         return pack("0".repeat(24) + "00000000000000000000000000000000000000ad");
       case SEL.pendingAdmin:
-        // 没有进行中的移交
+        // no handover in flight
         return pack("0".repeat(64));
       case "0x5e573804": {
         // previewBuy(uint8,uint256)
@@ -157,13 +157,13 @@ class MockTransport implements EthCallTransport {
   }
 }
 
-/* ------------------------------- 测试框架 ------------------------------- */
+/* ------------------------------- Test harness ------------------------------- */
 
 type T = { name: string; fn: () => Promise<void> | void };
 const tests: T[] = [];
 const test = (name: string, fn: () => Promise<void> | void) => tests.push({ name, fn });
 
-/* --------------------- MEV 路由 / 提交链路的测试夹具 --------------------- */
+/* --------------------- MEV route / submission pipeline fixtures --------------------- */
 
 const TX_HASH = "0x" + "ab".repeat(32);
 
@@ -173,8 +173,9 @@ interface RouteHarness {
 }
 
 /**
- * 在 MockTransport 外面套一层"提交路由"能力。
- * previewOverride 用来模拟价格跑动：callIndex=0 是报价，callIndex>=1 是提交前复算。
+ * Wraps MockTransport with a "submission route" capability.
+ * previewOverride simulates a moving price: callIndex=0 is the quote, callIndex>=1 is the recompute before
+ * submission.
  */
 function makeRouteTransport(
   overrides: {
@@ -227,9 +228,9 @@ async function expectSdkError(fn: () => Promise<unknown>, code: string) {
   assert.fail(`expected SdkError(${code}) but call succeeded`);
 }
 
-/* --------------------------------- 用例 --------------------------------- */
+/* --------------------------------- Test cases --------------------------------- */
 
-test("getMarketState 正确解码 14 个字段", async () => {
+test("getMarketState decodes all 14 fields correctly", async () => {
   const t = new MockTransport();
   const sdk = new PredictionSDK(t, { vault: VAULT });
   const st = await sdk.getMarketState();
@@ -245,58 +246,58 @@ test("getMarketState 正确解码 14 个字段", async () => {
   assert.equal(st.tradeFeeBps, 150n);
 });
 
-test("previewBuy 与合约数学一致（100 USDC -> 89,667,728 份）", async () => {
+test("previewBuy matches the contract math (100 USDC -> 89,667,728 shares)", async () => {
   const t = new MockTransport();
   const sdk = new PredictionSDK(t, { vault: VAULT });
   const out = await sdk.previewBuy(1, 100_000_000n);
   assert.equal(out, 89_667_728n);
 });
 
-test("calculateMinSharesOut：preview 后按 1% 下折，向下取整", async () => {
+test("calculateMinSharesOut: discounts the preview by 1%, rounding down", async () => {
   const t = new MockTransport();
   const sdk = new PredictionSDK(t, { vault: VAULT });
   const min = await sdk.calculateMinSharesOut(1, 100_000_000n, 100);
 
   const expected = 89_667_728n;
   assert.equal(min, (expected * 9_900n) / 10_000n);
-  assert.ok(min < expected, "minSharesOut 必须严格小于理论份额");
+  assert.ok(min < expected, "minSharesOut must be strictly below the theoretical share count");
 });
 
-test("【核心】slippageBps = 0 被拒绝（杜绝裸奔）", async () => {
+test("[core] slippageBps = 0 is refused (no unprotected orders)", async () => {
   const t = new MockTransport();
   const sdk = new PredictionSDK(t, { vault: VAULT });
   await expectSdkError(() => sdk.calculateMinSharesOut(1, 100_000_000n, 0), "SLIPPAGE_NOT_SET");
   await expectSdkError(() => sdk.buildBuy({ outcome: 1, amountIn: 100_000_000n, slippageBps: 0 }), "SLIPPAGE_NOT_SET");
 });
 
-test("负滑点 / 非整数滑点 被拒绝", async () => {
+test("negative / non-integer slippage is refused", async () => {
   const t = new MockTransport();
   const sdk = new PredictionSDK(t, { vault: VAULT });
   await expectSdkError(() => sdk.calculateMinSharesOut(1, 100_000_000n, -1), "SLIPPAGE_NOT_SET");
   await expectSdkError(() => sdk.calculateMinSharesOut(1, 100_000_000n, 1.5 as unknown as number), "SLIPPAGE_NOT_SET");
 });
 
-test("滑点 > 5% 被拒绝", async () => {
+test("slippage > 5% is refused", async () => {
   const t = new MockTransport();
   const sdk = new PredictionSDK(t, { vault: VAULT });
   await expectSdkError(() => sdk.calculateMinSharesOut(1, 100_000_000n, 501), "SLIPPAGE_TOO_HIGH");
 });
 
-test("低于最低下注额(5 USDC) -> BELOW_MIN_BET（不发交易、不烧 gas）", async () => {
+test("below the 5 USDC minimum bet -> BELOW_MIN_BET (no transaction, no gas burned)", async () => {
   const t = new MockTransport();
   const sdk = new PredictionSDK(t, { vault: VAULT });
   await expectSdkError(() => sdk.buildBuy({ outcome: 1, amountIn: 4_999_999n, slippageBps: 100 }), "BELOW_MIN_BET");
 });
 
-test("恰好 5 USDC 起投额可以通过", async () => {
+test("exactly the 5 USDC minimum is accepted", async () => {
   const sdk = new PredictionSDK(new MockTransport(), { vault: VAULT });
   const plan = await sdk.buildBuy({ outcome: 1, amountIn: 5_000_000n, slippageBps: 100 });
   assert.ok(plan.quote.minSharesOut > 0n);
 });
 
-test("超过绝对上限(10,000 USDC) -> ABOVE_MAX_BET", async () => {
+test("above the absolute cap (10,000 USDC) -> ABOVE_MAX_BET", async () => {
   const st = defaultState();
-  // 造一个深池，确保不是 5% 影响上限先命中
+  // Build a deep pool so the 5% impact cap does not trip first
   st.yes = 400_000_000_000n;
   st.no = 400_000_000_000n;
   st.priceYes = (st.no * WAD) / (st.yes + st.no);
@@ -306,52 +307,52 @@ test("超过绝对上限(10,000 USDC) -> ABOVE_MAX_BET", async () => {
     () => sdk.buildBuy({ outcome: 1, amountIn: 10_000_000_001n, slippageBps: 100 }),
     "ABOVE_MAX_BET",
   );
-  // 恰好 10,000 通过
+  // exactly 10,000 is accepted
   const ok = await sdk.buildBuy({ outcome: 1, amountIn: 10_000_000_000n, slippageBps: 100 });
   assert.ok(ok.quote.minSharesOut > 0n);
 });
 
-test("超过单笔影响上限 -> IMPACT_TOO_HIGH（本地拦截）", async () => {
+test("above the per-trade impact cap -> IMPACT_TOO_HIGH (blocked locally)", async () => {
   const t = new MockTransport();
   const sdk = new PredictionSDK(t, { vault: VAULT });
-  // 深度 2000 USDC，5% = 100 USDC
+  // depth 2000 USDC, 5% = 100 USDC
   await expectSdkError(() => sdk.buildBuy({ outcome: 1, amountIn: 100_000_001n, slippageBps: 100 }), "IMPACT_TOO_HIGH");
 });
 
-test("边界值：恰好 5% 深度可以通过", async () => {
+test("boundary: exactly 5% of pool depth is accepted", async () => {
   const t = new MockTransport();
   const sdk = new PredictionSDK(t, { vault: VAULT });
   const plan = await sdk.buildBuy({ outcome: 1, amountIn: 100_000_000n, slippageBps: 100 });
   assert.ok(plan.quote.minSharesOut > 0n);
 });
 
-test("已结算盘口 -> MARKET_RESOLVED", async () => {
+test("resolved market -> MARKET_RESOLVED", async () => {
   const st = defaultState();
   st.resolved = true;
   const sdk = new PredictionSDK(new MockTransport(st), { vault: VAULT });
   await expectSdkError(() => sdk.buildBuy({ outcome: 1, amountIn: 10_000_000n, slippageBps: 100 }), "MARKET_RESOLVED");
 });
 
-test("暂停中 -> TRADING_PAUSED", async () => {
+test("paused market -> TRADING_PAUSED", async () => {
   const st = defaultState();
   st.paused = true;
   const sdk = new PredictionSDK(new MockTransport(st), { vault: VAULT });
   await expectSdkError(() => sdk.buildBuy({ outcome: 1, amountIn: 10_000_000n, slippageBps: 100 }), "TRADING_PAUSED");
 });
 
-test("过了结算时间 -> TRADING_PAUSED", async () => {
+test("past the resolution time -> TRADING_PAUSED", async () => {
   const st = defaultState();
   st.tradingOpen = false;
   const sdk = new PredictionSDK(new MockTransport(st), { vault: VAULT });
   await expectSdkError(() => sdk.buildBuy({ outcome: 1, amountIn: 10_000_000n, slippageBps: 100 }), "TRADING_PAUSED");
 });
 
-test("非法 outcome 被拒绝", async () => {
+test("an invalid outcome is refused", async () => {
   const sdk = new PredictionSDK(new MockTransport(), { vault: VAULT });
   await expectSdkError(() => sdk.buildBuy({ outcome: 2 as Outcome, amountIn: 10_000_000n, slippageBps: 100 }), "BAD_OUTCOME");
 });
 
-test("buildBuy calldata 结构正确（selector + 3 个 word）", async () => {
+test("buildBuy calldata is structured correctly (selector + 3 words)", async () => {
   const t = new MockTransport();
   const sdk = new PredictionSDK(t, { vault: VAULT });
   const plan = await sdk.buildBuy({ outcome: 1, amountIn: 100_000_000n, slippageBps: 100 });
@@ -368,11 +369,11 @@ test("buildBuy calldata 结构正确（selector + 3 个 word）", async () => {
   assert.equal(outcome, 1n);
   assert.equal(amountIn, 100_000_000n);
   assert.equal(minOut, plan.quote.minSharesOut);
-  assert.ok(minOut <= plan.quote.expectedSharesOut, "minSharesOut 不得超过理论值");
+  assert.ok(minOut <= plan.quote.expectedSharesOut, "minSharesOut must not exceed the theoretical value");
 });
 
-test("buildBuy 的 minSharesOut 永远严格小于等于理论份额（否则必 revert）", async () => {
-  // 5 USDC 起投、5% 深度上限（2000 深度 -> 100 USDC）之间的合法区间
+test("buildBuy's minSharesOut is always at or below the expected share count (otherwise it must revert)", async () => {
+  // legal band between the 5 USDC minimum and the 5% impact cap (2000 depth -> 100 USDC)
   for (const amount of [5_000_000n, 20_000_000n, 50_000_000n, 99_999_999n, 100_000_000n]) {
     for (const slip of [1, 10, 50, 100, 300, 500]) {
       const t = new MockTransport();
@@ -384,17 +385,17 @@ test("buildBuy 的 minSharesOut 永远严格小于等于理论份额（否则必
   }
 });
 
-test("buildSell 复刻合约数学：卖出份额的净额与费率", async () => {
+test("buildSell replicates the contract math: net proceeds and fee on sold shares", async () => {
   const t = new MockTransport();
   const sdk = new PredictionSDK(t, { vault: VAULT });
 
-  // 先买 100 USDC
+  // buy 100 USDC first
   const plan = await sdk.buildBuy({ outcome: 1, amountIn: 100_000_000n, slippageBps: 100 });
   const shares = plan.quote.expectedSharesOut;
 
-  // 用未成交的原始状态推演卖出
+  // Derive the sell from the untouched starting state
   const st = t.state;
-  const newYes = st.yes + shares; // 注意：真实链上储备已被买入改变，这里只验证公式
+  const newYes = st.yes + shares; // note: real reserves already moved on the buy; this only validates the formula
   const grossOut = st.no - ceilDiv(st.no * st.yes, newYes);
   const fee = ceilDiv(grossOut * 150n, BPS);
 
@@ -402,41 +403,41 @@ test("buildSell 复刻合约数学：卖出份额的净额与费率", async () =
   assert.ok(sell.quote.expectedSharesOut > 0n);
   assert.equal(sell.data.slice(0, 10), SEL.sell);
   assert.equal(sell.data.length, 10 + 64 * 3);
-  // 卖出的 minAmountOut 必须 > 0 且 <= 理论净额
+  // the sell's minAmountOut must be > 0 and <= the theoretical net
   assert.ok(sell.quote.minSharesOut > 0n);
   assert.ok(sell.quote.minSharesOut <= sell.quote.expectedSharesOut);
   assert.ok(fee > 0n);
 });
 
-test("零份额卖出被拒绝", async () => {
+test("selling zero shares is refused", async () => {
   const sdk = new PredictionSDK(new MockTransport(), { vault: VAULT });
   await expectSdkError(() => sdk.buildSell({ outcome: 1, sharesIn: 0n, slippageBps: 100 }), "ZERO_SHARES");
 });
 
-test("地址校验：非法 vault 地址直接构造函数报错", () => {
+test("address validation: an invalid vault address throws in the constructor", () => {
   assert.throws(() => new PredictionSDK(new MockTransport(), { vault: "0x123" }), /invalid vault address/);
 });
 
-test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () => {
+test("impactSafetyMarginBps tightens the cap (safety buffer for the front end)", async () => {
   const sdk = new PredictionSDK(new MockTransport(), { vault: VAULT, impactSafetyMarginBps: 100 });
-  // 上限从 5% 收紧到 4% => 80 USDC；90 USDC 应被拒
+  // cap tightens from 5% to 4% => 80 USDC; 90 USDC must be refused
   await expectSdkError(() => sdk.buildBuy({ outcome: 1, amountIn: 90_000_000n, slippageBps: 100 }), "IMPACT_TOO_HIGH");
   const ok = await sdk.buildBuy({ outcome: 1, amountIn: 79_000_000n, slippageBps: 100 });
   assert.ok(ok.quote.minSharesOut > 0n);
 });
 
-/* --------------------------------- 执行 --------------------------------- */
+/* --------------------------------- Execution --------------------------------- */
 
 (async () => {
   let passed = 0;
   const failures: string[] = [];
 
-  /* ------------------- 6 参 createMarket / 熔断 / 错误映射 ------------------- */
+  /* ------------------- 6-param createMarket / circuit breaker / error mapping ------------------- */
 
   const FACTORY = "0x00000000000000000000000000000000000000F4";
 
   tests.push({
-    name: "buildCreateMarket 编码 6 个参数（selector + 6 words）",
+    name: "buildCreateMarket encodes 6 params (selector + 6 words)",
     fn: async () => {
       const sdk = new PredictionSDK(new MockTransport(), { vault: VAULT, factory: FACTORY });
       const cid = "0x" + "11".repeat(32);
@@ -460,7 +461,7 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
   });
 
   tests.push({
-    name: "buildCreateMarket 拒绝超过 10,000 USDC 的 maxBet",
+    name: "buildCreateMarket refuses a maxBet above 10,000 USDC",
     fn: async () => {
       const sdk = new PredictionSDK(new MockTransport(), { vault: VAULT, factory: FACTORY });
       await expectSdkError(
@@ -479,7 +480,7 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
   });
 
   tests.push({
-    name: "buildCreateMarket 拒绝低于 5 USDC 的 minBet 与倒挂的 maxBet",
+    name: "buildCreateMarket refuses a minBet below 5 USDC and an inverted maxBet",
     fn: async () => {
       const sdk = new PredictionSDK(new MockTransport(), { vault: VAULT, factory: FACTORY });
       const base = {
@@ -494,7 +495,7 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
   });
 
   tests.push({
-    name: "未配置 factory 时 buildCreateMarket 直接报错，不静默发空交易",
+    name: "buildCreateMarket throws when no factory is configured instead of silently sending an empty tx",
     fn: async () => {
       const sdk = new PredictionSDK(new MockTransport(), { vault: VAULT });
       await expectSdkError(
@@ -513,7 +514,7 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
   });
 
   tests.push({
-    name: "buildPause / buildUnpause 选择器正确",
+    name: "buildPause / buildUnpause use the correct selectors",
     fn: async () => {
       const sdk = new PredictionSDK(new MockTransport(), { vault: VAULT });
       assert.equal(sdk.buildPause().data, "0x8456cb59");
@@ -522,10 +523,10 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
     },
   });
 
-  /* ----------------------- 两步 Admin 移交（transferAdmin/acceptAdmin） ----------------------- */
+  /* ----------------------- Two-step admin handover (transferAdmin/acceptAdmin) ----------------------- */
 
   tests.push({
-    name: "两步移交：transferAdmin 只编码 pending，acceptAdmin 是独立交易",
+    name: "two-step handover: transferAdmin only encodes pending, acceptAdmin is a separate transaction",
     fn: async () => {
       const sdk = new PredictionSDK(new MockTransport(), { vault: VAULT, factory: FACTORY });
       const newAdmin = "0x00000000000000000000000000000000000000Ad";
@@ -536,7 +537,7 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
       assert.equal(t1.data.length, 10 + 64, "selector + one address word");
       assert.equal(t1.data.slice(10), "0".repeat(24) + "00000000000000000000000000000000000000ad");
 
-      // 第二步是独立交易，不能和第一步合并
+      // the second step is its own transaction and must not be merged with the first
       const t2 = sdk.buildAcceptAdmin();
       assert.equal(t2.to, VAULT);
       assert.equal(t2.data, SEL_ACCEPT_ADMIN);
@@ -545,7 +546,7 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
   });
 
   tests.push({
-    name: "两步移交：工厂侧同一 ABI，未配置 factory 时拒绝编码",
+    name: "two-step handover: same ABI on the factory side, encoding refused when no factory is configured",
     fn: async () => {
       const sdk = new PredictionSDK(new MockTransport(), { vault: VAULT, factory: FACTORY });
       const f1 = sdk.buildFactoryTransferAdmin("0x00000000000000000000000000000000000000Ad");
@@ -563,7 +564,7 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
   });
 
   tests.push({
-    name: "两步移交：getAdmin / getPendingAdmin 正确解码地址",
+    name: "two-step handover: getAdmin / getPendingAdmin decode addresses correctly",
     fn: async () => {
       const sdk = new PredictionSDK(new MockTransport(), { vault: VAULT });
       assert.equal(await sdk.getAdmin(), "0x00000000000000000000000000000000000000ad");
@@ -572,39 +573,39 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
   });
 
   tests.push({
-    name: "链上 revert 映射：NotPendingAdmin -> 友好中文提示",
+    name: "on-chain revert mapping: NotPendingAdmin -> friendly message",
     fn: async () => {
       const m = PredictionSDK.mapRevert({ data: "0x058d9a1b" });
       assert.equal(m.code, "NOT_PENDING_ADMIN");
-      assert.equal(m.message, "只有被指定的待接收管理员才能完成交接（acceptAdmin）");
+      assert.equal(m.message, "Only the nominated pending admin can complete the handover (acceptAdmin)");
     },
   });
 
-  /* -------------------- MEV 保护：路由、防夹、报价新鲜度 -------------------- */
+  /* -------------------- MEV protection: routes, anti-sandwich, quote freshness -------------------- */
 
   tests.push({
-    name: "路由表：Base 主网走 sequencer-private，ETH 主网优先 Flashbots，未知链不静默降级",
+    name: "route table: Base mainnet uses sequencer-private, ETH mainnet prefers Flashbots, unknown chains never degrade silently",
     fn: async () => {
       const base = routesForChain(8453);
       assert.equal(base.length, 1);
       assert.equal(base[0].id, "base-mainnet-sequencer");
       assert.equal(base[0].privacy, "sequencer-private");
-      assert.ok(!base.some((r) => /flashbots/i.test(r.url)), "Flashbots 不支持 Base，不能出现在表里");
+      assert.ok(!base.some((r) => /flashbots/i.test(r.url)), "Flashbots does not support Base and must not appear in the table");
 
       const eth = routesForChain(1);
       assert.equal(eth[0].id, "flashbots-protect");
       assert.equal(eth[0].privacy, "private-relay");
 
-      assert.deepEqual(routesForChain(999), [], "未知链必须返回空，而不是降级到公开 RPC");
+      assert.deepEqual(routesForChain(999), [], "an unknown chain must return empty rather than fall back to a public RPC");
     },
   });
 
   tests.push({
-    name: "自定义私有路由排在最前，非法 URL 直接拒绝",
+    name: "custom private routes rank first; an invalid URL is refused outright",
     fn: async () => {
       const routes = routesForChain(8453, [PRIVATE_BASE_ROUTE]);
       assert.equal(routes.length, 2);
-      assert.equal(routes[0].id, "acme-private-base", "私有中继必须先试");
+      assert.equal(routes[0].id, "acme-private-base", "the private relay must be tried first");
       assert.equal(routes[1].id, "base-mainnet-sequencer");
 
       assert.throws(
@@ -615,7 +616,7 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
   });
 
   tests.push({
-    name: "submitProtected：私有路由成功即返回，不再碰公开端点",
+    name: "submitProtected: a successful private route returns immediately and never touches a public endpoint",
     fn: async () => {
       const h = makeRouteTransport();
       const sdk = new PredictionSDK(h.transport, {
@@ -627,12 +628,12 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
       const res = await sdk.submitProtected("0x02f8deadbeef");
       assert.equal(res.hash, TX_HASH);
       assert.equal(res.route.id, "acme-private-base");
-      assert.equal(h.sends.length, 1, "只应提交一次");
+      assert.equal(h.sends.length, 1, "the transaction must be submitted exactly once");
     },
   });
 
   tests.push({
-    name: "submitProtected：私有路由超时 = 结果未知（SUBMIT_AMBIGUOUS），绝不自动改投公开池",
+    name: "submitProtected: a private-route timeout means unknown outcome (SUBMIT_AMBIGUOUS), never an automatic fallback to the public pool",
     fn: async () => {
       const h = makeRouteTransport({ send: () => new Promise<string>(() => {}) });
       const sdk = new PredictionSDK(h.transport, {
@@ -643,13 +644,13 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
       });
 
       await expectSdkError(() => sdk.submitProtected("0x02f8deadbeef"), "SUBMIT_AMBIGUOUS");
-      assert.equal(h.sends.length, 1, "超时后不得重发到第二个路由");
+      assert.equal(h.sends.length, 1, "a timeout must not trigger a resend to a second route");
       assert.equal(h.sends[0].route.id, "acme-private-base");
     },
   });
 
   tests.push({
-    name: "submitProtected：私有路由明确拒绝才回退到下一条（顺序为 私有 → 排序器）",
+    name: "submitProtected: only an explicit private-route rejection falls back to the next route (order: private -> sequencer)",
     fn: async () => {
       const h = makeRouteTransport({
         send: async (route) => {
@@ -673,7 +674,7 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
   });
 
   tests.push({
-    name: "submitProtected：没有可用路由直接 NO_ROUTE，不发任何东西",
+    name: "submitProtected: with no usable route it throws NO_ROUTE and sends nothing",
     fn: async () => {
       const h = makeRouteTransport();
       const sdk = new PredictionSDK(h.transport, { vault: VAULT, chainId: 999 });
@@ -683,11 +684,11 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
   });
 
   tests.push({
-    name: "assertPlanIntegrity：被篡改的 minSharesOut / selector 一律拦下",
+    name: "assertPlanIntegrity: a tampered minSharesOut / selector is always caught",
     fn: async () => {
       const sdk = new PredictionSDK(new MockTransport(), { vault: VAULT });
       const plan = await sdk.buildBuy({ outcome: 1, amountIn: 10_000_000n, slippageBps: 100 });
-      sdk.assertPlanIntegrity(plan); // 合法 plan 不抛
+      sdk.assertPlanIntegrity(plan); // a legitimate plan does not throw
 
       const tamperedMin: TradePlan = {
         ...plan,
@@ -701,7 +702,7 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
   });
 
   tests.push({
-    name: "signAndSubmitBuy：签名前完成报价复算，minSharesOut 与报价完全一致",
+    name: "signAndSubmitBuy: the quote is recomputed before signing and minSharesOut matches it exactly",
     fn: async () => {
       const h = makeRouteTransport();
       const sdk = new PredictionSDK(h.transport, {
@@ -719,10 +720,10 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
         },
       );
 
-      assert.ok(signed, "signer 必须被调用");
+      assert.ok(signed, "the signer must be invoked");
       assert.equal(signed!.to, VAULT);
       assert.equal(signed!.data.slice(0, 10), SEL_BUY);
-      // calldata 里的 minSharesOut 必须就是报价里的那个值
+      // the minSharesOut inside the calldata must be exactly the one from the quote
       assert.equal("0x" + signed!.data.slice(138, 202), "0x" + padWord(res.quote.minSharesOut));
       assert.equal(res.route.id, "acme-private-base");
       assert.ok(res.quote.minSharesOut > 0n);
@@ -730,9 +731,9 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
   });
 
   tests.push({
-    name: "signAndSubmitBuy：价格在确认期间跑出滑点 → QUOTE_STALE，签名与提交都不发生",
+    name: "signAndSubmitBuy: a price that leaves the slippage band during confirmation -> QUOTE_STALE, neither signing nor submission happens",
     fn: async () => {
-      // 第 0 次 previewBuy = 正常报价；第 1 次（提交前复算）价格腰斩
+      // previewBuy call 0 = the normal quote; call 1 (the pre-submit recompute) is half the shares
       const h = makeRouteTransport({
         previewOverride: (callIndex, outcome, amountIn) =>
           callIndex === 0 ? null : mockPreview(defaultState(), outcome, amountIn) / 2n,
@@ -752,13 +753,13 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
           }),
         "QUOTE_STALE",
       );
-      assert.equal(signerCalls, 0, "报价失效时绝不能调 signer");
-      assert.equal(h.sends.length, 0, "更不该发交易");
+      assert.equal(signerCalls, 0, "the signer must never be called when the quote is invalid");
+      assert.equal(h.sends.length, 0, "and no transaction should be sent");
     },
   });
 
   tests.push({
-    name: "confirmQuoteStillValid：报价过期（超过 maxQuoteAgeMs）直接拦下",
+    name: "confirmQuoteStillValid: an expired quote (older than maxQuoteAgeMs) is caught immediately",
     fn: async () => {
       const sdk = new PredictionSDK(new MockTransport(), { vault: VAULT, maxQuoteAgeMs: 2_000 });
       const req = { outcome: 1 as Outcome, amountIn: 10_000_000n, slippageBps: 100 };
@@ -769,7 +770,7 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
   });
 
   tests.push({
-    name: "waitForReceipt：轮询到回执即返回；超时抛 RECEIPT_TIMEOUT",
+    name: "waitForReceipt: returns as soon as a receipt is polled; throws RECEIPT_TIMEOUT on timeout",
     fn: async () => {
       let polls = 0;
       const h = makeRouteTransport({
@@ -786,34 +787,34 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
   });
 
   tests.push({
-    name: "链上 revert 映射：AboveMaxBet -> 友好中文提示",
+    name: "on-chain revert mapping: AboveMaxBet -> friendly message",
     fn: async () => {
       const m = PredictionSDK.mapRevert({ data: "0xb8ab88d4" });
       assert.equal(m.code, "ABOVE_MAX_BET");
-      assert.equal(m.message, "单笔下注不能超过 10,000 USDC");
+      assert.equal(m.message, "Maximum bet size is 10,000 USDC");
     },
   });
 
   tests.push({
-    name: "链上 revert 映射：BelowMinBet -> 友好中文提示",
+    name: "on-chain revert mapping: BelowMinBet -> friendly message",
     fn: async () => {
       const m = PredictionSDK.mapRevert({ error: { data: "0x5688ffb3" } });
       assert.equal(m.code, "BELOW_MIN_BET");
-      assert.equal(m.message, "单笔下注不能低于 5 USDC");
+      assert.equal(m.message, "Minimum bet size is 5 USDC");
     },
   });
 
   tests.push({
-    name: "链上 revert 映射：EnforcedPause -> 暂停提示",
+    name: "on-chain revert mapping: EnforcedPause -> paused message",
     fn: async () => {
       const m = PredictionSDK.mapRevert("0xd93c0665");
       assert.equal(m.code, "TRADING_PAUSED");
-      assert.ok(m.message.includes("暂停"));
+      assert.ok(m.message.includes("paused"));
     },
   });
 
   tests.push({
-    name: "链上 revert 映射：未知错误不吞异常，返回 UNKNOWN",
+    name: "on-chain revert mapping: unknown errors are not swallowed and return UNKNOWN",
     fn: async () => {
       const m = PredictionSDK.mapRevert({ data: "0xdeadbeef" });
       assert.equal(m.code, "UNKNOWN");
@@ -823,7 +824,7 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
   });
 
   tests.push({
-    name: "每个 SdkErrorCode 都有中文文案（无空洞）",
+    name: "every SdkErrorCode has user-facing copy (no gaps)",
     fn: async () => {
       for (const code of [
         "SLIPPAGE_NOT_SET","SLIPPAGE_TOO_HIGH","BELOW_MIN_BET","ABOVE_MAX_BET","IMPACT_TOO_HIGH",
@@ -831,7 +832,7 @@ test("impactSafetyMarginBps 收紧上限（给前端留安全垫）", async () =
         "BAD_RESPONSE","MARKET_NOT_RESOLVED","NOTHING_TO_REDEEM","NOT_ADMIN","BAD_CONFIG",
       ] as const) {
         const msg = PredictionSDK.message(code);
-        assert.ok(msg && msg !== "交易失败，请稍后重试", `missing message for ${code}`);
+        assert.ok(msg && msg !== "Transaction failed, please try again shortly", `missing message for ${code}`);
       }
     },
   });

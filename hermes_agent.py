@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-hermes_agent.py —— 根目录入口，等价于 `python3 hermes/hermes_brain.py`。
+hermes_agent.py -- root entry point, equivalent to `python3 hermes/hermes_brain.py`.
 
-真正的实现在 `hermes/hermes_brain.py`（含 Creator / Marketing / Oracle 三个引擎与离线单测）。
-放在根目录只是为了 `python3 hermes_agent.py --once` 这种顺手写法。
+The implementation lives in `hermes/hermes_brain.py` (Creator / Marketing / Oracle engines plus offline unit tests).
+This shim exists so that `python3 hermes_agent.py --once` is convenient to type.
 
     export RPC_URL=https://sepolia.base.org ENGINE=0x... USDC=0x... BRAIN_PK=0x...
     python3 hermes_agent.py --once --dry-run

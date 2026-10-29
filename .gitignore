@@ -11,15 +11,15 @@ keeper/proposals/*.json
 .env.local
 .env.*.local
 
-# 前端构建产物（Vercel/Netlify 会在云端重新构建）
+# Frontend build output (Vercel/Netlify rebuild it in the cloud)
 frontend/dist/
 dist/
 *.tsbuildinfo
 
-# 一次性隧道地址（每次启动都变，不要进版本库）
+# Ephemeral tunnel URL (changes on every start; keep it out of version control)
 PUBLIC-URL.txt
 
-# 平台部署状态文件
+# Platform deployment state files
 .vercel/
 .netlify/
 deploy/.vercel-url

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# CentralPredictionSDK 的真链联调（anvil 一键跑）
+# Live-chain integration test for CentralPredictionSDK (one shot via anvil)
 #
 #   bash script/e2e-sdk-central.sh
 #
-# 流程：起链 → 部署引擎 → SDK 建盘 → 做市 → 买入 → 卖出 → 裁决 → 争议期拦提现 →
-#       Safe 改判 → 提现 → 扫残余，每一步都是 SDK 生成的真实 calldata 上链。
+# Flow: start chain → deploy engine → SDK creates a market → provide liquidity → buy → sell → resolve → withdrawal blocked in the dispute window →
+#       Safe override → withdraw → sweep residual; every step puts real SDK-generated calldata on chain.
 set -euo pipefail
 
 export PATH=/opt/foundry:$PATH
@@ -19,24 +19,24 @@ die() { printf '\033[1;31m   FAIL\033[0m %s\n' "$*"; exit 1; }
 cleanup() { [[ -n "${ANVIL_PID:-}" ]] && kill "$ANVIL_PID" 2>/dev/null || true; }
 trap cleanup EXIT
 
-say "1/4 启动 anvil"
+say "1/4 starting anvil"
 anvil --port 8545 --chain-id 31337 >/dev/null 2>&1 &
 ANVIL_PID=$!
 for _ in $(seq 1 40); do cast chain-id --rpc-url $RPC >/dev/null 2>&1 && break; sleep 0.25; done
-[[ "$(cast chain-id --rpc-url $RPC)" == "31337" ]] || die "anvil 没起来"
+[[ "$(cast chain-id --rpc-url $RPC)" == "31337" ]] || die "anvil did not come up"
 
-say "2/4 部署 CentralPredictionEngine"
+say "2/4 deploying CentralPredictionEngine"
 DEPLOY=$(PRIVATE_KEY=$PK TREASURY=$A ADMIN=$A CREATOR=$A ORACLE=$A \
   forge script "$ROOT/script/DeployCentral.s.sol:DeployCentral" --rpc-url $RPC --broadcast 2>&1)
 ENGINE=$(echo "$DEPLOY" | awk '/export ENGINE=/{sub(/.*ENGINE=/,""); print $1}')
 USDC=$(echo "$DEPLOY" | awk '/export USDC=/{sub(/.*USDC=/,""); print $1}')
-[[ -n "$ENGINE" && -n "$USDC" ]] || die "部署输出里没解析到地址"
+[[ -n "$ENGINE" && -n "$USDC" ]] || die "could not parse an address out of the deploy output"
 echo "   engine=$ENGINE usdc=$USDC"
 
-say "3/4 编译 SDK"
+say "3/4 building the SDK"
 cd "$ROOT/sdk" && npm run build >/dev/null
-echo "   dist/ 已就绪"
+echo "   dist/ is ready"
 
-say "4/4 跑 SDK 真链联调"
+say "4/4 running the SDK live-chain integration test"
 cast send $USDC "mint(address,uint256)" $A 100000000000 --private-key $PK --rpc-url $RPC >/dev/null
 RPC_URL=$RPC ENGINE=$ENGINE USDC=$USDC PK=$PK node dist/e2e-central.js

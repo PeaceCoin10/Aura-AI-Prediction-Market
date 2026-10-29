@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""deploy/netlify.sh 的离线自测：本地 mock Netlify API，跑完整条 zip 部署链路。
+"""Offline self-test for deploy/netlify.sh: a local mock Netlify API drives the whole zip deploy path.
 
-证明脚本真的会：建站 → zip 打包 → 上传 → 轮询状态 → 回读 HTTP 200。
-不需要任何 token，不碰外网。
+Proves the script really does: create site → zip → upload → poll state → read back HTTP 200.
+Needs no token and never touches the network.
 """
 import json
 import os
@@ -14,7 +14,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PORT = 8899
-SITE_URL = "http://127.0.0.1:4173"  # 由调用方先起的静态预览服务
+SITE_URL = "http://127.0.0.1:4173"  # static preview server the caller must start first
 state = {"polls": 0, "zip_bytes": 0, "zip_entries": 0, "site_created": 0}
 
 

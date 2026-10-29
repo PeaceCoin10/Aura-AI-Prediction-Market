@@ -1,11 +1,11 @@
-# Netlify 永久域名部署配置（git 直连 / CLI 都可用）
+# Netlify permanent-domain deployment config (works with git integration or the CLI)
 [build]
   base = "frontend"
   command = "npm ci --no-audit --no-fund && npm run build"
   publish = "dist"
   environment = { NODE_VERSION = "20" }
 
-# SPA：任何未知路径都回 index.html（前端自己路由）
+# SPA: unknown paths fall back to index.html (routing happens client-side)
 [[redirects]]
   from = "/*"
   to = "/index.html"
