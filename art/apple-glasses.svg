@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-label="Will Apple announce AR glasses this quarter?">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="675" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#05060f"/><stop offset="52%" stop-color="#1e1b4b" stop-opacity=".30"/><stop offset="100%" stop-color="#05060f"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="41%" cy="48%" r="58%">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity=".30"/><stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vig" cx="50%" cy="50%" r="72%">
+      <stop offset="55%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".62"/>
+    </radialGradient>
+    <linearGradient id="edge" x1="0" y1="675" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0"/><stop offset="50%" stop-color="#67e8f9" stop-opacity=".7"/><stop offset="100%" stop-color="#a78bfa" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+      <path d="M60 0H0V60" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+    </pattern>
+    <clipPath id="c"><rect width="1200" height="675"/></clipPath>
+  </defs>
+  <g clip-path="url(#c)">
+    <rect width="1200" height="675" fill="url(#bg)"/>
+    <rect width="1200" height="675" fill="url(#grid)"/>
+    <rect width="1200" height="675" fill="url(#glow)"/>
+    <g stroke="#a78bfa" stroke-width="1.3" opacity=".26" fill="none">
+    <path d="M90 140 H420 L460 166 H520"/>
+    <path d="M520 166 V560"/>
+    <path d="M90 204 H420 L460 230 H580"/>
+    <path d="M590 230 V540"/>
+    <path d="M90 268 H420 L460 294 H640"/>
+    <path d="M660 294 V520"/>
+    <path d="M90 332 H420 L460 358 H700"/>
+    <path d="M730 358 V500"/>
+    <path d="M90 396 H420 L460 422 H760"/>
+    <path d="M800 422 V480"/>
+    <path d="M90 460 H420 L460 486 H820"/>
+    <path d="M870 486 V460"/>
+    <path d="M90 524 H420 L460 550 H880"/>
+    <path d="M940 550 V440"/>
+    </g>
+    <circle cx="600" cy="328" r="120" fill="none" stroke="#a78bfa" stroke-width="1.6" opacity=".3"/>
+    <circle cx="975" cy="366" r="3" fill="#67e8f9" opacity=".55"/>
+    <circle cx="1066" cy="239" r="4" fill="#67e8f9" opacity=".55"/>
+    <circle cx="542" cy="538" r="5" fill="#67e8f9" opacity=".55"/>
+    <circle cx="996" cy="358" r="3" fill="#67e8f9" opacity=".55"/>
+    <circle cx="509" cy="228" r="4" fill="#67e8f9" opacity=".55"/>
+    <circle cx="1048" cy="369" r="5" fill="#67e8f9" opacity=".55"/>
+    <circle cx="748" cy="177" r="3" fill="#67e8f9" opacity=".55"/>
+    <circle cx="918" cy="153" r="4" fill="#67e8f9" opacity=".55"/>
+    <circle cx="339" cy="150" r="5" fill="#67e8f9" opacity=".55"/>
+    <circle cx="147" cy="150" r="3" fill="#67e8f9" opacity=".55"/>
+    <circle cx="123" cy="150" r="4" fill="#67e8f9" opacity=".55"/>
+    <circle cx="120" cy="150" r="5" fill="#67e8f9" opacity=".55"/>
+    <rect width="1200" height="675" fill="url(#vig)"/>
+    <rect x="0" y="672" width="1200" height="3" fill="url(#edge)"/>
+  </g>
+</svg>
