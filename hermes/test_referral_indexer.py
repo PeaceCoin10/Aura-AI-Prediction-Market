@@ -27,11 +27,15 @@ def _word(value: int) -> str:
     return format(value, "x").rjust(64, "0")
 
 
+# signature -> pinned topic, so these fixtures need no crypto dependency at runtime
+TOPIC_FOR = {ri.SIG_BOUGHT: ri.TOPIC_BOUGHT, ri.SIG_SOLD: ri.TOPIC_SOLD}
+
+
 def _log(signature: str, values: list[int], trader: str = BUYER) -> dict:
     data = "0x" + "".join(_word(v) for v in values)
     return {
         "address": ri.ENGINE_DEFAULT,
-        "topics": [ri.topic0(signature), MARKET, "0x" + trader[2:].rjust(64, "0")],
+        "topics": [TOPIC_FOR[signature], MARKET, "0x" + trader[2:].rjust(64, "0")],
         "data": data,
         "transactionHash": "0x" + "ef" * 32,
         "blockNumber": "0x10",
