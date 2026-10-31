@@ -9,6 +9,7 @@ import { marketing } from "./marketing";
 import { social } from "./social";
 import { airdrop } from "./airdrop";
 import { ui } from "./ui";
+import { terminal } from "./terminal";
 
 /**
  * English message tree — the reference implementation every other locale must satisfy.
@@ -26,6 +27,27 @@ export const en = {
   social,
   airdrop,
   ui,
+  terminal,
 } as const;
 
-export type Messages = typeof en;
+/**
+ * Structural message type.
+ *
+ * `en` itself is `as const` so component code gets literal types, but a translation must be allowed
+ * to use *different* text. `Widen` (deeply) replaces every literal with `string` while preserving
+ * the key structure, so a locale that forgets a namespace, a key or a nested field fails to compile
+ * instead of rendering `undefined` at runtime.
+ */
+type Widen<T> = T extends string
+  ? string
+  : T extends number
+    ? number
+    : T extends boolean
+      ? boolean
+      : T extends readonly (infer U)[]
+        ? readonly Widen<U>[]
+        : T extends object
+          ? { [K in keyof T]: Widen<T[K]> }
+          : T;
+
+export type Messages = Widen<typeof en>;

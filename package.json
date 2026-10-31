@@ -18,6 +18,10 @@
     "brain": "python3 hermes/hermes_brain.py --interval 300",
     "insights": "python3 hermes/insights.py --workdir hermes-runtime --out frontend/public/insights.json",
     "tunnel": "./deploy/tunnel.sh start",
-    "verify:contracts": "bash deploy/verify-basescan.sh"
+    "verify:contracts": "bash deploy/verify-basescan.sh",
+    "sync": "node server/sync-server.mjs",
+    "test:sync": "node server/sync-selftest.mjs",
+    "e2e:sync": "cd frontend && python3 scripts/e2e_sync.py",
+    "test:all": "npm test && npm run typecheck && npm run e2e:ui"
   }
 }

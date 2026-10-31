@@ -33,6 +33,8 @@ import { groupOf, NAV, NAV_LABEL, type NavKey } from "./lib/nav";
 import { format, useT } from "./lib/i18n";
 import { LiveTicker } from "./components/LiveTicker";
 import { PredictorBoard } from "./components/PredictorBoard";
+import { HeroCarousel } from "./components/HeroCarousel";
+import { WhaleTicker } from "./components/WhaleTicker";
 
 function ConnectModal({ onClose }: { onClose: () => void }) {
   const { providers, connect, connectSocial, connecting, error } = useWallet();
@@ -363,7 +365,7 @@ function Dashboard() {
       <main className="mx-auto max-w-[1240px] px-4 py-5">
         {tab === "feed" && (
           <div className="space-y-4">
-            <div className="card hero-panel relative overflow-hidden p-4">
+            <div className="card hero-panel sheen relative overflow-hidden p-4">
               <div className="grid-bg pointer-events-none absolute inset-0 opacity-40" />
               <div className="relative flex flex-wrap items-end gap-3">
                 <div className="min-w-0">
@@ -391,6 +393,8 @@ function Dashboard() {
               </div>
             </div>
 
+            <HeroCarousel onOpen={setDemoSelected} />
+
             <StatStrip
               items={
                 mode === "paper"
@@ -414,6 +418,7 @@ function Dashboard() {
 
             <CategoryNav value={nav} onChange={setNav} counts={counts} />
 
+            <WhaleTicker />
             <LiveTicker />
 
             <div className="grid gap-3 lg:grid-cols-[1fr_380px]">

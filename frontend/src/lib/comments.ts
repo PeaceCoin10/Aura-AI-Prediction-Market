@@ -140,3 +140,38 @@ export function stanceTally(marketId: string): { yes: number; no: number; neutra
   }
   return out;
 }
+
+/** Whole debate corpus — the wire shape the cloud layer carries. */
+export function snapshotComments(): Record<string, Comment[]> {
+  return readAll();
+}
+
+/**
+ * Adopt remote debate takes: union by comment id, newest first, capped per market.
+ * Seeded official prompts are never dropped, so a cold market keeps its opening question.
+ */
+export function mergeComments(remote: Record<string, Comment[]>): void {
+  if (!remote || typeof remote !== "object") return;
+  const local = readAll();
+  let changed = false;
+  for (const [marketId, incoming] of Object.entries(remote)) {
+    if (!Array.isArray(incoming)) continue;
+    const byId = new Map<string, Comment>();
+    for (const c of local[marketId] ?? []) byId.set(c.id, c);
+    for (const c of incoming) {
+      if (!c || typeof c.id !== "string") continue;
+      const seen = byId.get(c.id);
+      if (!seen) {
+        byId.set(c.id, c);
+        changed = true;
+      } else if (seen.seeded && !c.seeded) {
+        byId.set(c.id, c);
+        changed = true;
+      }
+    }
+    const merged = [...byId.values()].sort((a, b) => b.ts - a.ts).slice(0, MAX_PER_MARKET);
+    if (merged.length !== (local[marketId] ?? []).length) changed = true;
+    local[marketId] = merged;
+  }
+  if (changed) writeAll(local);
+}

@@ -60,7 +60,83 @@ export interface PaperState {
   trades: PaperTrade[];
 }
 
+/** Wire format for cloud sync: bigints as decimal strings, trade list bounded. */
+export interface PaperSnapshot {
+  balance: string;
+  claimed: boolean;
+  positions: Record<string, { yes: string; no: string; spent: string; realized: string }>;
+  trades: PaperTrade[];
+  updatedAt: number;
+}
+
 const EMPTY: PaperState = { balance: 0n, claimed: false, positions: {}, trades: [] };
+
+/** Last write timestamp, mirrored into storage so cloud merges can order two devices. */
+let lastWrite = 0;
+
+export function paperUpdatedAt(): number {
+  return lastWrite;
+}
+
+/** Compact wire snapshot of everything the cloud layer needs to carry. */
+export function snapshotPaper(): PaperSnapshot {
+  const s = loadPaper();
+  return {
+    balance: s.balance.toString(),
+    claimed: s.claimed,
+    positions: Object.fromEntries(
+      Object.entries(s.positions).map(([k, v]) => [
+        k,
+        { yes: v.yes.toString(), no: v.no.toString(), spent: v.spent.toString(), realized: v.realized.toString() },
+      ]),
+    ),
+    trades: s.trades.slice(0, 120),
+    updatedAt: lastWrite || Math.max(0, ...s.trades.map((t) => t.ts)),
+  };
+}
+
+/**
+ * Adopt a remote snapshot.
+ *
+ * Money fields are last-write-wins (a single number cannot be merged), while the trade ledger is
+ * unioned by id so two devices trading offline never lose each other's fills.
+ *
+ * `force` is for a device's *first* sync: a fresh browser that just claimed the 10,000 FAKE-USDC
+ * welcome bonus must not overwrite an account that already has a trade history. Only the very first
+ * round on a device can force, so an explicit local reset later still wins on its own timestamp.
+ */
+export function applyPaperSnapshot(remote: PaperSnapshot, opts: { force?: boolean } = {}): void {
+  const local = loadPaper();
+  const remoteAt = Number(remote.updatedAt) || 0;
+  const localAt = lastWrite || Math.max(0, ...local.trades.map((t) => t.ts));
+  const takeRemote = opts.force && (remote.trades?.length ?? 0) > 0 ? true : remoteAt >= localAt;
+
+  const positions: Record<string, PaperPosition> = {};
+  const source = takeRemote ? remote.positions ?? {} : snapshotPaper().positions;
+  for (const [k, v] of Object.entries(source)) {
+    positions[k] = {
+      yes: BigInt(v.yes ?? "0"),
+      no: BigInt(v.no ?? "0"),
+      spent: BigInt(v.spent ?? "0"),
+      realized: BigInt(v.realized ?? "0"),
+    };
+  }
+
+  const seen = new Set<string>();
+  const trades = [...(remote.trades ?? []), ...local.trades]
+    .filter((t) => (seen.has(t.id) ? false : (seen.add(t.id), true)))
+    .sort((a, b) => b.ts - a.ts)
+    .slice(0, 120);
+
+  const next: PaperState = {
+    balance: takeRemote ? BigInt(remote.balance ?? "0") : local.balance,
+    claimed: takeRemote ? !!remote.claimed : local.claimed,
+    positions,
+    trades,
+  };
+  lastWrite = Math.max(localAt, remoteAt);
+  saveLocal(next, lastWrite);
+}
 
 function canStore(): boolean {
   try {
@@ -80,7 +156,9 @@ export function loadPaper(): PaperState {
       claimed?: boolean;
       positions?: Record<string, { yes?: string; no?: string; spent?: string; realized?: string }>;
       trades?: PaperTrade[];
+      updatedAt?: number;
     };
+    if (typeof p.updatedAt === "number") lastWrite = Math.max(lastWrite, p.updatedAt);
     const positions: Record<string, PaperPosition> = {};
     for (const [k, v] of Object.entries(p.positions ?? {})) {
       positions[k] = {
@@ -96,8 +174,12 @@ export function loadPaper(): PaperState {
   }
 }
 
-function save(state: PaperState): void {
-  if (!canStore()) return;
+function saveLocal(state: PaperState, updatedAt = Date.now()): void {
+  lastWrite = Math.max(lastWrite, updatedAt);
+  if (!canStore()) {
+    listeners.forEach((fn) => fn());
+    return;
+  }
   try {
     window.localStorage.setItem(
       KEY,
@@ -111,12 +193,17 @@ function save(state: PaperState): void {
           ]),
         ),
         trades: state.trades.slice(0, 120),
+        updatedAt: lastWrite,
       }),
     );
   } catch {
     /* ignore quota */
   }
   listeners.forEach((fn) => fn());
+}
+
+function save(state: PaperState): void {
+  saveLocal(state, Date.now());
 }
 
 export function subscribePaper(fn: () => void): () => void {

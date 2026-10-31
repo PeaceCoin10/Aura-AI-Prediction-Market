@@ -10,20 +10,21 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/PeaceCoin10/Aura-AI-Prediction-Market/actions"><img alt="tests" src="https://img.shields.io/badge/test%20suite-250%20passing-34d399?style=flat-square&logo=githubactions&logoColor=white" /></a>
+  <a href="https://github.com/PeaceCoin10/Aura-AI-Prediction-Market/actions"><img alt="tests" src="https://img.shields.io/badge/test%20suite-311%20passing-34d399?style=flat-square&logo=githubactions&logoColor=white" /></a>
   <a href="https://basescan.org/address/0xE6056Bc6700F6d7E6fF8779B212655284dc1631C#code"><img alt="Base mainnet verified" src="https://img.shields.io/badge/Base%20mainnet-verified-0052FF?style=flat-square&logo=base&logoColor=white" /></a>
-  <img alt="active markets" src="https://img.shields.io/badge/active%20markets-130-34d399?style=flat-square" />
-  <img alt="simulated volume" src="https://img.shields.io/badge/sample%20volume-9.7M%20USDC-0f172a?style=flat-square" />
-  <img alt="locales" src="https://img.shields.io/badge/i18n-EN%20%C2%B7%20extensible-22d3ee?style=flat-square" />
+  <img alt="active markets" src="https://img.shields.io/badge/active%20markets-250%2B-34d399?style=flat-square" />
+  <img alt="simulated volume" src="https://img.shields.io/badge/sample%20volume-18M%20USDC-0f172a?style=flat-square" />
+  <img alt="locales" src="https://img.shields.io/badge/i18n-EN%20%C2%B7%20ZH%20%C2%B7%20JA%20%C2%B7%20KO%20%C2%B7%20DE-22d3ee?style=flat-square" />
+  <img alt="cloud sync" src="https://img.shields.io/badge/cloud%20sync-AES--256--GCM%20%C2%B7%20wallet--bound-22d3ee?style=flat-square" />
   <img alt="license" src="https://img.shields.io/badge/license-MIT-0f172a?style=flat-square" />
 </p>
 
 <p align="center">
-  <a href="https://peacecoin10.github.io/Aura-AI-Prediction-Market/"><img alt="Open the app" src="https://img.shields.io/badge/%E2%96%B6%20OPEN%20THE%20APP-trade%20130%20markets-34d399?style=for-the-badge&labelColor=05060a" /></a>
+  <a href="https://peacecoin10.github.io/Aura-AI-Prediction-Market/"><img alt="Open the app" src="https://img.shields.io/badge/%E2%96%B6%20OPEN%20THE%20APP-trade%20250%2B%20markets-34d399?style=for-the-badge&labelColor=05060a" /></a>
 </p>
 
 <p align="center">
-  <sub>130 sample markets across politics, crypto, sport, esports and frontier tech · 10,000 FAKE-USDC on arrival · no wallet needed to look around</sub>
+  <sub>255 sample markets across geopolitics, central banks, crypto, sport, esports and frontier tech · 10,000 FAKE-USDC on arrival · five languages · no wallet needed to look around</sub>
 </p>
 
 <p align="center">
@@ -33,6 +34,9 @@
   <a href="#contracts">Contracts</a> ·
   <a href="#economics">Economics</a> ·
   <a href="#quickstart">Quickstart</a> ·
+  <a href="#the-terminal-surface">Terminal UI</a> ·
+  <a href="#globalisation-five-locales">i18n</a> ·
+  <a href="#cloud-sync-account-owned-state">Cloud sync</a> ·
   <a href="#sdk">SDK</a> ·
   <a href="#security">Security</a> ·
   <a href="#deploy">Deploy</a>
@@ -50,7 +54,7 @@ liquidity, no liquidity means no markets. Most teams answer that with incentives
 | **Who writes the markets?** | A Hermes agent cycle polls CoinGecko/Binance, RSS, ESPN and LoL Esports every 5 minutes and drafts a binary market with an explicit resolution rule | `hermes/hermes_brain.py`, `hermes/verticals.py` |
 | **Who prices them?** | A constant-product market maker on-chain — `p_yes = noReserve / (yesReserve + noReserve)`. No order book, no market maker to hire | `src/CentralPredictionEngine.sol` |
 | **Who settles them?** | Price markets: 3×30s sampling to resist wicks. Sports/esports: official results only. News: **never auto-resolved** — routed to a Safe | `OracleEngine` |
-| **What about first-time users?** | Paper mode: 10,000 FAKE-USDC credited on arrival, 130 sample markets across six verticals, quoted with the same CPMM maths and settled locally | `frontend/src/lib/paper.ts` |
+| **What about first-time users?** | Paper mode: 10,000 FAKE-USDC credited on arrival, 255 sample markets across six verticals, quoted with the same CPMM maths and settled locally | `frontend/src/lib/paper.ts` |
 | **Can settlement be gamed?** | 1-hour dispute window after resolution, withdrawals locked, Safe multisig can override | `DISPUTE_WINDOW = 1 hours` |
 | **Can the admin run away?** | After 7 days unsettled, anyone can call `emergencyRefund` for a full refund | `REFUND_DELAY = 7 days` |
 
@@ -211,13 +215,17 @@ git clone https://github.com/PeaceCoin10/Aura-AI-Prediction-Market.git
 cd Aura-AI-Prediction-Market
 
 # contracts
-forge test                                              # 46 tests
+forge test                                              # 62 tests
 
 # SDK (offline unit tests, no RPC needed)
 cd sdk && npm install && npm test && cd ..               # 70 tests
 
 # agent
-python3 -m unittest discover -s hermes -p 'test_*.py'    # 49 tests
+python3 -m unittest discover -s hermes -p 'test_*.py'    # 64 tests
+
+# cloud-sync store (optional: durable transport for the ledger)
+node server/sync-server.mjs                              # :8787
+node server/sync-selftest.mjs                            # 11 assertions
 
 # dApp
 cd frontend && npm install && npm run dev
@@ -228,7 +236,8 @@ End-to-end suites:
 
 ```bash
 cd frontend
-python3 scripts/e2e_ui.py        # 55 headless UI assertions
+python3 scripts/e2e_ui.py        # 91 headless UI assertions (5 locales, carousel, whale tape, depth)
+SYNC_MODE=relay python3 scripts/e2e_sync.py   # 13 cross-device cloud-sync assertions
 python3 scripts/shots.py         # regenerate README screenshots
 python3 scripts/e2e_local.py     # 11 real-chain assertions against anvil (see docs)
 ```
@@ -239,7 +248,7 @@ python3 scripts/e2e_local.py     # 11 real-chain assertions against anvil (see d
 | | |
 | --- | --- |
 | ![Market hall](reports/shots/03-hall-paper.png) | ![Novice pool](reports/shots/02b-novice-pool.png) |
-| Market hall — 130 sample markets, artwork, live ticker and leaderboard | Novice pool — the second beat of onboarding |
+| Market hall — 255 sample markets, headline carousel, whale tape, ticker and leaderboard | Novice pool — the second beat of onboarding |
 
 </details>
 
@@ -281,6 +290,90 @@ Full API tables: [`docs/CENTRAL-SDK-GUIDE.md`](docs/CENTRAL-SDK-GUIDE.md).
 
 > **Outcome encoding caveat:** the contract uses `0 = NO, 1 = YES`; the UI's side index is the reverse
 > (`0 = YES`). The mapping lives in exactly one place — `frontend/src/lib/paper.ts` — and is covered by tests.
+
+---
+
+## The terminal surface
+
+The hall is built to read like a desk terminal, not a landing page. Every motion carries information:
+
+- **Global headline carousel** — the deepest book per vertical, rotating every 8s with a probability
+  sparkline fed by the same simulated tick the cards use (7s cadence, labelled as such). Hover pauses,
+  the progress rail shows the remaining dwell time, `prefers-reduced-motion` disables the rotation.
+- **Whale flow tape** — prints at or above $25k only, wallet + side + notional. Real fills from the
+  event feed come first and carry an `ON-CHAIN` tag; the rest is a deterministic sample from the
+  featured book, labelled *Simulated tape* in the header. Sample prints are never presented as
+  settled transactions.
+- **Live depth curve** — for each notional on a log ladder (500 → 250k USDC) the chart re-solves the
+  engine's invariant `k = yes × no` and plots the price that order would move YES to. It is drawn from
+  the same reserves the trade panel quotes against, so the "what would $50k do here" number is real.
+- **Breathing highlight ring, light sheen, and a synthesised sound engine** — every cue is a short
+  WebAudio envelope (no assets, no network): a two-note rise on a filled order, a soft click on a tab.
+  The mute toggle in the header is one click and persists.
+
+---
+
+## Globalisation: five locales
+
+English ships as the reference message tree; Simplified Chinese, Japanese, Korean and German mirror it
+key for key.
+
+```
+frontend/src/locales/
+  en/   index.ts + one file per surface (shell, hall, trade, paper, portfolio, terminal, …)
+  zh/   index.ts   (typed `satisfies Messages`)
+  ja/   index.ts
+  ko/   index.ts
+  de/   index.ts
+```
+
+- **Typed, not string-keyed.** `Messages` is a widened version of the English tree, so a locale that
+  forgets a namespace, a key or a nested field fails `tsc` instead of rendering `undefined`.
+- **No reload.** The provider swaps the message tree in place and writes `<html lang>`; the choice is
+  persisted to `localStorage` and mirrored to the cloud so a second device adopts it.
+- **First visit resolution:** `?lang=` → saved preference → `navigator.languages` → English.
+- **The switcher** is a frosted dropdown in the header: Latin two-letter chips (EN/ZH/JA/KO/DE) plus
+  endonyms, keyboard navigable, click-outside and `Escape` to dismiss. It renders conditionally so the
+  English first paint contains no translated glyphs.
+- Adding a locale is one file and one `registerLocale({ code, label, native, htmlLang, messages })` call.
+
+---
+
+## Cloud sync: account-owned state
+
+A portfolio should belong to a user, not to a browser profile. Paper balance, positions, fills, the
+referral journal and every debate take now follow the wallet across devices.
+
+```
+personal_sign(challenge)  →  PBKDF2-SHA256 (120k)  →  AES-256-GCM  →  transport
+```
+
+- **Identity** is the wallet address, or the ERC-4337 smart account that Web3Auth mints from a Google /
+  email login — the same `personal_sign` path, no gas, no transaction.
+- **The payload is sealed before it leaves the browser.** The transport only ever stores `{ iv, ct }`.
+- **Transports**, first configured wins:
+
+  | Transport | Env | Durable | Notes |
+  | --- | --- | --- | --- |
+  | `endpoint` | `VITE_SYNC_ENDPOINT` | yes | `server/sync-server.mjs`, dependency-free, file-backed |
+  | `supabase` | `VITE_SUPABASE_URL` + `_ANON_KEY` | yes | PostgREST, SQL in `docs/cloud-sync.md` |
+  | `relay` | none | 12 h | `ntfy.sh`, topic derived from the wallet — the zero-config default |
+
+- **Merge:** money is last-write-wins; fills and takes are unioned by id, so two devices trading
+  offline never destroy each other's history. A brand-new device that just claimed the welcome bonus
+  cannot shadow an account that already has a fill history.
+- **The chip never lies:** `Local only` → `Syncing` → `Synced` is reported from the real round-trip.
+  With no wallet bound nothing is uploaded at all.
+
+Verified, not asserted:
+
+```bash
+npm run test:sync     # 11 assertions: seal → round-trip → wrong-key rejection → miss
+npm run e2e:sync      # 13 assertions: two isolated browser profiles, device B adopts A's ledger
+SYNC_MODE=relay npm run e2e:sync   # same suite over the public zero-config relay
+```
+
+Full design, the Supabase schema and the threat model: [`docs/cloud-sync.md`](docs/cloud-sync.md).
 
 ---
 
@@ -409,10 +502,11 @@ test/               forge tests + invariant handlers (62)
 sdk/                TypeScript SDK (Multicall3, offline quotes, log decoding)
 hermes/             agent: planners, verticals, insights, referral indexer, X bot
 frontend/           dApp (Vite + React + Tailwind + viem)
-  src/locales/en/   message tree — one namespace per surface
+  src/locales/      five locales (en, zh, ja, ko, de) — one namespace per surface
+server/             cloud-sync store + crypto round-trip self-test
 deploy/             gh-pages / vercel / netlify / tunnel / basescan verification
 scripts/            github_push + repo tooling
-docs/               engineering notes, security matrix, deploy guides
+docs/               engineering notes, security matrix, deploy guides, cloud-sync design
 assets/             brand: logo, banner
 ```
 
@@ -422,10 +516,11 @@ assets/             brand: logo, banner
 
 - [ ] Fund the agent wallet (≥100 USDC) so it seeds markets on mainnet automatically
 - [ ] Deploy `ReferralLedger` on Base and fund the rebate pool (script + 16 tests are ready)
-- [ ] Move the debate wall off `localStorage` (indexer or on-chain)
+- [x] Move the debate wall off `localStorage` (wallet-bound, end-to-end encrypted cloud sync)
 - [ ] Hand `admin` to a Safe multisig (currently a single EOA)
 - [ ] Independent audit
-- [ ] More locales — the i18n runtime is namespace-based; add one file under `frontend/src/locales/`
+- [x] Five locales (EN / ZH / JA / KO / DE) — the runtime is namespace-based; add one file under `frontend/src/locales/`
+- [ ] Point the hosted build at a durable transport (Supabase or the bundled server) for >12h retention
 
 ---
 

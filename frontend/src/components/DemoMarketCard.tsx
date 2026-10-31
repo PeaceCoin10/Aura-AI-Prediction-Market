@@ -15,6 +15,7 @@ import { brainInsight, localInsight, refreshInsights, type Insight, type Insight
 import { format, useT } from "../lib/i18n";
 import { MarketArt } from "./MarketArt";
 import { TelegramShare } from "./TelegramShare";
+import { DepthChart } from "./DepthChart";
 
 const CAT_STYLE: Record<string, string> = {
   crypto: "border-amber-400/30 bg-amber-400/10 text-amber-300",
@@ -313,6 +314,10 @@ export function DemoDetail({ market, onClose }: { market: DemoMarket; onClose: (
             <div className="rounded-xl border border-brand/15 bg-brand/[0.04] p-3">
               <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-brand/80">{t.paper.detail.criteriaTitle}</h3>
               <p className="text-[12.5px] leading-relaxed text-slate-300">{market.criteria}</p>
+            </div>
+
+            <div className="sheen rounded-xl border border-white/8 bg-white/[0.03] p-3">
+              <DepthChart yesReserve={live.yesReserve} noReserve={live.noReserve} />
             </div>
 
             <AIInsights

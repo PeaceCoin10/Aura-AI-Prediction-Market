@@ -36,3 +36,7 @@ __pycache__/
 # legacy archive build output
 legacy/out/
 legacy/cache/
+
+# cloud-sync store (local dev data) and its alternate build
+.sync-store/
+frontend/dist-sync/

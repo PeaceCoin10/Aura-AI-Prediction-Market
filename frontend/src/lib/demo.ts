@@ -78,7 +78,7 @@ function demo(
 /** Demo copy lives in the i18n tree so translators get the questions and criteria too. */
 const M = en.content.demoMarkets;
 
-/** The catalogue lives in `src/data/markets.ts` (130 sample markets). */
+/** The catalogue lives in `src/data/markets.ts` (255 sample markets). */
 export { DEMO_MARKETS } from "../data/markets";
 
 

@@ -7,37 +7,12 @@ import { useToasts } from "../hooks/useToasts";
 import { useI18n, useT } from "../lib/i18n";
 import { LogoLockup, LogoMark } from "./BrandLogo";
 import { ModeSwitch, SoundToggle } from "./ModeSwitch";
+import { LocaleSwitcher } from "./LocaleSwitcher";
+import { SyncBadge } from "./SyncBadge";
 
 const SHORT_ENGINE = shortAddr(ENGINE_ADDRESS);
 
 export type Tab = "feed" | "portfolio" | "activity";
-
-/** Locale chip: renders every registered locale; a second one turns it into a real switcher. */
-function LocaleChip() {
-  const { locale, setLocale, locales, t } = useI18n();
-  const label = locales.find((l) => l.code === locale)?.label ?? locale.toUpperCase();
-  if (locales.length <= 1) {
-    return (
-      <span className="chip mono hidden h-8 items-center text-[11px] lg:inline-flex" title={t.shell.locale.label}>
-        {label}
-      </span>
-    );
-  }
-  return (
-    <select
-      className="hidden h-8 rounded-lg border border-white/10 bg-ink-950/70 px-1.5 text-[11px] text-slate-300 lg:block"
-      value={locale}
-      onChange={(e) => setLocale(e.target.value)}
-      title={t.shell.locale.label}
-    >
-      {locales.map((l) => (
-        <option key={l.code} value={l.code}>
-          {l.label}
-        </option>
-      ))}
-    </select>
-  );
-}
 
 export function Header({
   tab,
@@ -133,7 +108,8 @@ export function Header({
             }
           />
           <SoundToggle />
-          <LocaleChip />
+          <SyncBadge />
+          <LocaleSwitcher />
 
           <button
             className="btn-ghost hidden h-8 px-2.5 text-[11px] sm:inline-flex"

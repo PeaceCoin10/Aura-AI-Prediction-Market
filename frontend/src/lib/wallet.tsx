@@ -44,6 +44,8 @@ interface WalletState {
   sendTransaction: (tx: { to: `0x${string}`; data: string }) => Promise<Hex>;
   approveUsdc: (amount: bigint) => Promise<Hex | null>;
   ensureUsdcAllowance: (amount: bigint) => Promise<void>;
+  /** EIP-191 personal signature — used to derive the cloud-sync key, never broadcast. */
+  signMessage: (message: string) => Promise<Hex>;
 }
 
 const WalletCtx = createContext<WalletState | null>(null);
@@ -265,6 +267,23 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     [entry, account, approveUsdc],
   );
 
+  const signMessage = useCallback(
+    async (message: string) => {
+      if (!entry || !account) throw new Error(en.content.wallet.notConnected);
+      // personal_sign takes the UTF-8 message as a hex string for injected providers.
+      const hex =
+        "0x" +
+        Array.from(new TextEncoder().encode(message))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
+      return (await entry.provider.request({
+        method: "personal_sign",
+        params: [hex, account],
+      })) as Hex;
+    },
+    [entry, account],
+  );
+
   const value = useMemo<WalletState>(
     () => ({
       providers,
@@ -281,6 +300,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       sendTransaction,
       approveUsdc,
       ensureUsdcAllowance,
+      signMessage,
     }),
     [
       providers,
@@ -297,6 +317,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       sendTransaction,
       approveUsdc,
       ensureUsdcAllowance,
+      signMessage,
     ],
   );
 
