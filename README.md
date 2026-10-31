@@ -249,6 +249,10 @@ python3 scripts/e2e_local.py     # 11 real-chain assertions against anvil (see d
 | --- | --- |
 | ![Market hall](reports/shots/03-hall-paper.png) | ![Novice pool](reports/shots/02b-novice-pool.png) |
 | Market hall — 255 sample markets, headline carousel, whale tape, ticker and leaderboard | Novice pool — the second beat of onboarding |
+| ![Language switcher](reports/shots/07-locale-switcher.png) | ![Hall in Chinese](reports/shots/08-hall-zh.png) |
+| Language switcher — frosted dropdown, five locales, switch without a reload | The same hall in Simplified Chinese (`<html lang="zh-CN">`) |
+| ![Cloud sync panel](reports/shots/09-cloud-sync-panel.png) | ![Demo detail](reports/shots/05-demo-detail.png) |
+| Cloud-sync panel — transport, device id, cipher, manual push / pull | Market detail — live depth curve solved from the CPMM invariant |
 
 </details>
 

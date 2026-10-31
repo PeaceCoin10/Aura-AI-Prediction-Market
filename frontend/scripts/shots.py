@@ -3,6 +3,7 @@
 
 Usage: python3 frontend/scripts/shots.py [url] [outdir]
 """
+import re
 import sys
 from pathlib import Path
 
@@ -20,7 +21,7 @@ with sync_playwright() as pw:
     pg.wait_for_timeout(1200)
     pg.screenshot(path=str(OUT / "01-risk-modal.png"))
 
-    pg.get_by_role("button", name="I understand the risk — enter markets").click()
+    pg.get_by_role("button", name=re.compile("I understand the risk", re.I)).first.click()
     pg.wait_for_timeout(1900)
     pg.screenshot(path=str(OUT / "02-welcome-airdrop.png"))
 
