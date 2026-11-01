@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { haptic, isTelegram, marketDeepLink, shareToTelegram } from "../lib/telegram";
+import { useT } from "../lib/i18n";
 
 /**
  * Native Telegram share for one market: the deep link reopens the dApp inside
  * Telegram with `startapp=market_<id>`, so a recipient lands on the same book.
  */
 export function TelegramShare({ marketId, question }: { marketId: string; question: string }) {
+  const t = useT();
   const [copied, setCopied] = useState(false);
   const link = marketDeepLink(marketId);
 
   const onShare = () => {
     haptic("success");
-    shareToTelegram(link, `${question}\n\nTrade it on Aura → #PredictionMarkets #Base #AI`);
+    shareToTelegram(link, `${question}\n\n${t.social.share.template}`);
   };
 
   const onCopy = async () => {
@@ -30,7 +32,7 @@ export function TelegramShare({ marketId, question }: { marketId: string; questi
       <button
         onClick={onShare}
         className="rounded-lg border border-sky-400/30 bg-sky-400/10 px-2 py-1 text-[10.5px] font-medium text-sky-300 transition hover:bg-sky-400/20"
-        title={isTelegram() ? "Share inside Telegram" : "Open the Telegram share sheet"}
+        title={isTelegram() ? t.social.share.shareIn : t.social.share.shareSheet}
       >
         Telegram
       </button>
@@ -39,7 +41,7 @@ export function TelegramShare({ marketId, question }: { marketId: string; questi
         className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1 text-[10.5px] text-slate-400 transition hover:text-slate-200"
         title={link}
       >
-        {copied ? "Copied" : "Deep link"}
+        {copied ? t.social.share.copied : t.social.share.deepLink}
       </button>
     </div>
   );

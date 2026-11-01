@@ -14,7 +14,7 @@
  *                  only ever sees ciphertext, so even a public demo bucket leaks nothing.
  *   3. Transport — a small provider interface. Three implementations ship here:
  *                    relay    : ntfy.sh public relay, zero-config, predictable topic, 12h retention
- *                    supabase : your own project + the SQL in docs/cloud-sync.md (durable)
+ *                    supabase : your own project + the SQL in docs/WHITEPAPER.md (durable)
  *                    endpoint : the bundled server/sync-server.mjs, or any compatible REST store
  *   4. Merge     — money is last-write-wins; the trade ledger and the debate wall are unioned by id
  *                  so two devices trading offline never destroy each other's history.
@@ -250,7 +250,7 @@ const SB_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 const SB_TABLE = (import.meta.env.VITE_SUPABASE_TABLE as string | undefined) ?? "aura_sync";
 
 /**
- * Supabase PostgREST. Row shape (see docs/cloud-sync.md):
+ * Supabase PostgREST. Row shape (see docs/WHITEPAPER.md):
  *   tag text primary key, updated_at timestamptz, device text, blob jsonb
  * RLS is left closed for anon reads by default; the documented policy allows insert/update on
  * `tag` only, and the row content is ciphertext anyway.

@@ -12,6 +12,7 @@
 import { toProb } from "./format";
 import { format } from "./i18n";
 import { en } from "../locales/en";
+import type { Messages } from "../locales/en";
 
 export type InsightTone = "bull" | "bear" | "warn" | "geek" | "calm";
 
@@ -71,13 +72,15 @@ export function insightsHealth(): { online: boolean; generatedAt?: number } {
 
 const C = en.content.insights;
 
-const CATEGORY_FLAVOR: Record<string, string> = {
-  crypto: C.flavor.crypto,
-  news: C.flavor.news,
-  tech: C.flavor.tech,
-  sports: C.flavor.sports,
-  esports: C.flavor.esports,
-};
+export type InsightCopy = Messages["content"]["insights"];
+
+const CATEGORY_FLAVOR = (copy: InsightCopy): Record<string, string> => ({
+  crypto: copy.flavor.crypto,
+  news: copy.flavor.news,
+  tech: copy.flavor.tech,
+  sports: copy.flavor.sports,
+  esports: copy.flavor.esports,
+});
 
 /**
  * Local inference: uses only real pool data (probability / depth / volume / time to settlement).
@@ -92,44 +95,44 @@ export function localInsight(input: {
   volume?: bigint;
   resolutionTime?: number;
   now?: number;
-}): Insight {
+}, copy: InsightCopy = C): Insight {
   const p = toProb(input.priceYes);
   const depthUsdc = Number(input.depth) / 1e6;
   const volUsdc = Number(input.volume ?? 0n) / 1e6;
   const now = input.now ?? Math.floor(Date.now() / 1000);
   const leftH = input.resolutionTime ? Math.max(0, (input.resolutionTime - now) / 3600) : undefined;
-  const flavor = CATEGORY_FLAVOR[(input.category ?? "").toLowerCase()] ?? C.flavor.fallback;
+  const flavor = CATEGORY_FLAVOR(copy)[(input.category ?? "").toLowerCase()] ?? copy.flavor.fallback;
 
   let tone: InsightTone = "calm";
   let text: string;
 
   if (p >= 0.75) {
     tone = "warn";
-    text = format(C.crowded, { prob: (p * 100).toFixed(1) });
+    text = format(copy.crowded, { prob: (p * 100).toFixed(1) });
   } else if (p >= 0.58) {
     tone = "bull";
-    text = format(C.edge, { prob: (p * 100).toFixed(1), flavor });
+    text = format(copy.edge, { prob: (p * 100).toFixed(1), flavor });
   } else if (p >= 0.42) {
     tone = "geek";
-    text = format(C.neutral, { prob: (p * 100).toFixed(1) });
+    text = format(copy.neutral, { prob: (p * 100).toFixed(1) });
   } else if (p >= 0.25) {
     tone = "bear";
-    text = format(C.fade, { prob: (p * 100).toFixed(1) });
+    text = format(copy.fade, { prob: (p * 100).toFixed(1) });
   } else {
     tone = "bear";
-    text = format(C.priced, { prob: (p * 100).toFixed(1), flavor });
+    text = format(copy.priced, { prob: (p * 100).toFixed(1), flavor });
   }
 
   if (depthUsdc > 0 && depthUsdc < 500) {
-    text += format(C.thinPool, { depth: depthUsdc.toFixed(0) });
+    text += format(copy.thinPool, { depth: depthUsdc.toFixed(0) });
     if ((["calm", "geek"] as InsightTone[]).includes(tone)) tone = "warn";
   } else if (volUsdc > 0 && volUsdc > depthUsdc * 2 && depthUsdc > 0) {
-    text += format(C.heavyVolume, { vol: volUsdc.toFixed(0), multiple: (volUsdc / depthUsdc).toFixed(1) });
+    text += format(copy.heavyVolume, { vol: volUsdc.toFixed(0), multiple: (volUsdc / depthUsdc).toFixed(1) });
   }
 
   if (leftH !== undefined) {
-    if (leftH <= 1) text += C.closingSoon;
-    else if (leftH <= 6) text += format(C.finalHours, { hours: leftH.toFixed(1) });
+    if (leftH <= 1) text += copy.closingSoon;
+    else if (leftH <= 6) text += format(copy.finalHours, { hours: leftH.toFixed(1) });
   }
 
   return {
@@ -137,7 +140,7 @@ export function localInsight(input: {
     tone,
     ts: Date.now(),
     source: "local",
-    basis: format(C.basis, {
+    basis: format(copy.basis, {
       prob: (p * 100).toFixed(1),
       depth: depthUsdc.toFixed(0),
       vol: volUsdc.toFixed(0),

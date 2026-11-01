@@ -1,0 +1,1277 @@
+[
+  {
+    "id": "btc-90k",
+    "question": "BTC가 이번 주 $90,000 위로 마감할까요?",
+    "criteria": "주 마지막 날 00:00 UTC 기준 CoinGecko 일봉 종가."
+  },
+  {
+    "id": "btc-100k",
+    "question": "BTC가 이번 달 $105,000 위로 사상 최고가를 새로 쓸까요?",
+    "criteria": "이번 달 내 Binance BTC/USDT 105,000 초과 체결 1건 이상."
+  },
+  {
+    "id": "btc-dominance",
+    "question": "BTC 도미넌스가 금요일까지 55% 위를 유지할까요?",
+    "criteria": "금요일 00:00 UTC 기준 CoinGecko 글로벌 시가총액 점유율."
+  },
+  {
+    "id": "eth-5k",
+    "question": "ETH가 이번 달 $5,000 위로 마감할까요?",
+    "criteria": "월 마지막 날 CoinGecko 일봉 종가."
+  },
+  {
+    "id": "eth-etf-flow",
+    "question": "미국 현물 ETH ETF가 이번 주 $500M 넘는 순유입을 기록할까요?",
+    "criteria": "Farside Investors 주간 순유입 표."
+  },
+  {
+    "id": "btc-etf-outflow",
+    "question": "미국 현물 BTC ETF에 이번 주 순유출 일자가 나올까요?",
+    "criteria": "Farside 데이터 기준 총 순유입이 마이너스인 날 1일 이상."
+  },
+  {
+    "id": "sol-300",
+    "question": "SOL이 이번 달 $300 위로 마감할까요?",
+    "criteria": "월 마지막 날 CoinGecko 일봉 종가."
+  },
+  {
+    "id": "sol-etf",
+    "question": "SEC가 분기 말 이전 현물 SOL ETF를 승인할까요?",
+    "criteria": "SEC 공식 명령 또는 승인 통지."
+  },
+  {
+    "id": "xrp-etf",
+    "question": "현물 XRP ETF가 이번 분기 안에 거래를 시작할까요?",
+    "criteria": "미국 거래소의 첫 거래일."
+  },
+  {
+    "id": "stablecoin-bill",
+    "question": "미국 스테이블코인 법안이 이번 회기 법으로 서명될까요?",
+    "criteria": "Congress.gov에 보고된 대통령 서명."
+  },
+  {
+    "id": "clarity-act",
+    "question": "시장구조 법안이 이번 분기 상원을 통과할까요?",
+    "criteria": "Senate.gov에 기록된 상원 최종 표결."
+  },
+  {
+    "id": "cpi-3",
+    "question": "다음 발표에서 미국 CPI가 전년 대비 3.0% 아래로 나올까요?",
+    "criteria": "BLS CPI 발표, 헤드라인 전년 대비 수치."
+  },
+  {
+    "id": "fed-cut",
+    "question": "연준이 다음 FOMC 회의에서 금리를 인하할까요?",
+    "criteria": "FOMC 성명의 목표 범위가 직전 회의보다 낮아짐."
+  },
+  {
+    "id": "fed-50",
+    "question": "다음 인하 폭이 50bp 이상일까요?",
+    "criteria": "FOMC 성명의 목표 범위 변경 폭 50bp 이상."
+  },
+  {
+    "id": "treasury-5",
+    "question": "미국 10년물 국채 금리가 이번 주 4.5% 위로 마감할까요?",
+    "criteria": "미 재무부 일별 수익률 곡선, 금요일 종가."
+  },
+  {
+    "id": "base-tvl",
+    "question": "Base TVL이 이번 주 $6B 위를 유지할까요?",
+    "criteria": "주말 기준 DefiLlama 체인 TVL."
+  },
+  {
+    "id": "l2-fees",
+    "question": "이번 주 Base 평균 가스비가 스왑당 $0.005 아래로 내려갈까요?",
+    "criteria": "L2Fees 주간 스냅샷의 스왑 수수료 중앙값."
+  },
+  {
+    "id": "dex-volume",
+    "question": "주요 자산의 DEX 거래량이 하루에 $40B를 넘을까요?",
+    "criteria": "DefiLlama DEX 거래량 집계, 이번 주 중 하루."
+  },
+  {
+    "id": "perp-funding",
+    "question": "BTC 무기한 선물 펀딩비가 7일 연속 플러스를 유지할까요?",
+    "criteria": "Binance BTCUSDT 무기한 펀딩레이트, 8시간 정산 전 회차."
+  },
+  {
+    "id": "hack-100m",
+    "question": "이번 달 어떤 DeFi 프로토콜이 익스플로잇으로 $100M 넘게 손실할까요?",
+    "criteria": "공개 사후 분석 또는 Rekt가 확인한 온체인 손실."
+  },
+  {
+    "id": "unlock-arb",
+    "question": "ARB가 다음 토큰 언락 24시간 후 더 낮게 거래될까요?",
+    "criteria": "언락 시점 24시간 후 CoinGecko 종가."
+  },
+  {
+    "id": "memecoin-cap",
+    "question": "밈코인 총 시가총액이 이번 달 $120B를 넘을까요?",
+    "criteria": "CoinGecko 카테고리 시가총액."
+  },
+  {
+    "id": "btc-vol",
+    "question": "BTC 30일 내재변동성이 60 위로 마감할까요?",
+    "criteria": "주말 기준 Deribit DVOL 지수."
+  },
+  {
+    "id": "eth-burn",
+    "question": "이번 주 ETH 공급량이 계속 줄어들까요?",
+    "criteria": "Ultrasound.money 순발행량, 7일 평균."
+  },
+  {
+    "id": "rwa-tvl",
+    "question": "토큰화 RWA TVL이 이번 분기 $20B를 돌파할까요?",
+    "criteria": "RWA.xyz 총 온체인 가치."
+  },
+  {
+    "id": "quantum-btc",
+    "question": "주요 지갑 제공사가 이번 분기 포스트 양자 키를 발표할까요?",
+    "criteria": "상위 5개 지갑 벤더의 공식 발표."
+  },
+  {
+    "id": "midterms-house",
+    "question": "중간선거에서 공화당이 하원 과반을 유지할까요?",
+    "criteria": "AP 개표 콜 기준 확정 의석수."
+  },
+  {
+    "id": "midterms-senate",
+    "question": "민주당이 상원 과반을 차지할까요?",
+    "criteria": "AP 개표 콜 기준 확정 의석수."
+  },
+  {
+    "id": "gov-shutdown",
+    "question": "이번 분기 미국 연방정부가 셧다운될까요?",
+    "criteria": "OMB 지침 또는 Congress.gov에 보고된 예산 소진(lapse in appropriations)."
+  },
+  {
+    "id": "supreme-court",
+    "question": "대법원이 이번 개정기(term)에 관세 사건을 판결할까요?",
+    "criteria": "supremecourt.gov에 공개된 판결문."
+  },
+  {
+    "id": "tariff-25",
+    "question": "미국이 중국산 EV 관세를 25% 넘게 인상할까요?",
+    "criteria": "USTR 연방관보 고시."
+  },
+  {
+    "id": "china-stimulus",
+    "question": "중국이 이번 분기 1조 위안 넘는 경기부양 패키지를 발표할까요?",
+    "criteria": "국무원 또는 인민은행(PBOC) 공식 발표."
+  },
+  {
+    "id": "opec-cut",
+    "question": "OPEC+가 다음 회의에서 감산을 연장할까요?",
+    "criteria": "OPEC 공식 코뮈니케."
+  },
+  {
+    "id": "ukraine-ceasefire",
+    "question": "이번 분기 정식 휴전 협정이 서명될까요?",
+    "criteria": "주요 통신사 2곳이 확인한 서명 협정."
+  },
+  {
+    "id": "gaza-deal",
+    "question": "인질 석방 합의가 주요 언론 2곳에 의해 확인될까요?",
+    "criteria": "Reuters/AP/BBC 확인."
+  },
+  {
+    "id": "taiwan-exercise",
+    "question": "중국이 이번 분기 대만 주변에서 대규모 훈련을 실시할까요?",
+    "criteria": "인민해방군 공식 발표 또는 Reuters 확인."
+  },
+  {
+    "id": "uk-pm",
+    "question": "영국 총리가 분기 말에도 재임 중일까요?",
+    "criteria": "다우닝가 10번가의 사임 또는 지도부 교체 확인."
+  },
+  {
+    "id": "japan-election",
+    "question": "다음 선거에서 자민당이 중의원 과반을 잃을까요?",
+    "criteria": "공식 선거관리위원회 결과."
+  },
+  {
+    "id": "india-election",
+    "question": "다음 주 선거에서 여당이 과반을 유지할까요?",
+    "criteria": "인도 선거관리위원회 결과."
+  },
+  {
+    "id": "argentina-reform",
+    "question": "아르헨티나 개혁 법안이 이번 분기 의회를 통과할까요?",
+    "criteria": "공식 의회 표결 기록."
+  },
+  {
+    "id": "brazil-rate",
+    "question": "브라질 중앙은행이 이번 분기 다시 금리를 인하할까요?",
+    "criteria": "Copom 성명."
+  },
+  {
+    "id": "ecb-cut",
+    "question": "ECB가 다음 회의에서 금리를 인하할까요?",
+    "criteria": "ECB 관리위원회 결정."
+  },
+  {
+    "id": "ecb-hold",
+    "question": "ECB가 연말까지 금리를 동결할까요?",
+    "criteria": "남은 회의 전 회차에서 변경 없음."
+  },
+  {
+    "id": "fed-chair",
+    "question": "이번 분기에 새 연준 의장이 지명될까요?",
+    "criteria": "백악관이 상원에 제출한 지명."
+  },
+  {
+    "id": "ai-bill",
+    "question": "미국이 이번 회기 연방 AI 규제를 통과시킬까요?",
+    "criteria": "Congress.gov에 보고된 법률 서명."
+  },
+  {
+    "id": "eu-ai-act",
+    "question": "EU AI법 시행 규칙이 이번 달 발효될까요?",
+    "criteria": "EUR-Lex의 시행법 공표."
+  },
+  {
+    "id": "immigration-bill",
+    "question": "이민 법안이 이번 분기 상원을 통과할까요?",
+    "criteria": "Senate.gov 상원 최종 표결."
+  },
+  {
+    "id": "nato-spend",
+    "question": "올해 NATO 회원국 3개국이 추가로 2% 목표를 달성할까요?",
+    "criteria": "NATO 연례 국방비 지출 보고서."
+  },
+  {
+    "id": "nikkei-45k",
+    "question": "닛케이가 이번 분기 45,000 위로 마감할까요?",
+    "criteria": "닛케이 공식 종가."
+  },
+  {
+    "id": "gold-3k",
+    "question": "금이 이번 주 온스당 $3,000 위를 유지할까요?",
+    "criteria": "금요일 LBMA PM 고시가."
+  },
+  {
+    "id": "oil-90",
+    "question": "브렌트유가 이번 분기 $90 위로 마감할까요?",
+    "criteria": "ICE 브렌트 근월물 결제가."
+  },
+  {
+    "id": "ceasefire-redsea",
+    "question": "홍해 해상 물동량이 2023년 수준의 60% 위로 회복될까요?",
+    "criteria": "IMF PortWatch 주간 통항 지수."
+  },
+  {
+    "id": "nba-celtics",
+    "question": "셀틱스가 다음 경기에서 이길까요?",
+    "criteria": "NBA 공식 최종 스코어."
+  },
+  {
+    "id": "nba-lakers",
+    "question": "레이커스가 플레이인 토너먼트에 진출할까요?",
+    "criteria": "정규시즌 종료 시점 NBA 순위."
+  },
+  {
+    "id": "nba-mvp",
+    "question": "MVP가 동부 콘퍼런스에서 나올까요?",
+    "criteria": "NBA 시즌 종료 시상 발표."
+  },
+  {
+    "id": "nba-70win",
+    "question": "이번 시즌 70승을 거두는 팀이 나올까요?",
+    "criteria": "NBA 정규시즌 최종 성적."
+  },
+  {
+    "id": "epl-arsenal",
+    "question": "아스널이 이번 라운드에서 첼시를 꺾을까요?",
+    "criteria": "프리미어리그 공식 결과."
+  },
+  {
+    "id": "epl-title",
+    "question": "아스널이 프리미어리그 우승을 차지할까요?",
+    "criteria": "최종 리그 순위표."
+  },
+  {
+    "id": "epl-city",
+    "question": "맨체스터 시티가 리버풀보다 높은 순위로 마감할까요?",
+    "criteria": "최종 리그 순위표 순위."
+  },
+  {
+    "id": "epl-relegation",
+    "question": "승격 3개 팀이 모두 강등될까요?",
+    "criteria": "최종 리그 순위표."
+  },
+  {
+    "id": "ucl-final",
+    "question": "스페인 클럽이 챔피언스리그 결승에 오를까요?",
+    "criteria": "UEFA 공식 결과."
+  },
+  {
+    "id": "ucl-upset",
+    "question": "톱5 리그가 아닌 클럽이 8강에 오를까요?",
+    "criteria": "UEFA 공식 결과."
+  },
+  {
+    "id": "f1-verstappen",
+    "question": "페르스타펜이 다음 그랑프리에서 우승할까요?",
+    "criteria": "FIA 공식 순위."
+  },
+  {
+    "id": "f1-constructors",
+    "question": "맥라렌이 컨스트럭터 타이틀을 차지할까요?",
+    "criteria": "FIA 최종 순위."
+  },
+  {
+    "id": "f1-pole",
+    "question": "노리스가 다음 예선에서 폴 포지션을 차지할까요?",
+    "criteria": "FIA 예선 순위."
+  },
+  {
+    "id": "f1-sprint",
+    "question": "스프린트 주말 우승자가 GP 우승자와 다를까요?",
+    "criteria": "해당 주말 FIA 공식 결과."
+  },
+  {
+    "id": "nfl-chiefs",
+    "question": "치프스가 이번 주 원정 경기에서 이길까요?",
+    "criteria": "NFL 공식 최종 스코어."
+  },
+  {
+    "id": "nfl-playoffs",
+    "question": "이글스가 플레이오프에 진출할까요?",
+    "criteria": "NFL 최종 순위."
+  },
+  {
+    "id": "nfl-chiefs-sb",
+    "question": "치프스가 슈퍼볼에 진출할까요?",
+    "criteria": "AFC 챔피언십 결과."
+  },
+  {
+    "id": "mlb-dodgers",
+    "question": "다저스가 월드시리즈에서 우승할까요?",
+    "criteria": "MLB 공식 결과."
+  },
+  {
+    "id": "tennis-slam",
+    "question": "알카라스가 다음 그랜드슬램에서 우승할까요?",
+    "criteria": "ATP 공식 대회 결과."
+  },
+  {
+    "id": "tennis-wta",
+    "question": "시비옹테크가 다음 WTA 1000 결승에 오를까요?",
+    "criteria": "WTA 공식 결과."
+  },
+  {
+    "id": "boxing-title",
+    "question": "이번 분기 헤비급 타이틀 주인이 바뀔까요?",
+    "criteria": "공식 인증 기구 결과."
+  },
+  {
+    "id": "ufc-main",
+    "question": "다음 UFC 메인이벤트에서 챔피언이 타이틀을 방어할까요?",
+    "criteria": "UFC 공식 결과."
+  },
+  {
+    "id": "mma-ko",
+    "question": "UFC 메인이벤트가 KO/TKO로 끝날까요?",
+    "criteria": "UFC 공식 결과 판정 방식."
+  },
+  {
+    "id": "olympics-host",
+    "question": "다음 개최 도시가 예정대로 확정될까요?",
+    "criteria": "IOC 공식 발표."
+  },
+  {
+    "id": "cricket-ipl",
+    "question": "뭄바이 인디언스가 IPL 플레이오프에 진출할까요?",
+    "criteria": "IPL 공식 순위."
+  },
+  {
+    "id": "golf-major",
+    "question": "셰플러가 올해 메이저 대회에서 또 우승할까요?",
+    "criteria": "PGA 공식 결과."
+  },
+  {
+    "id": "sports-scandal",
+    "question": "이번 시즌 톱10 클럽이 승점 삭감 징계를 받을까요?",
+    "criteria": "리그 공식 징계 결정."
+  },
+  {
+    "id": "athletics-record",
+    "question": "다음 다이아몬드리그에서 세계기록이 나올까요?",
+    "criteria": "World Athletics 공식 공인."
+  },
+  {
+    "id": "lol-t1",
+    "question": "T1이 월즈 녹아웃 스테이지에서 Movistar KOI를 꺾을까요?",
+    "criteria": "Riot Games 공식 시리즈 결과."
+  },
+  {
+    "id": "lol-worlds",
+    "question": "LCK 팀이 월즈에서 우승할까요?",
+    "criteria": "공식 대회 우승자."
+  },
+  {
+    "id": "lol-final",
+    "question": "월즈 결승이 5세트까지 갈까요?",
+    "criteria": "공식 시리즈 스코어."
+  },
+  {
+    "id": "cs2-major",
+    "question": "유럽 로스터가 CS2 메이저에서 우승할까요?",
+    "criteria": "HLTV 공식 확인 결과."
+  },
+  {
+    "id": "cs2-upset",
+    "question": "톱8 시드가 조별리그에서 탈락할까요?",
+    "criteria": "HLTV 공식 순위."
+  },
+  {
+    "id": "cs2-map",
+    "question": "메이저에서 Mirage가 가장 많이 선택된 맵이 될까요?",
+    "criteria": "HLTV 공식 맵 통계."
+  },
+  {
+    "id": "vct-sentinels",
+    "question": "센티널스가 다음 VCT 경기에서 2:0으로 이길까요?",
+    "criteria": "VCT 공식 경기 결과."
+  },
+  {
+    "id": "vct-final",
+    "question": "퍼시픽 팀이 VCT 결승에 오를까요?",
+    "criteria": "VCT 공식 대진표."
+  },
+  {
+    "id": "dota-ti",
+    "question": "동유럽 팀이 The International에서 우승할까요?",
+    "criteria": "Valve 공식 결과."
+  },
+  {
+    "id": "ow-final",
+    "question": "OWCS 우승팀이 북미에서 나올까요?",
+    "criteria": "블리자드 공식 결과."
+  },
+  {
+    "id": "rlcs-final",
+    "question": "유럽 팀이 RLCS에서 우승할까요?",
+    "criteria": "RLCS 공식 결과."
+  },
+  {
+    "id": "evo-gf",
+    "question": "EVO 우승자가 타이틀을 방어할까요?",
+    "criteria": "EVO 공식 결과."
+  },
+  {
+    "id": "lol-poro",
+    "question": "대회 MVP가 미드 라이너일까요?",
+    "criteria": "공식 MVP 발표."
+  },
+  {
+    "id": "cs2-awp",
+    "question": "대회 최고 평점 선수가 AWPer일까요?",
+    "criteria": "HLTV 공식 레이팅 리더보드."
+  },
+  {
+    "id": "vct-viewership",
+    "question": "최고 동시 시청자가 작년 결승을 넘을까요?",
+    "criteria": "VCT 공식 시청자 보고서."
+  },
+  {
+    "id": "mobile-legend",
+    "question": "중국 팀이 M시리즈 타이틀을 차지할까요?",
+    "criteria": "문톤(Moonton) 공식 결과."
+  },
+  {
+    "id": "pubg-final",
+    "question": "PUBG 네이션스컵 결승이 마지막 자기장까지 갈까요?",
+    "criteria": "공식 경기 로그."
+  },
+  {
+    "id": "apex-lan",
+    "question": "새로운 팀이 Apex LAN에서 우승할까요?",
+    "criteria": "EA 공식 결과."
+  },
+  {
+    "id": "fifa-esports",
+    "question": "유럽 선수가 FC Pro 타이틀을 차지할까요?",
+    "criteria": "EA Sports FC 공식 결과."
+  },
+  {
+    "id": "fortnite-duo",
+    "question": "FNCS 듀오 결승 우승자가 전 대회 우승자일까요?",
+    "criteria": "Epic 공식 결과."
+  },
+  {
+    "id": "esports-major-city",
+    "question": "다음 메이저가 유럽 밖에서 열릴까요?",
+    "criteria": "공식 대회 발표."
+  },
+  {
+    "id": "valo-rank",
+    "question": "다음 LAN에서 신인 선수가 ACS 톱3에 들까요?",
+    "criteria": "VCT 공식 통계."
+  },
+  {
+    "id": "lol-patch",
+    "question": "다음 패치가 대회 최다 픽 챔피언을 너프할까요?",
+    "criteria": "Riot 공식 패치 노트."
+  },
+  {
+    "id": "esports-prize",
+    "question": "상금 규모가 작년을 넘을까요?",
+    "criteria": "공식 대회 상금 배분."
+  },
+  {
+    "id": "ai-gpt6",
+    "question": "이번 분기 프런티어 랩이 GPT-5급 모델을 출시할까요?",
+    "criteria": "상위 3개 랩의 공식 모델 출시 발표."
+  },
+  {
+    "id": "ai-gemini",
+    "question": "제미나이가 이번 분기 LMSYS 아레나 1위에 오를까요?",
+    "criteria": "LMSYS Chatbot Arena 리더보드."
+  },
+  {
+    "id": "ai-llama",
+    "question": "메타가 이번 분기 새 오픈 웨이트 모델을 발표할까요?",
+    "criteria": "메타 공식 발표."
+  },
+  {
+    "id": "ai-agent-bench",
+    "question": "AI 에이전트가 SWE-bench Verified에서 70%를 넘을까요?",
+    "criteria": "공식 리더보드 제출 기록."
+  },
+  {
+    "id": "ai-context",
+    "question": "상용 모델이 1,000만 토큰 컨텍스트 윈도를 출시할까요?",
+    "criteria": "제공사 문서 또는 릴리스 노트."
+  },
+  {
+    "id": "nvda-earnings",
+    "question": "엔비디아가 다음 분기 매출 컨센서스를 웃돌까요?",
+    "criteria": "발표된 분기 실적 대비 컨센서스."
+  },
+  {
+    "id": "nvda-5t",
+    "question": "엔비디아 시가총액이 이번 분기 $5T 위로 마감할까요?",
+    "criteria": "나스닥 종가 기준 시가총액."
+  },
+  {
+    "id": "tsmc-2nm",
+    "question": "TSMC가 이번 분기 2nm 양산을 발표할까요?",
+    "criteria": "TSMC 공식 발표."
+  },
+  {
+    "id": "chip-export",
+    "question": "미국이 이번 분기 반도체 수출 통제를 강화할까요?",
+    "criteria": "BIS 연방관보 규정."
+  },
+  {
+    "id": "asml-orders",
+    "question": "ASML 수주액이 컨센서스를 웃돌까요?",
+    "criteria": "발표된 분기 수주액."
+  },
+  {
+    "id": "apple-glasses",
+    "question": "애플이 이번 분기 AR 안경을 발표할까요?",
+    "criteria": "애플 공식 이벤트 또는 보도자료."
+  },
+  {
+    "id": "apple-ai",
+    "question": "애플이 이번 분기 새 온디바이스 AI 기능을 출시할까요?",
+    "criteria": "출시된 OS 릴리스 노트."
+  },
+  {
+    "id": "tesla-fsd",
+    "question": "테슬라가 이번 분기 로보택시 이정표를 발표할까요?",
+    "criteria": "테슬라 공식 공시."
+  },
+  {
+    "id": "spacex-starship",
+    "question": "스타십이 다음 비행에서 궤도에 도달할까요?",
+    "criteria": "SpaceX 공식 확인."
+  },
+  {
+    "id": "quantum-qubit",
+    "question": "올해 한 연구소가 1,000개 이상 논리 큐비트 결과를 보고할까요?",
+    "criteria": "동료 심사 논문."
+  },
+  {
+    "id": "humanoid-ship",
+    "question": "이번 분기 휴머노이드 로봇이 유료 고객에게 출하될까요?",
+    "criteria": "기업 공시 또는 고객사 발표."
+  },
+  {
+    "id": "openai-ipo",
+    "question": "OpenAI가 올해 IPO를 신청할까요?",
+    "criteria": "공개 S-1 제출."
+  },
+  {
+    "id": "ai-energy",
+    "question": "이번 분기 하이퍼스케일러가 원전 전력구매계약을 발표할까요?",
+    "criteria": "기업 보도자료."
+  },
+  {
+    "id": "ai-copyright",
+    "question": "이번 분기 미국 법원이 AI 학습의 공정이용 여부를 판단할까요?",
+    "criteria": "공개된 법원 판결문."
+  },
+  {
+    "id": "ai-model-ban",
+    "question": "규제 당국이 주요 시장에서 프런티어 모델을 금지할까요?",
+    "criteria": "공식 규제 명령."
+  },
+  {
+    "id": "ai-voice",
+    "question": "실시간 음성 모델이 200ms 미만 지연으로 출시될까요?",
+    "criteria": "측정 지연시간이 기재된 제공사 문서."
+  },
+  {
+    "id": "robotics-cost",
+    "question": "올해 휴머노이드 로봇 가격이 $30k 아래로 내려갈까요?",
+    "criteria": "출하 벤더의 공개 가격."
+  },
+  {
+    "id": "cyber-ransom",
+    "question": "포춘 500 기업이 $10M 이상 몸값 지급을 공시할까요?",
+    "criteria": "SEC 8-K 또는 공개 공시."
+  },
+  {
+    "id": "data-center",
+    "question": "미국 데이터센터 전력 수요가 전년 대비 15% 넘게 증가할까요?",
+    "criteria": "EIA 발표 수치."
+  },
+  {
+    "id": "ai-benchmark",
+    "question": "이번 분기 오픈 모델이 공개 코딩 벤치마크 1위에 오를까요?",
+    "criteria": "공식 리더보드."
+  },
+  {
+    "id": "tech-antitrust",
+    "question": "이번 분기 대형 플랫폼이 미국 반독점 구제조치를 받을까요?",
+    "criteria": "법원 명령 또는 DOJ/FTC 조치."
+  },
+  {
+    "id": "geo-eu-defense",
+    "question": "EU 이사회가 이번 분기 새 공동 방위 기금을 승인할까요?",
+    "criteria": "이사회 보도자료 또는 공식 공동 성명."
+  },
+  {
+    "id": "geo-nato-spend",
+    "question": "올해 NATO 회원국 중 세 번째 국가가 국방비를 GDP의 3% 넘게 늘릴까요?",
+    "criteria": "NATO 연례 국방비 지출 보고서."
+  },
+  {
+    "id": "geo-un-ceasefire",
+    "question": "이번 달 유엔 안보리가 구속력 있는 휴전 결의를 통과시킬까요?",
+    "criteria": "un.org에 채택된 결의문."
+  },
+  {
+    "id": "geo-g7-summit",
+    "question": "다음 G7 공동성명이 AI 규제를 공동 우선순위로 명시할까요?",
+    "criteria": "의장국 정부가 공개한 최종 공동성명."
+  },
+  {
+    "id": "geo-imo-shipping",
+    "question": "이번 분기 대형 해상보험사가 홍해 보장을 중단할까요?",
+    "criteria": "로이즈 등록 보험사의 공개 통지."
+  },
+  {
+    "id": "geo-opec-cut",
+    "question": "OPEC+가 다음 회의에서 자발적 감산을 연장할까요?",
+    "criteria": "회의 후 OPEC 보도자료."
+  },
+  {
+    "id": "geo-us-cr",
+    "question": "미국이 다음 재정 협상 시한에 정부 셧다운을 피할까요?",
+    "criteria": "의회의 임시 예산(CR) 통과."
+  },
+  {
+    "id": "geo-eu-tariff",
+    "question": "EU가 분기 말 이전에 중국산 EV에 잠정 관세를 부과할까요?",
+    "criteria": "관보(Official Journal) 규정."
+  },
+  {
+    "id": "geo-jp-rate",
+    "question": "일본은행이 올해 금리를 0.75% 넘게 인상할까요?",
+    "criteria": "일본은행 정책 성명."
+  },
+  {
+    "id": "geo-ecb-cut",
+    "question": "ECB가 이번 반기에 두 차례 이상 인하할까요?",
+    "criteria": "ECB 금리 결정."
+  },
+  {
+    "id": "geo-fed-cut",
+    "question": "연준이 다음 FOMC 회의에서 금리를 인하할까요?",
+    "criteria": "FOMC 성명."
+  },
+  {
+    "id": "geo-fed-hold",
+    "question": "연준이 다음 두 차례 회의까지 금리를 동결할까요?",
+    "criteria": "두 차례 FOMC 성명 모두."
+  },
+  {
+    "id": "geo-us-cpi",
+    "question": "다음 발표에서 미국 CPI가 전년 대비 2.5% 아래로 나올까요?",
+    "criteria": "BLS CPI 발표."
+  },
+  {
+    "id": "geo-eu-cpi",
+    "question": "다음 발표에서 유로존 물가상승률이 2% 아래로 떨어질까요?",
+    "criteria": "유로스타트 속보치."
+  },
+  {
+    "id": "geo-uk-budget",
+    "question": "영국이 가을 예산안에서 새 자산세를 발표할까요?",
+    "criteria": "영국 재무부 레드북."
+  },
+  {
+    "id": "geo-jp-election",
+    "question": "올해 일본 여당 연립이 중의원 과반을 잃을까요?",
+    "criteria": "공식 선거 결과."
+  },
+  {
+    "id": "geo-india-gdp",
+    "question": "인도가 이번 분기 GDP 성장률 7% 넘게 발표할까요?",
+    "criteria": "통계청 발표."
+  },
+  {
+    "id": "geo-brazil-rate",
+    "question": "브라질 중앙은행이 다음 회의에서 셀릭 금리를 인하할까요?",
+    "criteria": "Copom 성명."
+  },
+  {
+    "id": "geo-us-tariff",
+    "question": "미국이 이번 분기 주요 교역국에 10% 이상의 새 관세를 발표할까요?",
+    "criteria": "USTR 연방관보 고시."
+  },
+  {
+    "id": "geo-china-stimulus",
+    "question": "중국이 이번 분기 새 소비 부양책을 발표할까요?",
+    "criteria": "국무원 발표."
+  },
+  {
+    "id": "geo-china-gdp",
+    "question": "중국이 올해 공식 성장 목표를 달성할까요?",
+    "criteria": "국가통계국 연례 발표."
+  },
+  {
+    "id": "geo-taiwan-exports",
+    "question": "다음 발표에서 대만 수출 주문이 전년 대비 증가할까요?",
+    "criteria": "경제부 발표."
+  },
+  {
+    "id": "geo-korea-rate",
+    "question": "한국은행이 다음 회의에서 금리를 동결할까요?",
+    "criteria": "한국은행 정책 성명."
+  },
+  {
+    "id": "geo-oil-80",
+    "question": "브렌트유가 이번 달 $80 위로 마감할까요?",
+    "criteria": "ICE 브렌트 근월물 결제가."
+  },
+  {
+    "id": "geo-oil-100",
+    "question": "브렌트유가 연말 이전 $100을 터치할까요?",
+    "criteria": "근월물 가격이 100 이상인 체결 1건 이상."
+  },
+  {
+    "id": "geo-gold-3k",
+    "question": "금이 이번 달 사상 최고가를 새로 쓸까요?",
+    "criteria": "COMEX 현물 기록."
+  },
+  {
+    "id": "geo-yields-5",
+    "question": "미국 10년물 금리가 한 주를 5% 위에서 마감할까요?",
+    "criteria": "재무부 일별 수익률 곡선."
+  },
+  {
+    "id": "geo-dxy",
+    "question": "달러 인덱스가 이번 달 100 아래로 마감할까요?",
+    "criteria": "ICE DXY 종가."
+  },
+  {
+    "id": "geo-unemployment",
+    "question": "다음 발표에서 미국 실업률이 4.5% 아래를 유지할까요?",
+    "criteria": "BLS 고용 보고서."
+  },
+  {
+    "id": "geo-housing",
+    "question": "미국 30년 모기지 금리가 이번 분기 6% 아래로 떨어질까요?",
+    "criteria": "프레디맥 주간 조사."
+  },
+  {
+    "id": "geo-eu-gas",
+    "question": "EU 천연가스 저장량이 겨울을 40% 위에서 마감할까요?",
+    "criteria": "GIE AGSI 집계."
+  },
+  {
+    "id": "geo-greece-rating",
+    "question": "이번 분기 신용평가사가 유로 주변국 국채 등급을 A로 올릴까요?",
+    "criteria": "평가사 보도자료."
+  },
+  {
+    "id": "geo-arctic-route",
+    "question": "올해 상업 컨테이너 선사가 정기 북극 항로를 개설할까요?",
+    "criteria": "선사 운항 일정 공표."
+  },
+  {
+    "id": "geo-election-turnout",
+    "question": "다음 주요 EU 선거 투표율이 55%를 넘을까요?",
+    "criteria": "공식 투표율 수치."
+  },
+  {
+    "id": "geo-succession",
+    "question": "이번 분기 G20 회원국이 정부 수반을 교체할까요?",
+    "criteria": "공식 교체 발표."
+  },
+  {
+    "id": "geo-trade-deal",
+    "question": "EU가 올해 새 자유무역협정을 체결할까요?",
+    "criteria": "집행위원회가 공개한 서명 문안."
+  },
+  {
+    "id": "pop-box-office",
+    "question": "다음 대작이 전 세계에서 $200M 넘는 오프닝을 기록할까요?",
+    "criteria": "스튜디오가 발표한 개봉 주말 성적."
+  },
+  {
+    "id": "pop-streaming",
+    "question": "이번 분기 스트리밍 서비스가 예상 밖 가입자 감소를 발표할까요?",
+    "criteria": "기업 실적 발표."
+  },
+  {
+    "id": "pop-grammy",
+    "question": "올해 최다 스트리밍 아티스트가 올해의 앨범상을 받을까요?",
+    "criteria": "레코딩 아카데미 결과."
+  },
+  {
+    "id": "pop-festival",
+    "question": "주요 여름 페스티벌이 48시간 내 매진될까요?",
+    "criteria": "공식 티켓팅 발표."
+  },
+  {
+    "id": "pop-viral",
+    "question": "단일 영상이 한 달 내 5억 뷰를 넘을까요?",
+    "criteria": "플랫폼 공개 카운터."
+  },
+  {
+    "id": "pop-game-launch",
+    "question": "다음 AAA 신작이 전작의 첫 주 판매량을 넘을까요?",
+    "criteria": "퍼블리셔 보도자료."
+  },
+  {
+    "id": "pop-console",
+    "question": "연말 이전에 새 콘솔 리비전이 출시될까요?",
+    "criteria": "공식 소매 유통 리스팅."
+  },
+  {
+    "id": "pop-award-host",
+    "question": "시상식 진행자가 행사 30일 이전에 발표될까요?",
+    "criteria": "공식 방송 발표."
+  },
+  {
+    "id": "pop-merch",
+    "question": "투어 굿즈 라인이 일주일 내 매진될까요?",
+    "criteria": "공식 스토어 상태."
+  },
+  {
+    "id": "pop-podcast",
+    "question": "이번 분기 팟캐스트 네트워크가 대형 독점 계약을 발표할까요?",
+    "criteria": "업계 매체 확인."
+  },
+  {
+    "id": "tech-ipo",
+    "question": "올해 VC 투자를 받은 AI 기업이 IPO를 신청할까요?",
+    "criteria": "SEC S-1 제출."
+  },
+  {
+    "id": "tech-mega-round",
+    "question": "올해 비상장 AI 랩이 단일 라운드로 $5B 넘게 유치할까요?",
+    "criteria": "확정된 라운드 발표."
+  },
+  {
+    "id": "tech-down-round",
+    "question": "이번 분기 상위 10% 유니콘이 다운 라운드를 받아들일까요?",
+    "criteria": "2개 매체가 확인한 텀시트."
+  },
+  {
+    "id": "tech-nvidia",
+    "question": "엔비디아가 다음 실적에서 매출 컨센서스를 웃돌까요?",
+    "criteria": "기업 실적 발표."
+  },
+  {
+    "id": "tech-tsmc",
+    "question": "TSMC가 다음 컨퍼런스콜에서 설비투자 가이던스를 올릴까요?",
+    "criteria": "실적 발표 콜 트랜스크립트."
+  },
+  {
+    "id": "tech-chip-act",
+    "question": "이번 분기 $5B 넘는 두 번째 CHIPS법 지원이 발표될까요?",
+    "criteria": "상무부 공고."
+  },
+  {
+    "id": "tech-ai-act",
+    "question": "EU AI법이 예정대로 다음 시행 단계에 들어갈까요?",
+    "criteria": "집행위원회 시행법."
+  },
+  {
+    "id": "tech-browser",
+    "question": "올해 주요 브라우저가 내장 AI 에이전트를 출시할까요?",
+    "criteria": "안정 채널 릴리스 노트."
+  },
+  {
+    "id": "tech-open-weights",
+    "question": "올해 프런티어 랩이 400B 파라미터 넘는 오픈 웨이트를 공개할까요?",
+    "criteria": "모델 카드 또는 저장소 공개."
+  },
+  {
+    "id": "tech-robotaxi",
+    "question": "로보택시 운영사가 새 도시에서 하루 1,000건 넘는 무인 운행을 달성할까요?",
+    "criteria": "규제 당국 또는 운영사 공시."
+  },
+  {
+    "id": "tech-datacenter",
+    "question": "올해 하이퍼스케일러가 5GW 이상 데이터센터 캠퍼스를 발표할까요?",
+    "criteria": "기업 발표."
+  },
+  {
+    "id": "tech-quantum",
+    "question": "올해 양자 컴퓨팅 벤더가 논리 큐비트 우위를 주장할까요?",
+    "criteria": "동료 심사 또는 프리프린트 주장."
+  },
+  {
+    "id": "tech-cyber",
+    "question": "이번 분기 포춘 100 기업이 8자리 수 규모의 침해를 공시할까요?",
+    "criteria": "8-K 또는 규제 당국 제출."
+  },
+  {
+    "id": "tech-antitrust-2",
+    "question": "올해 법원이 빅테크 플랫폼에 구조적 구제조치를 명할까요?",
+    "criteria": "법원 명령."
+  },
+  {
+    "id": "tech-saas",
+    "question": "이번 분기 SaaS 성장률 가이던스 중앙값이 12% 아래로 떨어질까요?",
+    "criteria": "집계된 실적 데이터."
+  },
+  {
+    "id": "tech-fintech",
+    "question": "올해 네오뱅크가 입금 계좌 1,000만 개를 달성할까요?",
+    "criteria": "기업 공시."
+  },
+  {
+    "id": "tech-stablecoin-bill",
+    "question": "미국 스테이블코인 법안이 올해 양원을 통과할까요?",
+    "criteria": "의회 기록."
+  },
+  {
+    "id": "tech-ai-revenue",
+    "question": "파운데이션 모델 랩이 연환산 매출 $2B 넘게 공시할까요?",
+    "criteria": "기업 또는 투자자 공시."
+  },
+  {
+    "id": "tech-gpu-price",
+    "question": "이번 분기 H100 임대료가 시간당 $1.50 아래로 떨어질까요?",
+    "criteria": "집계된 마켓플레이스 요율."
+  },
+  {
+    "id": "tech-eu-fine",
+    "question": "올해 EU가 10억 유로 넘는 DMA 과징금을 부과할까요?",
+    "criteria": "집행위원회 결정."
+  },
+  {
+    "id": "tech-semiconductor",
+    "question": "올해 글로벌 반도체 매출이 월간 최고치를 세울까요?",
+    "criteria": "SIA 월간 보고서."
+  },
+  {
+    "id": "tech-ev",
+    "question": "이번 분기 주요 완성차 업체가 EV 공장을 연기할까요?",
+    "criteria": "기업 성명."
+  },
+  {
+    "id": "tech-battery",
+    "question": "올해 전고체 배터리가 양산차에 탑재될까요?",
+    "criteria": "완성차 또는 공급사 확인."
+  },
+  {
+    "id": "tech-space",
+    "question": "올해 민간 발사체 기업이 재사용 부스터로 궤도에 도달할까요?",
+    "criteria": "발사 확인."
+  },
+  {
+    "id": "tech-dev-tools",
+    "question": "올해 AI 코딩 툴이 유료 좌석 500만 개를 넘을까요?",
+    "criteria": "기업 공시."
+  },
+  {
+    "id": "tech-ai-export",
+    "question": "미국이 이번 분기 AI 칩 수출 규정을 강화할까요?",
+    "criteria": "BIS 규정 공표."
+  },
+  {
+    "id": "tech-superapp",
+    "question": "올해 메신저 앱이 인앱 예측 상품을 출시할까요?",
+    "criteria": "공식 제품 발표."
+  },
+  {
+    "id": "crypto-btc-120k",
+    "question": "BTC가 이번 분기 한 주를 $120,000 위로 마감할까요?",
+    "criteria": "CoinGecko 주간 종가."
+  },
+  {
+    "id": "crypto-btc-70k",
+    "question": "BTC가 이번 분기 $70,000 아래로 떨어질까요?",
+    "criteria": "CoinGecko 일봉 종가가 70,000 미만인 날 1회 이상."
+  },
+  {
+    "id": "crypto-eth-btc",
+    "question": "ETH/BTC가 분기 말 0.05 위로 마감할까요?",
+    "criteria": "분기 종가 기준 비율."
+  },
+  {
+    "id": "crypto-l2-tvl",
+    "question": "L2 TVL 합계가 올해 $80B를 넘을까요?",
+    "criteria": "L2Beat 집계."
+  },
+  {
+    "id": "crypto-stables",
+    "question": "스테이블코인 공급량이 올해 $300B를 넘을까요?",
+    "criteria": "DefiLlama 집계."
+  },
+  {
+    "id": "crypto-defi-yield",
+    "question": "이번 분기 톱10 프로토콜이 스테이블 예치금에 15% 넘는 이자를 지급할까요?",
+    "criteria": "프로토콜 대시보드."
+  },
+  {
+    "id": "crypto-hack",
+    "question": "올해 또 다른 9자리 수 규모의 프로토콜 익스플로잇이 발생할까요?",
+    "criteria": "손실액 온체인 검증."
+  },
+  {
+    "id": "crypto-restaking",
+    "question": "리스테이킹 TVL이 올해 현재 수준에서 두 배가 될까요?",
+    "criteria": "DefiLlama 리스테이킹 카테고리."
+  },
+  {
+    "id": "crypto-base-tvl",
+    "question": "Base TVL이 올해 $20B를 넘을까요?",
+    "criteria": "L2Beat Base 페이지."
+  },
+  {
+    "id": "crypto-sol-flip",
+    "question": "SOL이 이번 분기 주간 DEX 거래량에서 한 번이라도 ETH를 추월할까요?",
+    "criteria": "DefiLlama 체인 거래량."
+  },
+  {
+    "id": "crypto-meme",
+    "question": "이번 분기 밈코인이 시가총액 톱20에 진입할까요?",
+    "criteria": "CoinGecko 순위."
+  },
+  {
+    "id": "crypto-etf-btc-flow",
+    "question": "현물 BTC ETF가 주간 $2B 이상 순유입을 기록할까요?",
+    "criteria": "Farside 주간 합계."
+  },
+  {
+    "id": "crypto-perp-oi",
+    "question": "무기한 선물 미결제약정 합계가 올해 $100B를 넘을까요?",
+    "criteria": "Coinglass 집계."
+  },
+  {
+    "id": "crypto-funding",
+    "question": "BTC 펀딩비가 30일 연속 플러스를 유지할까요?",
+    "criteria": "거래소 펀딩 이력."
+  },
+  {
+    "id": "crypto-airdrop",
+    "question": "톱5 L2가 올해 토큰 에어드롭을 진행할까요?",
+    "criteria": "공식 클레임 페이지 오픈."
+  },
+  {
+    "id": "crypto-reg",
+    "question": "SEC가 올해 새 암호화폐 ETP 카테고리를 승인할까요?",
+    "criteria": "승인 명령."
+  },
+  {
+    "id": "crypto-onchain-fees",
+    "question": "주요 체인의 월간 온체인 수수료가 올해 최고치를 경신할까요?",
+    "criteria": "DefiLlama 수수료."
+  },
+  {
+    "id": "crypto-validator",
+    "question": "주요 체인이 언스테이킹 기간을 7일 아래로 줄일까요?",
+    "criteria": "프로토콜 업그레이드 노트."
+  },
+  {
+    "id": "crypto-oracle",
+    "question": "이번 분기 톱 오라클이 새 자산군 피드를 추가할까요?",
+    "criteria": "제공사 체인지로그."
+  },
+  {
+    "id": "crypto-dao",
+    "question": "이번 분기 톱20 DAO가 금고 다각화 투표를 통과시킬까요?",
+    "criteria": "온체인 거버넌스 결과."
+  },
+  {
+    "id": "crypto-l2-fee",
+    "question": "이번 분기 L2 거래 수수료 중앙값이 $0.01 아래로 떨어질까요?",
+    "criteria": "L2Beat 수수료 트래커."
+  },
+  {
+    "id": "crypto-bridge",
+    "question": "올해 크로스체인 브리지가 월간 거래량 $5B를 넘을까요?",
+    "criteria": "DefiLlama 브리지 거래량."
+  },
+  {
+    "id": "sport-ucl",
+    "question": "챔피언스리그 결승이 연장전까지 갈까요?",
+    "criteria": "공식 경기 기록."
+  },
+  {
+    "id": "sport-epl-title",
+    "question": "프리미어리그 우승이 최종 라운드에서 결정될까요?",
+    "criteria": "최종 순위표."
+  },
+  {
+    "id": "sport-nba-finals",
+    "question": "NBA 파이널이 7차전까지 갈까요?",
+    "criteria": "공식 시리즈 결과."
+  },
+  {
+    "id": "sport-nfl-mvp",
+    "question": "NFL MVP가 톱4 시드 밖 팀에서 나올까요?",
+    "criteria": "AP 시상 발표."
+  },
+  {
+    "id": "sport-f1",
+    "question": "F1 드라이버 타이틀이 최종전에서 결정될까요?",
+    "criteria": "공식 순위."
+  },
+  {
+    "id": "sport-wimbledon",
+    "question": "올해 윔블던에서 첫 우승자가 나올까요?",
+    "criteria": "공식 대진 결과."
+  },
+  {
+    "id": "sport-olympics",
+    "question": "다음 개최국이 메달 순위 톱3에 들까요?",
+    "criteria": "공식 메달 순위표."
+  },
+  {
+    "id": "sport-cricket",
+    "question": "IPL 결승에서 추격하는 팀이 이길까요?",
+    "criteria": "경기 결과."
+  },
+  {
+    "id": "sport-rugby",
+    "question": "식스네이션이 그랜드슬램으로 결정될까요?",
+    "criteria": "최종 순위."
+  },
+  {
+    "id": "sport-mma",
+    "question": "다음 UFC PPV에서 타이틀 주인이 바뀔까요?",
+    "criteria": "공식 결과."
+  },
+  {
+    "id": "sport-golf",
+    "question": "메이저 대회 우승자가 세계 랭킹 톱20 밖 선수일까요?",
+    "criteria": "공식 리더보드."
+  },
+  {
+    "id": "sport-marathon",
+    "question": "올해 남자 마라톤 세계기록이 깨질까요?",
+    "criteria": "World Athletics 공인."
+  },
+  {
+    "id": "sport-soccer-transfer",
+    "question": "이번 이적시장에서 1억 5,000만 유로 넘는 이적이 성사될까요?",
+    "criteria": "구단 발표."
+  },
+  {
+    "id": "sport-esports-crossover",
+    "question": "올해 e스포츠 구단이 전통 스포츠 팀 지분을 인수할까요?",
+    "criteria": "거래 확인."
+  },
+  {
+    "id": "sport-formula-e",
+    "question": "포뮬러 E가 다음 시즌 새 제조사를 추가할까요?",
+    "criteria": "FIA 엔트리 리스트."
+  },
+  {
+    "id": "esp-lol-worlds",
+    "question": "올해 LCK 팀이 월즈에서 우승할까요?",
+    "criteria": "공식 대진 결과."
+  },
+  {
+    "id": "esp-cs-major",
+    "question": "다음 CS 메이저에서 랭킹 톱3 팀이 우승할까요?",
+    "criteria": "공식 순위."
+  },
+  {
+    "id": "esp-dota-ti",
+    "question": "TI 결승이 마지막 5차전까지 갈까요?",
+    "criteria": "공식 시리즈 결과."
+  },
+  {
+    "id": "esp-valorant",
+    "question": "새로운 지역이 발로란트 챔피언스 결승에 오를까요?",
+    "criteria": "공식 대진표."
+  },
+  {
+    "id": "esp-lol-msi",
+    "question": "MSI 우승팀이 개최 지역 팀일까요?",
+    "criteria": "공식 결과."
+  },
+  {
+    "id": "esp-apex",
+    "question": "이번 스플릿 ALGS에서 컨트롤러 유저가 1위를 차지할까요?",
+    "criteria": "공식 순위."
+  },
+  {
+    "id": "esp-rocket",
+    "question": "로켓리그 메이저에서 북미 로스터가 우승할까요?",
+    "criteria": "공식 대진표."
+  },
+  {
+    "id": "esp-esl",
+    "question": "올해 ESL이 새 6자리 수 규모의 LAN 서킷을 발표할까요?",
+    "criteria": "공식 발표."
+  },
+  {
+    "id": "esp-viewership",
+    "question": "올해 단일 대회 최고 동시 시청자가 700만을 넘을까요?",
+    "criteria": "공개 트래커 최고치."
+  },
+  {
+    "id": "esp-mobile",
+    "question": "올해 모바일 e스포츠가 시청 시간 10억 시간을 넘을까요?",
+    "criteria": "공개 트래커 합계."
+  },
+  {
+    "id": "esp-org-ipo",
+    "question": "올해 e스포츠 구단이 상장할까요?",
+    "criteria": "거래소 상장."
+  },
+  {
+    "id": "esp-franchise",
+    "question": "다음 시즌 1부 리그가 새 지역으로 확장될까요?",
+    "criteria": "공식 리그 발표."
+  },
+  {
+    "id": "esp-female",
+    "question": "올해 여성 서킷 결승 최고 시청자가 30만을 넘을까요?",
+    "criteria": "공개 트래커 최고치."
+  },
+  {
+    "id": "esp-ai-coach",
+    "question": "올해 1부 팀이 AI 코칭 툴을 공개할까요?",
+    "criteria": "구단 공식 성명."
+  },
+  {
+    "id": "esp-university",
+    "question": "올해 대학 팀이 1부 LAN 플레이오프에 진출할까요?",
+    "criteria": "공식 대진표."
+  }
+]

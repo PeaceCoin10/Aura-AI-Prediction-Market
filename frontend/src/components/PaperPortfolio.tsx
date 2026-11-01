@@ -5,11 +5,13 @@ import { formatFake, paperPriceYes, paperValue, type MarketRef } from "../lib/pa
 import { usdc } from "../lib/format";
 import { ShareButton } from "./ShareButton";
 import { format, useT } from "../lib/i18n";
+import { localQuestion, useMarketText } from "../lib/marketText";
 
 /** Paper account: balance, per-market mark value and unrealized PnL, one-tap position share. */
 export function PaperPortfolio({ chain, demo }: { chain: MarketSnapshot[]; demo: DemoMarket[] }) {
   const { paper, claim, reset } = useMode();
   const t = useT();
+  const mt = useMarketText();
 
   const refs: MarketRef[] = [
     ...demo.map((d) => ({
@@ -86,7 +88,9 @@ export function PaperPortfolio({ chain, demo }: { chain: MarketSnapshot[]; demo:
                 className="flex flex-wrap items-center gap-2 rounded-xl border border-white/8 bg-white/[0.03] px-3 py-2"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[12.5px] text-slate-200">{r.ref?.question ?? r.id}</div>
+                  <div className="truncate text-[12.5px] text-slate-200">
+                    {r.ref ? localQuestion({ id: r.ref.id, question: r.ref.question }, mt.locale) : r.id}
+                  </div>
                   <div className="mono text-[10.5px] text-slate-500">
                     {format(t.paper.account.rowMeta, {
                       yes: usdc(r.pos.yes),
@@ -106,7 +110,7 @@ export function PaperPortfolio({ chain, demo }: { chain: MarketSnapshot[]; demo:
                   <ShareButton
                     compact
                     input={{
-                      question: r.ref.question,
+                      question: localQuestion({ id: r.ref.id, question: r.ref.question }, mt.locale),
                       category: r.ref.category,
                       side: r.pos.yes >= r.pos.no ? "YES" : "NO",
                       prob,

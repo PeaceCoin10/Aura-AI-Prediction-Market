@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useT } from "../lib/i18n";
 import { DEMO_MARKETS } from "../data/markets";
+import { useMarketText } from "../lib/marketText";
 import { useLivePool } from "../lib/demoLive";
 import type { DemoMarket, Vertical } from "../lib/demo";
 import { play } from "../lib/sound";
@@ -35,6 +36,7 @@ function headlines(): DemoMarket[] {
 
 export function HeroCarousel({ onOpen }: { onOpen: (m: DemoMarket) => void }) {
   const t = useT();
+  const mt = useMarketText();
   const items = useMemo(headlines, []);
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -115,7 +117,7 @@ export function HeroCarousel({ onOpen }: { onOpen: (m: DemoMarket) => void }) {
           </div>
 
           <h2 className="mt-2 max-w-2xl text-balance text-xl font-semibold leading-snug text-slate-50 sm:text-[22px]">
-            {current.question}
+            {mt.q(current)}
           </h2>
 
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -194,7 +196,7 @@ export function HeroCarousel({ onOpen }: { onOpen: (m: DemoMarket) => void }) {
               setIndex(i);
               trail.current = [];
             }}
-            aria-label={m.question}
+            aria-label={mt.q(m)}
             className={`h-1 rounded-full transition-all ${
               i === index % items.length ? "w-8 bg-brand" : "w-3 bg-white/15 hover:bg-white/30"
             }`}

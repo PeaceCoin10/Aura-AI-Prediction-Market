@@ -1,0 +1,1277 @@
+[
+  {
+    "id": "btc-90k",
+    "question": "Schließt BTC diese Woche über $90,000?",
+    "criteria": "CoinGecko-Tagesschluss am letzten Tag der Woche, 00:00 UTC."
+  },
+  {
+    "id": "btc-100k",
+    "question": "Markiert BTC diesen Monat ein neues Allzeithoch über $105,000?",
+    "criteria": "Jeder Binance-Handel BTC/USDT über 105,000 innerhalb des Monats."
+  },
+  {
+    "id": "btc-dominance",
+    "question": "Bleibt die BTC-Dominanz bis Freitag über 55%?",
+    "criteria": "Anteil an der globalen Marktkapitalisierung laut CoinGecko am Freitag, 00:00 UTC."
+  },
+  {
+    "id": "eth-5k",
+    "question": "Schließt ETH diesen Monat über $5,000?",
+    "criteria": "CoinGecko-Tagesschluss am letzten Tag des Monats."
+  },
+  {
+    "id": "eth-etf-flow",
+    "question": "Verzeichnen US-Spot-ETH-ETFs diese Woche Nettozuflüsse über $500M?",
+    "criteria": "Wöchentliche Nettostromtabelle von Farside Investors."
+  },
+  {
+    "id": "btc-etf-outflow",
+    "question": "Verzeichnen US-Spot-BTC-ETFs diese Woche einen Tag mit Nettoabfluss?",
+    "criteria": "Ein einzelner Tag mit negativem Gesamt-Nettostrom laut Farside-Daten."
+  },
+  {
+    "id": "sol-300",
+    "question": "Schließt SOL diesen Monat über $300?",
+    "criteria": "CoinGecko-Tagesschluss am letzten Tag des Monats."
+  },
+  {
+    "id": "sol-etf",
+    "question": "Genehmigt die SEC einen Spot-SOL-ETF vor Quartalsende?",
+    "criteria": "Offizielle SEC-Anordnung oder Genehmigungsmitteilung."
+  },
+  {
+    "id": "xrp-etf",
+    "question": "Nimmt in diesem Quartal ein Spot-XRP-ETF den Handel auf?",
+    "criteria": "Erster Handelstag an einer US-Börse."
+  },
+  {
+    "id": "stablecoin-bill",
+    "question": "Wird in dieser Legislaturperiode ein US-Stablecoin-Gesetz unterzeichnet?",
+    "criteria": "Unterzeichnung durch den Präsidenten, gemeldet von Congress.gov."
+  },
+  {
+    "id": "clarity-act",
+    "question": "Verabschiedet der Senat in diesem Quartal das Marktstrukturgesetz?",
+    "criteria": "Abschließende Senatsabstimmung, protokolliert auf Senate.gov."
+  },
+  {
+    "id": "cpi-3",
+    "question": "Liegt die US-Inflation (CPI) bei der nächsten Veröffentlichung unter 3.0% im Jahresvergleich?",
+    "criteria": "BLS-CPI-Veröffentlichung, Gesamtrate im Jahresvergleich."
+  },
+  {
+    "id": "fed-cut",
+    "question": "Senkt die Fed die Zinsen bei der nächsten FOMC-Sitzung?",
+    "criteria": "Zielband in der FOMC-Erklärung niedriger als bei der vorherigen Sitzung."
+  },
+  {
+    "id": "fed-50",
+    "question": "Beträgt die nächste Senkung 50bp oder mehr?",
+    "criteria": "Änderung des Zielbands in der FOMC-Erklärung ≥ 50bp."
+  },
+  {
+    "id": "treasury-5",
+    "question": "Schließt die Rendite 10-jähriger US-Staatsanleihen diese Woche über 4.5%?",
+    "criteria": "Tägliche Zinsstrukturkurve des US-Finanzministeriums, Schluss am Freitag."
+  },
+  {
+    "id": "base-tvl",
+    "question": "Hält das TVL von Base die Woche über $6B?",
+    "criteria": "Chain-TVL bei DefiLlama zum Wochenende."
+  },
+  {
+    "id": "l2-fees",
+    "question": "Fallen die durchschnittlichen Base-Gebühren diese Woche unter $0.005 pro Swap?",
+    "criteria": "Median-Swap-Gebühr aus dem wöchentlichen L2Fees-Snapshot."
+  },
+  {
+    "id": "dex-volume",
+    "question": "Übersteigt das DEX-Volumen der großen Protokolle an einem einzelnen Tag $40B?",
+    "criteria": "DEX-Volumen-Aggregator von DefiLlama, beliebiger Tag dieser Woche."
+  },
+  {
+    "id": "perp-funding",
+    "question": "Bleibt das BTC-Perp-Funding 7 Tage in Folge positiv?",
+    "criteria": "Funding-Rate des Binance-Perpetuals BTCUSDT, jede 8-Stunden-Abrechnung."
+  },
+  {
+    "id": "hack-100m",
+    "question": "Verliert diesen Monat ein DeFi-Protokoll mehr als $100M durch einen Exploit?",
+    "criteria": "Öffentlicher Post-Mortem oder on-chain bestätigter Verlust durch Rekt."
+  },
+  {
+    "id": "unlock-arb",
+    "question": "Handelt ARB 24h nach dem nächsten Token-Unlock tiefer?",
+    "criteria": "CoinGecko-Schlusskurs 24h nach dem Unlock-Zeitpunkt."
+  },
+  {
+    "id": "memecoin-cap",
+    "question": "Liegt die gesamte Marktkapitalisierung von Memecoins diesen Monat über $120B?",
+    "criteria": "Kategorie-Marktkapitalisierung bei CoinGecko."
+  },
+  {
+    "id": "btc-vol",
+    "question": "Schließt die implizite 30-Tage-Volatilität von BTC über 60?",
+    "criteria": "Deribit-DVOL-Index zum Wochenende."
+  },
+  {
+    "id": "eth-burn",
+    "question": "Schrumpft das ETH-Angebot diese Woche weiter?",
+    "criteria": "Nettoemission laut Ultrasound.money, 7-Tage-Durchschnitt."
+  },
+  {
+    "id": "rwa-tvl",
+    "question": "Überschreitet das TVL tokenisierter RWA in diesem Quartal $20B?",
+    "criteria": "Gesamter On-Chain-Wert laut RWA.xyz."
+  },
+  {
+    "id": "quantum-btc",
+    "question": "Kündigt in diesem Quartal ein großer Wallet-Anbieter Post-Quanten-Schlüssel an?",
+    "criteria": "Offizielle Ankündigung eines der Top-5-Wallet-Anbieter."
+  },
+  {
+    "id": "midterms-house",
+    "question": "Behalten die Republikaner bei den Midterms die Mehrheit im Repräsentantenhaus?",
+    "criteria": "Bestätigte Sitzzahl aus den Wahlprognosen von AP."
+  },
+  {
+    "id": "midterms-senate",
+    "question": "Gewinnen die Demokraten die Mehrheit im Senat?",
+    "criteria": "Bestätigte Sitzzahl aus den Wahlprognosen von AP."
+  },
+  {
+    "id": "gov-shutdown",
+    "question": "Kommt es in diesem Quartal zu einem Shutdown der US-Bundesregierung?",
+    "criteria": "OMB-Anweisung oder Ausfall der Mittelbewilligung, gemeldet von Congress.gov."
+  },
+  {
+    "id": "supreme-court",
+    "question": "Entscheidet der Supreme Court in dieser Sitzungsperiode über den Zollfall?",
+    "criteria": "Veröffentlichtes Urteil auf supremecourt.gov."
+  },
+  {
+    "id": "tariff-25",
+    "question": "Erhöhen die USA die Zölle auf chinesische E-Autos über 25%?",
+    "criteria": "Bekanntmachung des USTR im Federal Register."
+  },
+  {
+    "id": "china-stimulus",
+    "question": "Kündigt China in diesem Quartal ein Konjunkturpaket über ¥1tn an?",
+    "criteria": "Offizielle Ankündigung des Staatsrats oder der PBOC."
+  },
+  {
+    "id": "opec-cut",
+    "question": "Verlängert OPEC+ bei der nächsten Sitzung die Förderkürzungen?",
+    "criteria": "Offizielles OPEC-Kommuniqué."
+  },
+  {
+    "id": "ukraine-ceasefire",
+    "question": "Wird in diesem Quartal ein förmliches Waffenstillstandsabkommen unterzeichnet?",
+    "criteria": "Unterzeichnetes Abkommen, bestätigt durch zwei große Nachrichtenagenturen."
+  },
+  {
+    "id": "gaza-deal",
+    "question": "Wird ein Abkommen zur Freilassung von Geiseln von zwei großen Medien bestätigt?",
+    "criteria": "Bestätigung durch Reuters/AP/BBC."
+  },
+  {
+    "id": "taiwan-exercise",
+    "question": "Hält China in diesem Quartal eine groß angelegte Übung rund um Taiwan ab?",
+    "criteria": "Offizielle Ankündigung der PLA oder Bestätigung durch Reuters."
+  },
+  {
+    "id": "uk-pm",
+    "question": "Ist der britische Premierminister zum Quartalsende noch im Amt?",
+    "criteria": "Bestätigung eines Rücktritts oder Führungswechsels aus Downing Street Nr. 10."
+  },
+  {
+    "id": "japan-election",
+    "question": "Verliert die LDP bei der nächsten Wahl ihre Mehrheit im Unterhaus?",
+    "criteria": "Offizielle Ergebnisse der Wahlkommission."
+  },
+  {
+    "id": "india-election",
+    "question": "Behält die Regierungspartei bei den nächsten Regionalwahlen ihre Mehrheit?",
+    "criteria": "Ergebnisse der Election Commission of India."
+  },
+  {
+    "id": "argentina-reform",
+    "question": "Verabschiedet der Kongress in diesem Quartal das argentinische Reformgesetz?",
+    "criteria": "Offizielles Abstimmungsprotokoll der Kammer."
+  },
+  {
+    "id": "brazil-rate",
+    "question": "Senkt die brasilianische Zentralbank in diesem Quartal die Zinsen erneut?",
+    "criteria": "Copom-Erklärung."
+  },
+  {
+    "id": "ecb-cut",
+    "question": "Senkt die EZB bei ihrer nächsten Sitzung die Zinsen?",
+    "criteria": "Beschluss des EZB-Rats."
+  },
+  {
+    "id": "ecb-hold",
+    "question": "Lässt die EZB die Zinsen bis zum Jahresende unverändert?",
+    "criteria": "Keine Änderung bei den verbleibenden Sitzungen."
+  },
+  {
+    "id": "fed-chair",
+    "question": "Wird in diesem Quartal ein neuer Fed-Vorsitzender nominiert?",
+    "criteria": "An den Senat übermittelte Nominierung des Weißen Hauses."
+  },
+  {
+    "id": "ai-bill",
+    "question": "Verabschieden die USA in dieser Legislaturperiode eine bundesweite KI-Regulierung?",
+    "criteria": "Unterzeichnetes Gesetz, gemeldet von Congress.gov."
+  },
+  {
+    "id": "eu-ai-act",
+    "question": "Treten die Durchführungsvorschriften zum EU-KI-Gesetz diesen Monat in Kraft?",
+    "criteria": "Veröffentlichung des Durchführungsrechtsakts in EUR-Lex."
+  },
+  {
+    "id": "immigration-bill",
+    "question": "Passiert in diesem Quartal ein Einwanderungsgesetz den Senat?",
+    "criteria": "Abschließende Senatsabstimmung auf Senate.gov."
+  },
+  {
+    "id": "nato-spend",
+    "question": "Erreichen dieses Jahr drei weitere NATO-Mitglieder das 2%-Ziel?",
+    "criteria": "Jährlicher Bericht der NATO zu den Verteidigungsausgaben."
+  },
+  {
+    "id": "nikkei-45k",
+    "question": "Schließt der Nikkei in diesem Quartal über 45,000?",
+    "criteria": "Offizieller Schlussstand des Nikkei."
+  },
+  {
+    "id": "gold-3k",
+    "question": "Bleibt Gold diese Woche über $3,000/oz?",
+    "criteria": "LBMA-PM-Fixierung, Freitag."
+  },
+  {
+    "id": "oil-90",
+    "question": "Schließt Brent in diesem Quartal über $90?",
+    "criteria": "Abrechnung des ICE-Brent-Frontmonats."
+  },
+  {
+    "id": "ceasefire-redsea",
+    "question": "Erholt sich der Schiffsverkehr im Roten Meer auf über 60% des Niveaus von 2023?",
+    "criteria": "Wöchentlicher Transitindex von IMF PortWatch."
+  },
+  {
+    "id": "nba-celtics",
+    "question": "Gewinnen die Celtics ihr nächstes Spiel?",
+    "criteria": "Offizieller Endstand der NBA."
+  },
+  {
+    "id": "nba-lakers",
+    "question": "Erreichen die Lakers das Play-in-Turnier?",
+    "criteria": "NBA-Tabelle zum Ende der regulären Saison."
+  },
+  {
+    "id": "nba-mvp",
+    "question": "Kommt der MVP aus der Eastern Conference?",
+    "criteria": "Bekanntgabe der NBA-Saisonauszeichnungen."
+  },
+  {
+    "id": "nba-70win",
+    "question": "Gewinnt diese Saison ein Team 70 Spiele?",
+    "criteria": "Endgültige Bilanz der NBA-Regular-Season."
+  },
+  {
+    "id": "epl-arsenal",
+    "question": "Schlägt Arsenal in dieser Runde Chelsea?",
+    "criteria": "Offizielles Ergebnis der Premier League."
+  },
+  {
+    "id": "epl-title",
+    "question": "Gewinnt Arsenal den Titel in der Premier League?",
+    "criteria": "Abschlusstabelle."
+  },
+  {
+    "id": "epl-city",
+    "question": "Beendet Man City die Saison vor Liverpool?",
+    "criteria": "Positionen in der Abschlusstabelle."
+  },
+  {
+    "id": "epl-relegation",
+    "question": "Steigen alle drei Aufsteiger wieder ab?",
+    "criteria": "Abschlusstabelle."
+  },
+  {
+    "id": "ucl-final",
+    "question": "Erreicht ein spanischer Verein das Champions-League-Finale?",
+    "criteria": "Offizielle Ergebnisse der UEFA."
+  },
+  {
+    "id": "ucl-upset",
+    "question": "Erreicht ein Verein aus einer Nicht-Top-5-Liga das Viertelfinale?",
+    "criteria": "Offizielle Ergebnisse der UEFA."
+  },
+  {
+    "id": "f1-verstappen",
+    "question": "Gewinnt Verstappen den nächsten Grand Prix?",
+    "criteria": "Offizielle Klassifizierung der FIA."
+  },
+  {
+    "id": "f1-constructors",
+    "question": "Gewinnt McLaren die Konstrukteurswertung?",
+    "criteria": "Endstand der FIA-Wertung."
+  },
+  {
+    "id": "f1-pole",
+    "question": "Holt Norris beim nächsten Qualifying die Pole-Position?",
+    "criteria": "Qualifying-Klassifizierung der FIA."
+  },
+  {
+    "id": "f1-sprint",
+    "question": "Gewinnt an einem Sprint-Wochenende ein anderer Fahrer als im Grand Prix?",
+    "criteria": "Offizielle FIA-Ergebnisse des jeweiligen Wochenendes."
+  },
+  {
+    "id": "nfl-chiefs",
+    "question": "Gewinnen die Chiefs diese Woche auswärts?",
+    "criteria": "Offizieller Endstand der NFL."
+  },
+  {
+    "id": "nfl-playoffs",
+    "question": "Erreichen die Eagles die Playoffs?",
+    "criteria": "Endstand der NFL-Tabelle."
+  },
+  {
+    "id": "nfl-chiefs-sb",
+    "question": "Erreichen die Chiefs den Super Bowl?",
+    "criteria": "Ergebnis des AFC-Championship-Spiels."
+  },
+  {
+    "id": "mlb-dodgers",
+    "question": "Gewinnen die Dodgers die World Series?",
+    "criteria": "Offizielles Ergebnis der MLB."
+  },
+  {
+    "id": "tennis-slam",
+    "question": "Gewinnt Alcaraz den nächsten Grand Slam?",
+    "criteria": "Offizielles Turnierergebnis der ATP."
+  },
+  {
+    "id": "tennis-wta",
+    "question": "Erreicht Swiatek das Finale des nächsten WTA-1000-Turniers?",
+    "criteria": "Offizielle Ergebnisse der WTA."
+  },
+  {
+    "id": "boxing-title",
+    "question": "Wechselt in diesem Quartal der Schwergewichtstitel den Besitzer?",
+    "criteria": "Offizielles Ergebnis des sanctionierenden Verbands."
+  },
+  {
+    "id": "ufc-main",
+    "question": "Verteidigt der Champion im nächsten UFC-Hauptkampf seinen Titel?",
+    "criteria": "Offizielles Ergebnis der UFC."
+  },
+  {
+    "id": "mma-ko",
+    "question": "Endet der UFC-Hauptkampf durch KO/TKO?",
+    "criteria": "Offizielle Siegweise der UFC."
+  },
+  {
+    "id": "olympics-host",
+    "question": "Wird die nächste Gastgeberstadt planmäßig bestätigt?",
+    "criteria": "Offizielle Ankündigung des IOC."
+  },
+  {
+    "id": "cricket-ipl",
+    "question": "Erreichen die Mumbai Indians die Playoffs der IPL?",
+    "criteria": "Offizielle Tabelle der IPL."
+  },
+  {
+    "id": "golf-major",
+    "question": "Gewinnt Scheffler dieses Jahr ein weiteres Major?",
+    "criteria": "Offizielle Ergebnisse der PGA."
+  },
+  {
+    "id": "sports-scandal",
+    "question": "Wird diese Saison gegen einen Top-10-Klub ein Punktabzug verhängt?",
+    "criteria": "Offizielle Disziplinarentscheidung der Liga."
+  },
+  {
+    "id": "athletics-record",
+    "question": "Fällt beim nächsten Diamond-League-Meeting ein Weltrekord?",
+    "criteria": "Offizielle Ratifizierung durch World Athletics."
+  },
+  {
+    "id": "lol-t1",
+    "question": "Schlägt T1 Movistar KOI in der K.o.-Phase der Worlds?",
+    "criteria": "Offizielles Serienergebnis von Riot Games."
+  },
+  {
+    "id": "lol-worlds",
+    "question": "Gewinnt ein LCK-Team die Worlds?",
+    "criteria": "Offizieller Turniersieger."
+  },
+  {
+    "id": "lol-final",
+    "question": "Geht das Worlds-Finale über fünf Spiele?",
+    "criteria": "Offizieller Serienstand."
+  },
+  {
+    "id": "cs2-major",
+    "question": "Gewinnt ein europäisches Lineup das CS2-Major?",
+    "criteria": "Offizielles, von HLTV verifiziertes Ergebnis."
+  },
+  {
+    "id": "cs2-upset",
+    "question": "Scheidet ein Top-8-Gesetzter in der Gruppenphase aus?",
+    "criteria": "Offizielle HLTV-Tabelle."
+  },
+  {
+    "id": "cs2-map",
+    "question": "Ist Mirage die am häufigsten gewählte Map beim Major?",
+    "criteria": "Offizielle Map-Statistiken von HLTV."
+  },
+  {
+    "id": "vct-sentinels",
+    "question": "Gewinnen die Sentinels ihr nächstes VCT-Match mit 2:0?",
+    "criteria": "Offizielles Ergebnis des VCT-Matches."
+  },
+  {
+    "id": "vct-final",
+    "question": "Erreicht ein Team aus der Pacific-Region das VCT-Finale?",
+    "criteria": "Offizieller VCT-Bracket."
+  },
+  {
+    "id": "dota-ti",
+    "question": "Gewinnt ein osteuropäisches Team The International?",
+    "criteria": "Offizielles Ergebnis von Valve."
+  },
+  {
+    "id": "ow-final",
+    "question": "Kommt der OWCS-Champion aus Nordamerika?",
+    "criteria": "Offizielle Ergebnisse von Blizzard."
+  },
+  {
+    "id": "rlcs-final",
+    "question": "Gewinnt ein europäisches Team die RLCS?",
+    "criteria": "Offizielle Ergebnisse der RLCS."
+  },
+  {
+    "id": "evo-gf",
+    "question": "Verteidigt der EVO-Champion seinen Titel?",
+    "criteria": "Offizielle Ergebnisse der EVO."
+  },
+  {
+    "id": "lol-poro",
+    "question": "Ist der Turnier-MVP ein Mid-Laner?",
+    "criteria": "Offizielle MVP-Bekanntgabe."
+  },
+  {
+    "id": "cs2-awp",
+    "question": "Ist der bestbewertete Spieler des Turniers ein AWPer?",
+    "criteria": "Offizielles Rating-Ranking von HLTV."
+  },
+  {
+    "id": "vct-viewership",
+    "question": "Übertrifft die Spitzenzuschauerzahl die des Vorjahresfinales?",
+    "criteria": "Offizieller Zuschauerbericht der VCT."
+  },
+  {
+    "id": "mobile-legend",
+    "question": "Gewinnt ein chinesisches Team den M-Series-Titel?",
+    "criteria": "Offizielles Ergebnis von Moonton."
+  },
+  {
+    "id": "pubg-final",
+    "question": "Geht das Finale des PUBG Nations Cup bis zum letzten Circle?",
+    "criteria": "Offizielles Match-Log."
+  },
+  {
+    "id": "apex-lan",
+    "question": "Gewinnt ein neues Team das Apex-LAN?",
+    "criteria": "Offizielle Ergebnisse von EA."
+  },
+  {
+    "id": "fifa-esports",
+    "question": "Gewinnt ein europäischer Spieler den FC-Pro-Titel?",
+    "criteria": "Offizielles Ergebnis von EA Sports FC."
+  },
+  {
+    "id": "fortnite-duo",
+    "question": "Gewinnt ein Titelverteidiger das FNCS-Duo-Finale?",
+    "criteria": "Offizielle Ergebnisse von Epic."
+  },
+  {
+    "id": "esports-major-city",
+    "question": "Findet das nächste Major außerhalb Europas statt?",
+    "criteria": "Offizielle Turnierankündigung."
+  },
+  {
+    "id": "valo-rank",
+    "question": "Erreicht ein Rookie beim nächsten LAN die Top 3 im ACS?",
+    "criteria": "Offizielle VCT-Statistiken."
+  },
+  {
+    "id": "lol-patch",
+    "question": "Schwächt der nächste Patch den meistgewählten Pick des Turniers?",
+    "criteria": "Offizielle Patch Notes von Riot."
+  },
+  {
+    "id": "esports-prize",
+    "question": "Übersteigt der Preispool den des Vorjahres?",
+    "criteria": "Offizielle Preisgeldverteilung des Turniers."
+  },
+  {
+    "id": "ai-gpt6",
+    "question": "Bringt in diesem Quartal ein führendes Labor ein Modell der GPT-5-Klasse auf den Markt?",
+    "criteria": "Offizielle Modellankündigung eines der Top-3-Labore."
+  },
+  {
+    "id": "ai-gemini",
+    "question": "Führt Gemini in diesem Quartal die LMSYS-Arena an?",
+    "criteria": "Rangliste der LMSYS Chatbot Arena."
+  },
+  {
+    "id": "ai-llama",
+    "question": "Veröffentlicht Meta in diesem Quartal ein neues Modell mit offenen Gewichten?",
+    "criteria": "Offizielle Veröffentlichung von Meta."
+  },
+  {
+    "id": "ai-agent-bench",
+    "question": "Erreicht ein Agent über 70% auf SWE-bench Verified?",
+    "criteria": "Offizielle Einreichung in der Rangliste."
+  },
+  {
+    "id": "ai-context",
+    "question": "Bringt ein Produktionsmodell ein Kontextfenster von 10M Token auf den Markt?",
+    "criteria": "Anbieterdokumentation oder Release Notes."
+  },
+  {
+    "id": "nvda-earnings",
+    "question": "Übertrifft Nvidia im nächsten Quartal die Umsatzkonsensschätzung?",
+    "criteria": "Gemeldete Quartalszahlen im Vergleich zum Konsens."
+  },
+  {
+    "id": "nvda-5t",
+    "question": "Schließt die Marktkapitalisierung von Nvidia in diesem Quartal über $5T?",
+    "criteria": "Schluss-Marktkapitalisierung an der Nasdaq."
+  },
+  {
+    "id": "tsmc-2nm",
+    "question": "Kündigt TSMC in diesem Quartal die Serienproduktion in 2nm an?",
+    "criteria": "Offizielle Erklärung von TSMC."
+  },
+  {
+    "id": "chip-export",
+    "question": "Verschärfen die USA in diesem Quartal die Exportkontrollen für Chips?",
+    "criteria": "BIS-Regel im Federal Register."
+  },
+  {
+    "id": "asml-orders",
+    "question": "Übertrifft ASML beim Auftragseingang den Konsens?",
+    "criteria": "Gemeldeter Quartalsauftragseingang."
+  },
+  {
+    "id": "apple-glasses",
+    "question": "Kündigt Apple in diesem Quartal AR-Brillen an?",
+    "criteria": "Offizielles Apple-Event oder Pressemitteilung."
+  },
+  {
+    "id": "apple-ai",
+    "question": "Bringt Apple in diesem Quartal eine neue KI-Funktion auf dem Gerät heraus?",
+    "criteria": "Release Notes des ausgelieferten Betriebssystems."
+  },
+  {
+    "id": "tesla-fsd",
+    "question": "Meldet Tesla in diesem Quartal einen Robotaxi-Meilenstein?",
+    "criteria": "Offizielle Angaben von Tesla."
+  },
+  {
+    "id": "spacex-starship",
+    "question": "Erreicht Starship beim nächsten Flug die Umlaufbahn?",
+    "criteria": "Offizielle Bestätigung von SpaceX."
+  },
+  {
+    "id": "quantum-qubit",
+    "question": "Meldet dieses Jahr ein Labor ein Ergebnis mit über 1,000 logischen Qubits?",
+    "criteria": "Peer-reviewte Veröffentlichung."
+  },
+  {
+    "id": "humanoid-ship",
+    "question": "Wird in diesem Quartal ein humanoider Roboter an einen zahlenden Kunden ausgeliefert?",
+    "criteria": "Unternehmensangaben oder Kundenankündigung."
+  },
+  {
+    "id": "openai-ipo",
+    "question": "Reicht OpenAI dieses Jahr einen Börsengang ein?",
+    "criteria": "Öffentliche S-1-Einreichung."
+  },
+  {
+    "id": "ai-energy",
+    "question": "Kündigt in diesem Quartal ein Hyperscaler einen Atomstrom-PPA an?",
+    "criteria": "Pressemitteilung des Unternehmens."
+  },
+  {
+    "id": "ai-copyright",
+    "question": "Urteilt in diesem Quartal ein US-Gericht über Fair Use beim KI-Training?",
+    "criteria": "Veröffentlichtes Urteil."
+  },
+  {
+    "id": "ai-model-ban",
+    "question": "Verbietet ein Regulierer in einem wichtigen Markt ein Frontier-Modell?",
+    "criteria": "Offizielle regulatorische Anordnung."
+  },
+  {
+    "id": "ai-voice",
+    "question": "Kommt ein Echtzeit-Sprachmodell mit unter 200ms Latenz auf den Markt?",
+    "criteria": "Anbieterdokumentation mit gemessener Latenz."
+  },
+  {
+    "id": "robotics-cost",
+    "question": "Fällt der Preis eines humanoiden Roboters dieses Jahr unter $30k?",
+    "criteria": "Veröffentlichter Preis eines ausliefernden Anbieters."
+  },
+  {
+    "id": "cyber-ransom",
+    "question": "Meldet ein Fortune-500-Unternehmen eine Lösegeldzahlung über $10M?",
+    "criteria": "SEC-8-K oder öffentliche Angaben."
+  },
+  {
+    "id": "data-center",
+    "question": "Wächst der Strombedarf von US-Rechenzentren um über 15% im Jahresvergleich?",
+    "criteria": "Gemeldete Zahlen der EIA."
+  },
+  {
+    "id": "ai-benchmark",
+    "question": "Führt in diesem Quartal ein offenes Modell einen öffentlichen Coding-Benchmark an?",
+    "criteria": "Offizielle Rangliste."
+  },
+  {
+    "id": "tech-antitrust",
+    "question": "Wird in diesem Quartal gegen eine große Plattform eine US-Kartellrechtsauflage verhängt?",
+    "criteria": "Gerichtsbeschluss oder Maßnahme von DOJ/FTC."
+  },
+  {
+    "id": "geo-eu-defense",
+    "question": "Billigt der EU-Rat in diesem Quartal einen neuen gemeinsamen Verteidigungsfonds?",
+    "criteria": "Pressemitteilung des Rats oder offizielles gemeinsames Kommuniqué."
+  },
+  {
+    "id": "geo-nato-spend",
+    "question": "Hebt dieses Jahr ein drittes NATO-Mitglied die Verteidigungsausgaben über 3% des BIP?",
+    "criteria": "Jährlicher Bericht der NATO zu den Verteidigungsausgaben."
+  },
+  {
+    "id": "geo-un-ceasefire",
+    "question": "Verabschiedet der UN-Sicherheitsrat diesen Monat eine verbindliche Waffenstillstandsresolution?",
+    "criteria": "Verabschiedeter Resolutionstext auf un.org."
+  },
+  {
+    "id": "geo-g7-summit",
+    "question": "Nennt das nächste G7-Kommuniqué die KI-Regulierung als gemeinsame Priorität?",
+    "criteria": "Abschlusskommuniqué der gastgebenden Regierung."
+  },
+  {
+    "id": "geo-imo-shipping",
+    "question": "Setzt in diesem Quartal ein großer Schifffahrtsversicherer die Deckung für das Rote Meer aus?",
+    "criteria": "Öffentliche Mitteilung von bei Lloyd's gelisteten Versicherern."
+  },
+  {
+    "id": "geo-opec-cut",
+    "question": "Verlängert OPEC+ bei der nächsten Sitzung die freiwillige Förderkürzung?",
+    "criteria": "OPEC-Pressemitteilung nach der Sitzung."
+  },
+  {
+    "id": "geo-us-cr",
+    "question": "Vermeiden die USA zum nächsten Finanzierungstermin einen Shutdown?",
+    "criteria": "Verabschiedung eines Übergangshaushalts durch den Kongress."
+  },
+  {
+    "id": "geo-eu-tariff",
+    "question": "Erhebt die EU vor Quartalsende vorläufige Zölle auf chinesische E-Autos?",
+    "criteria": "Verordnung im Amtsblatt der EU."
+  },
+  {
+    "id": "geo-jp-rate",
+    "question": "Hebt die Bank of Japan die Zinsen dieses Jahr über 0.75%?",
+    "criteria": "Geldpolitische Erklärung der BoJ."
+  },
+  {
+    "id": "geo-ecb-cut",
+    "question": "Liefert die EZB in diesem Halbjahr zwei oder mehr Zinssenkungen?",
+    "criteria": "Zinsentscheidungen der EZB."
+  },
+  {
+    "id": "geo-fed-cut",
+    "question": "Senkt die Fed bei der nächsten FOMC-Sitzung die Zinsen?",
+    "criteria": "FOMC-Erklärung."
+  },
+  {
+    "id": "geo-fed-hold",
+    "question": "Lässt die Fed die Zinsen über die nächsten beiden Sitzungen unverändert?",
+    "criteria": "Beide FOMC-Erklärungen."
+  },
+  {
+    "id": "geo-us-cpi",
+    "question": "Liegt der US-CPI bei der nächsten Veröffentlichung unter 2.5% im Jahresvergleich?",
+    "criteria": "BLS-CPI-Veröffentlichung."
+  },
+  {
+    "id": "geo-eu-cpi",
+    "question": "Fällt die Inflation im Euroraum bei der nächsten Veröffentlichung unter 2%?",
+    "criteria": "Schnellschätzung von Eurostat."
+  },
+  {
+    "id": "geo-uk-budget",
+    "question": "Kündigt das Vereinigte Königreich im Herbsthaushalt eine neue Vermögensteuer an?",
+    "criteria": "Red Book des HM Treasury."
+  },
+  {
+    "id": "geo-jp-election",
+    "question": "Verliert die Regierungskoalition in Japan dieses Jahr ihre Mehrheit im Unterhaus?",
+    "criteria": "Offizielle Wahlergebnisse."
+  },
+  {
+    "id": "geo-india-gdp",
+    "question": "Meldet Indien in diesem Quartal ein BIP-Wachstum über 7%?",
+    "criteria": "Veröffentlichung des Statistikministeriums."
+  },
+  {
+    "id": "geo-brazil-rate",
+    "question": "Senkt die brasilianische Zentralbank bei der nächsten Sitzung den Selic-Satz?",
+    "criteria": "Copom-Erklärung."
+  },
+  {
+    "id": "geo-us-tariff",
+    "question": "Kündigen die USA in diesem Quartal einen neuen Zoll von 10%+ auf einen wichtigen Handelspartner an?",
+    "criteria": "Bekanntmachung des USTR im Federal Register."
+  },
+  {
+    "id": "geo-china-stimulus",
+    "question": "Kündigt China in diesem Quartal ein neues Konjunkturpaket für den Konsum an?",
+    "criteria": "Ankündigung des Staatsrats."
+  },
+  {
+    "id": "geo-china-gdp",
+    "question": "Erreicht China dieses Jahr sein offizielles Wachstumsziel?",
+    "criteria": "Jahresveröffentlichung des National Bureau of Statistics."
+  },
+  {
+    "id": "geo-taiwan-exports",
+    "question": "Steigen die taiwanesischen Exportaufträge bei der nächsten Veröffentlichung im Jahresvergleich?",
+    "criteria": "Veröffentlichung des Wirtschaftsministeriums."
+  },
+  {
+    "id": "geo-korea-rate",
+    "question": "Lässt die Bank of Korea die Zinsen bei der nächsten Sitzung unverändert?",
+    "criteria": "Geldpolitische Erklärung der BOK."
+  },
+  {
+    "id": "geo-oil-80",
+    "question": "Schließt Brent-Rohöl diesen Monat über $80?",
+    "criteria": "Abrechnung des ICE-Brent-Frontmonats."
+  },
+  {
+    "id": "geo-oil-100",
+    "question": "Erreicht Brent vor Jahresende $100?",
+    "criteria": "Jeder Frontmonats-Kurs von 100 oder mehr."
+  },
+  {
+    "id": "geo-gold-3k",
+    "question": "Markiert Gold diesen Monat ein neues Allzeithoch?",
+    "criteria": "Rekord von COMEX-Spot."
+  },
+  {
+    "id": "geo-yields-5",
+    "question": "Schließt die 10-jährige US-Rendite eine Woche über 5%?",
+    "criteria": "Tägliche Zinsstrukturkurve des Finanzministeriums."
+  },
+  {
+    "id": "geo-dxy",
+    "question": "Beendet der Dollar-Index den Monat unter 100?",
+    "criteria": "ICE-DXY-Schluss."
+  },
+  {
+    "id": "geo-unemployment",
+    "question": "Bleibt die US-Arbeitslosenquote bei der nächsten Veröffentlichung unter 4.5%?",
+    "criteria": "Arbeitsmarktbericht des BLS."
+  },
+  {
+    "id": "geo-housing",
+    "question": "Fallen die US-Hypothekenzinsen für 30 Jahre in diesem Quartal unter 6%?",
+    "criteria": "Wöchentliche Umfrage von Freddie Mac."
+  },
+  {
+    "id": "geo-eu-gas",
+    "question": "Endet die Gasspeicherung in der EU zum Winterende über 40%?",
+    "criteria": "Aggregat der GIE AGSI."
+  },
+  {
+    "id": "geo-greece-rating",
+    "question": "Stuft in diesem Quartal eine Ratingagentur einen Peripheriestaat des Euroraums auf A hoch?",
+    "criteria": "Pressemitteilung der Agentur."
+  },
+  {
+    "id": "geo-arctic-route",
+    "question": "Startet dieses Jahr eine kommerzielle Containerlinie eine reguläre Arktisroute?",
+    "criteria": "Veröffentlichung des Fahrplans durch die Reederei."
+  },
+  {
+    "id": "geo-election-turnout",
+    "question": "Übersteigt die Wahlbeteiligung bei der nächsten großen EU-Wahl 55%?",
+    "criteria": "Offizielle Wahlbeteiligungszahlen."
+  },
+  {
+    "id": "geo-succession",
+    "question": "Wechselt in diesem Quartal in einem G20-Mitglied die Regierungsführung?",
+    "criteria": "Offizielle Ankündigung des Übergangs."
+  },
+  {
+    "id": "geo-trade-deal",
+    "question": "Unterzeichnet die EU dieses Jahr ein neues Freihandelsabkommen?",
+    "criteria": "Unterzeichneter, von der Kommission veröffentlichter Text."
+  },
+  {
+    "id": "pop-box-office",
+    "question": "Übertrifft der nächste Blockbuster am Startwochenende weltweit $200M?",
+    "criteria": "Vom Studio gemeldetes Startwochenende."
+  },
+  {
+    "id": "pop-streaming",
+    "question": "Meldet in diesem Quartal ein Streamingdienst einen überraschenden Abonnentenrückgang?",
+    "criteria": "Quartalsbericht des Unternehmens."
+  },
+  {
+    "id": "pop-grammy",
+    "question": "Gewinnt der meistgestreamte Künstler des Jahres die Auszeichnung für das Album des Jahres?",
+    "criteria": "Ergebnisse der Recording Academy."
+  },
+  {
+    "id": "pop-festival",
+    "question": "Ist ein großes Sommerfestival innerhalb von 48 Stunden ausverkauft?",
+    "criteria": "Offizielle Mitteilung des Ticketanbieters."
+  },
+  {
+    "id": "pop-viral",
+    "question": "Überschreitet ein einzelnes Video innerhalb eines Monats 500M Aufrufe?",
+    "criteria": "Öffentlicher Zähler der Plattform."
+  },
+  {
+    "id": "pop-game-launch",
+    "question": "Übertrifft der nächste AAA-Start die Verkaufszahlen der ersten Woche des Vorgängers?",
+    "criteria": "Pressemitteilung des Publishers."
+  },
+  {
+    "id": "pop-console",
+    "question": "Kommt vor Jahresende eine neue Konsolenversion auf den Markt?",
+    "criteria": "Offizielles Handelslisting."
+  },
+  {
+    "id": "pop-award-host",
+    "question": "Wird die Moderation der Preisverleihung mehr als 30 Tage vor der Show bekannt gegeben?",
+    "criteria": "Offizielle Ankündigung des Senders."
+  },
+  {
+    "id": "pop-merch",
+    "question": "Ist eine Tour-Merchandise-Kollektion in unter einer Woche ausverkauft?",
+    "criteria": "Offizieller Status des Shops."
+  },
+  {
+    "id": "pop-podcast",
+    "question": "Kündigt in diesem Quartal ein Podcast-Netzwerk einen großen Exklusivvertrag an?",
+    "criteria": "Bestätigung durch die Fachpresse."
+  },
+  {
+    "id": "tech-ipo",
+    "question": "Reicht dieses Jahr ein VC-finanziertes KI-Unternehmen einen Börsengang ein?",
+    "criteria": "S-1-Einreichung bei der SEC."
+  },
+  {
+    "id": "tech-mega-round",
+    "question": "Sammelt dieses Jahr ein privates KI-Labor in einer einzelnen Runde über $5B ein?",
+    "criteria": "Bestätigte Ankündigung der Finanzierungsrunde."
+  },
+  {
+    "id": "tech-down-round",
+    "question": "Akzeptiert in diesem Quartal ein Einhorn aus dem obersten Dezil eine Down Round?",
+    "criteria": "Gemeldeter Term Sheet, bestätigt durch zwei Medien."
+  },
+  {
+    "id": "tech-nvidia",
+    "question": "Übertrifft NVIDIA beim nächsten Ergebnis den Umsatzkonsens?",
+    "criteria": "Ergebnisbericht des Unternehmens."
+  },
+  {
+    "id": "tech-tsmc",
+    "question": "Hebt TSMC im nächsten Call die Capex-Prognose an?",
+    "criteria": "Transkript des Earnings Call."
+  },
+  {
+    "id": "tech-chip-act",
+    "question": "Wird in diesem Quartal eine zweite CHIPS-Act-Förderung über $5B bekannt gegeben?",
+    "criteria": "Mitteilung des Handelsministeriums."
+  },
+  {
+    "id": "tech-ai-act",
+    "question": "Tritt das EU-KI-Gesetz planmäßig in die nächste Durchsetzungsphase ein?",
+    "criteria": "Durchführungsrechtsakt der Kommission."
+  },
+  {
+    "id": "tech-browser",
+    "question": "Bringt dieses Jahr ein großer Browser einen integrierten KI-Agenten auf den Markt?",
+    "criteria": "Release Notes des Stable-Kanals."
+  },
+  {
+    "id": "tech-open-weights",
+    "question": "Veröffentlicht dieses Jahr ein führendes Labor offene Gewichte mit über 400B Parametern?",
+    "criteria": "Modellkarte oder Repository-Veröffentlichung."
+  },
+  {
+    "id": "tech-robotaxi",
+    "question": "Überschreitet in diesem Quartal ein Robotaxi-Betreiber 1,000 fahrerlose Fahrten pro Tag in einer neuen Stadt?",
+    "criteria": "Angaben der Aufsichtsbehörde oder des Betreibers."
+  },
+  {
+    "id": "tech-datacenter",
+    "question": "Kündigt dieses Jahr ein Hyperscaler einen Rechenzentrums-Campus mit 5GW+ an?",
+    "criteria": "Ankündigung des Unternehmens."
+  },
+  {
+    "id": "tech-quantum",
+    "question": "Beansprucht dieses Jahr ein Quanten-Anbieter einen Vorteil bei logischen Qubits?",
+    "criteria": "Peer-reviewte Veröffentlichung oder Preprint-Behauptung."
+  },
+  {
+    "id": "tech-cyber",
+    "question": "Meldet in diesem Quartal ein Fortune-100-Unternehmen eine Sicherheitspanne im achtstelligen Bereich?",
+    "criteria": "8-K oder Behördenmeldung."
+  },
+  {
+    "id": "tech-antitrust-2",
+    "question": "Verhängt dieses Jahr ein Gericht eine strukturelle Auflage gegen eine Big-Tech-Plattform?",
+    "criteria": "Gerichtsbeschluss."
+  },
+  {
+    "id": "tech-saas",
+    "question": "Fällt die mittlere Umsatzprognose im SaaS-Segment in diesem Quartal unter 12%?",
+    "criteria": "Aggregierte Ergebnisdaten."
+  },
+  {
+    "id": "tech-fintech",
+    "question": "Erreicht dieses Jahr eine Neobank 10M finanzierte Konten?",
+    "criteria": "Angaben des Unternehmens."
+  },
+  {
+    "id": "tech-stablecoin-bill",
+    "question": "Passiert dieses Jahr ein US-Stablecoin-Gesetz beide Kammern?",
+    "criteria": "Protokoll des Kongresses."
+  },
+  {
+    "id": "tech-ai-revenue",
+    "question": "Nennt ein Foundation-Model-Labor einen annualisierten Umsatz über $2B?",
+    "criteria": "Angaben des Unternehmens oder von Investoren."
+  },
+  {
+    "id": "tech-gpu-price",
+    "question": "Fallen die Mietpreise für H100 in diesem Quartal unter $1.50 pro Stunde?",
+    "criteria": "Aggregierte Marktplatzpreise."
+  },
+  {
+    "id": "tech-eu-fine",
+    "question": "Verhängt die EU dieses Jahr eine DMA-Geldbuße über 1B EUR?",
+    "criteria": "Entscheidung der Kommission."
+  },
+  {
+    "id": "tech-semiconductor",
+    "question": "Erreichen die globalen Halbleiterumsätze dieses Jahr einen Monatsrekord?",
+    "criteria": "Monatsbericht der SIA."
+  },
+  {
+    "id": "tech-ev",
+    "question": "Verschiebt in diesem Quartal ein großer Automobilhersteller ein E-Auto-Werk?",
+    "criteria": "Erklärung des Unternehmens."
+  },
+  {
+    "id": "tech-battery",
+    "question": "Kommt dieses Jahr eine Feststoffbatterie in einem Serienfahrzeug auf den Markt?",
+    "criteria": "Bestätigung des OEM oder Zulieferers."
+  },
+  {
+    "id": "tech-space",
+    "question": "Erreicht dieses Jahr ein privates Raumfahrtunternehmen mit einer wiederverwendbaren Erststufe die Umlaufbahn?",
+    "criteria": "Bestätigung des Starts."
+  },
+  {
+    "id": "tech-dev-tools",
+    "question": "Überschreitet dieses Jahr ein KI-Coding-Tool 5M bezahlte Plätze?",
+    "criteria": "Angaben des Unternehmens."
+  },
+  {
+    "id": "tech-ai-export",
+    "question": "Verschärfen die USA in diesem Quartal die Exportregeln für KI-Chips?",
+    "criteria": "Veröffentlichung der BIS-Regel."
+  },
+  {
+    "id": "tech-superapp",
+    "question": "Startet dieses Jahr eine Messaging-App ein In-App-Produkt für Prognosemärkte?",
+    "criteria": "Offizielle Produktankündigung."
+  },
+  {
+    "id": "crypto-btc-120k",
+    "question": "Schließt BTC in diesem Quartal eine Woche über $120,000?",
+    "criteria": "Wochenschluss bei CoinGecko."
+  },
+  {
+    "id": "crypto-btc-70k",
+    "question": "Fällt BTC in diesem Quartal unter $70,000?",
+    "criteria": "Jeder CoinGecko-Tagesschluss unter 70,000."
+  },
+  {
+    "id": "crypto-eth-btc",
+    "question": "Beendet ETH/BTC das Quartal über 0.05?",
+    "criteria": "Verhältnis zum Quartalsschluss."
+  },
+  {
+    "id": "crypto-l2-tvl",
+    "question": "Überschreitet das kombinierte L2-TVL dieses Jahr $80B?",
+    "criteria": "Aggregat von L2Beat."
+  },
+  {
+    "id": "crypto-stables",
+    "question": "Überschreitet das Stablecoin-Angebot dieses Jahr $300B?",
+    "criteria": "Aggregat von DefiLlama."
+  },
+  {
+    "id": "crypto-defi-yield",
+    "question": "Zahlt in diesem Quartal ein Top-10-Protokoll über 15% auf Stablecoin-Einlagen?",
+    "criteria": "Dashboard des Protokolls."
+  },
+  {
+    "id": "crypto-hack",
+    "question": "Kommt es dieses Jahr zu einem weiteren Exploit bei einem Protokoll im neunstelligen Bereich?",
+    "criteria": "On-Chain-Verifizierung des Verlusts."
+  },
+  {
+    "id": "crypto-restaking",
+    "question": "Verdoppelt sich das Restaking-TVL dieses Jahr gegenüber dem heutigen Stand?",
+    "criteria": "Kategorie Restaking bei DefiLlama."
+  },
+  {
+    "id": "crypto-base-tvl",
+    "question": "Überschreitet das TVL von Base dieses Jahr $20B?",
+    "criteria": "Base-Seite bei L2Beat."
+  },
+  {
+    "id": "crypto-sol-flip",
+    "question": "Übertrifft SOL in diesem Quartal einmal das wöchentliche DEX-Volumen von ETH?",
+    "criteria": "Chain-Volumen bei DefiLlama."
+  },
+  {
+    "id": "crypto-meme",
+    "question": "Kommt in diesem Quartal ein Memecoin nach Marktkapitalisierung in die Top 20?",
+    "criteria": "Ranglisten von CoinGecko."
+  },
+  {
+    "id": "crypto-etf-btc-flow",
+    "question": "Verzeichnen Spot-BTC-ETFs eine Zuflusswoche über $2B+?",
+    "criteria": "Wochensummen von Farside."
+  },
+  {
+    "id": "crypto-perp-oi",
+    "question": "Überschreitet das aggregierte Open Interest bei Perps dieses Jahr $100B?",
+    "criteria": "Aggregat von Coinglass."
+  },
+  {
+    "id": "crypto-funding",
+    "question": "Bleibt das BTC-Funding 30 Tage in Folge positiv?",
+    "criteria": "Funding-Historie der Börsen."
+  },
+  {
+    "id": "crypto-airdrop",
+    "question": "Führt dieses Jahr ein Top-5-L2 einen Token-Airdrop durch?",
+    "criteria": "Offizielle Claim-Seite ist live."
+  },
+  {
+    "id": "crypto-reg",
+    "question": "Genehmigt die SEC dieses Jahr eine neue Krypto-ETP-Kategorie?",
+    "criteria": "Genehmigungsanordnung."
+  },
+  {
+    "id": "crypto-onchain-fees",
+    "question": "Erreichen die monatlichen On-Chain-Gebühren der großen Chains dieses Jahr einen neuen Höchststand?",
+    "criteria": "Gebührendaten bei DefiLlama."
+  },
+  {
+    "id": "crypto-validator",
+    "question": "Senkt dieses Jahr eine große Chain die Unstaking-Frist auf unter 7 Tage?",
+    "criteria": "Upgrade-Notizen des Protokolls."
+  },
+  {
+    "id": "crypto-oracle",
+    "question": "Fügt in diesem Quartal ein führender Oracle-Anbieter einen Feed für eine neue Anlageklasse hinzu?",
+    "criteria": "Changelog des Anbieters."
+  },
+  {
+    "id": "crypto-dao",
+    "question": "Verabschiedet in diesem Quartal eine Top-20-DAO eine Abstimmung zur Diversifizierung der Treasury?",
+    "criteria": "On-Chain-Governance-Ergebnis."
+  },
+  {
+    "id": "crypto-l2-fee",
+    "question": "Fallen die medianen L2-Transaktionsgebühren in diesem Quartal unter $0.01?",
+    "criteria": "Gebühren-Tracker von L2Beat."
+  },
+  {
+    "id": "crypto-bridge",
+    "question": "Überschreitet dieses Jahr eine Cross-Chain-Bridge $5B Monatsvolumen?",
+    "criteria": "Bridge-Volumen bei DefiLlama."
+  },
+  {
+    "id": "sport-ucl",
+    "question": "Geht das Champions-League-Finale in die Verlängerung?",
+    "criteria": "Offizieller Spielbericht."
+  },
+  {
+    "id": "sport-epl-title",
+    "question": "Wird der Premier-League-Titel am letzten Spieltag entschieden?",
+    "criteria": "Abschlusstabelle."
+  },
+  {
+    "id": "sport-nba-finals",
+    "question": "Gehen die NBA Finals über sieben Spiele?",
+    "criteria": "Offizielles Serienergebnis."
+  },
+  {
+    "id": "sport-nfl-mvp",
+    "question": "Kommt der NFL-MVP aus einem Team außerhalb der besten vier Setzungen?",
+    "criteria": "Bekanntgabe der AP-Auszeichnung."
+  },
+  {
+    "id": "sport-f1",
+    "question": "Wird der Fahrertitel in der F1 beim letzten Rennen entschieden?",
+    "criteria": "Offizieller WM-Stand."
+  },
+  {
+    "id": "sport-wimbledon",
+    "question": "Wird dieses Jahr ein erstmaliger Wimbledon-Sieger gekürt?",
+    "criteria": "Offizielle Auslosungsergebnisse."
+  },
+  {
+    "id": "sport-olympics",
+    "question": "Landet die nächste Gastgebernation im Medaillenspiegel unter den besten drei?",
+    "criteria": "Offizieller Medaillenspiegel."
+  },
+  {
+    "id": "sport-cricket",
+    "question": "Gewinnt die nachsetzende Mannschaft das IPL-Finale?",
+    "criteria": "Spielergebnis."
+  },
+  {
+    "id": "sport-rugby",
+    "question": "Wird das Six Nations mit einem Grand Slam gewonnen?",
+    "criteria": "Abschlusstabelle."
+  },
+  {
+    "id": "sport-mma",
+    "question": "Wechselt beim nächsten UFC-Pay-per-View ein Titel den Besitzer?",
+    "criteria": "Offizielles Ergebnis."
+  },
+  {
+    "id": "sport-golf",
+    "question": "Wird ein Major von einem Spieler außerhalb der Top 20 der Weltrangliste gewonnen?",
+    "criteria": "Offizielles Leaderboard."
+  },
+  {
+    "id": "sport-marathon",
+    "question": "Fällt dieses Jahr ein Marathon-Weltrekord der Männer?",
+    "criteria": "Ratifizierung durch World Athletics."
+  },
+  {
+    "id": "sport-soccer-transfer",
+    "question": "Wird in diesem Transferfenster ein Wechsel über 150M EUR abgeschlossen?",
+    "criteria": "Ankündigung des Vereins."
+  },
+  {
+    "id": "sport-esports-crossover",
+    "question": "Erwirbt dieses Jahr eine Esport-Organisation Anteile an einem traditionellen Sportteam?",
+    "criteria": "Bestätigung des Deals."
+  },
+  {
+    "id": "sport-formula-e",
+    "question": "Nimmt Formula E für die nächste Saison einen neuen Hersteller auf?",
+    "criteria": "Nennliste der FIA."
+  },
+  {
+    "id": "esp-lol-worlds",
+    "question": "Gewinnt dieses Jahr ein LCK-Team die Worlds?",
+    "criteria": "Offizielles Bracket-Ergebnis."
+  },
+  {
+    "id": "esp-cs-major",
+    "question": "Gewinnt das nächste CS-Major ein Team der Top 3?",
+    "criteria": "Offizielle Rangliste."
+  },
+  {
+    "id": "esp-dota-ti",
+    "question": "Geht das TI-Grand-Final in ein entscheidendes fünftes Spiel?",
+    "criteria": "Offizielles Serienergebnis."
+  },
+  {
+    "id": "esp-valorant",
+    "question": "Erreicht eine neue Region das Finale der Valorant Champions?",
+    "criteria": "Offizielles Bracket."
+  },
+  {
+    "id": "esp-lol-msi",
+    "question": "Wird das MSI vom Team der Gastgeberregion gewonnen?",
+    "criteria": "Offizielles Ergebnis."
+  },
+  {
+    "id": "esp-apex",
+    "question": "Erreicht in diesem Split ein Controller-Spieler in einer ALGS-Lobby den ersten Platz?",
+    "criteria": "Offizielle Rangliste."
+  },
+  {
+    "id": "esp-rocket",
+    "question": "Wird ein Rocket-League-Major von einem nordamerikanischen Lineup gewonnen?",
+    "criteria": "Offizielles Bracket."
+  },
+  {
+    "id": "esp-esl",
+    "question": "Kündigt ESL dieses Jahr einen neuen LAN-Circuit im sechsstelligen Bereich an?",
+    "criteria": "Offizielle Ankündigung."
+  },
+  {
+    "id": "esp-viewership",
+    "question": "Übersteigt die Spitzenzuschauerzahl bei einem einzelnen Event dieses Jahr 7M?",
+    "criteria": "Spitzenwert öffentlicher Tracker."
+  },
+  {
+    "id": "esp-mobile",
+    "question": "Überschreitet ein Mobile-Esport dieses Jahr 1B gesehene Stunden?",
+    "criteria": "Summen öffentlicher Tracker."
+  },
+  {
+    "id": "esp-org-ipo",
+    "question": "Geht dieses Jahr eine Esport-Organisation an die Börse?",
+    "criteria": "Börsennotierung."
+  },
+  {
+    "id": "esp-franchise",
+    "question": "Erweitert sich eine Liga der höchsten Stufe in der nächsten Saison in eine neue Region?",
+    "criteria": "Offizielle Ankündigung der Liga."
+  },
+  {
+    "id": "esp-female",
+    "question": "Übersteigt das Finale eines Frauen-Circuits dieses Jahr 300K Spitzenzuschauer?",
+    "criteria": "Spitzenwert öffentlicher Tracker."
+  },
+  {
+    "id": "esp-ai-coach",
+    "question": "Gibt dieses Jahr ein Team der höchsten Stufe ein KI-Coaching-Tool bekannt?",
+    "criteria": "Offizielle Erklärung des Teams."
+  },
+  {
+    "id": "esp-university",
+    "question": "Erreicht dieses Jahr ein College-Team die Playoffs eines LAN der höchsten Stufe?",
+    "criteria": "Offizielles Bracket."
+  }
+]

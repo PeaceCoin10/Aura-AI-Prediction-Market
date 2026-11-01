@@ -5,7 +5,7 @@ import { en } from "../locales/en";
 export const CHAIN_ID = 8453;
 export const CHAIN_ID_HEX = "0x2105";
 
-/** Mainnet deployment of 2026-10-27 (see docs/MAINNET-DEPLOYED.md) */
+/** Mainnet deployment of 2026-10-27 (see docs/WHITEPAPER.md) */
 export const ENGINE_ADDRESS = (
   import.meta.env.VITE_ENGINE_ADDRESS ?? "0xE6056Bc6700F6d7E6fF8779B212655284dc1631C"
 ) as `0x${string}`;

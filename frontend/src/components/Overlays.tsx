@@ -7,7 +7,7 @@ import { useT } from "../lib/i18n";
 const ENGINE = ENGINE_ADDRESS;
 const USDC = USDC_ADDRESS;
 
-/** Security matrix data: every figure comes from a real run in this repo (see docs/SECURITY.md). */
+/** Security matrix data: every figure comes from a real run in this repo (see docs/WHITEPAPER.md). */
 export const SECURITY_FACTS = {
   slither: {
     high: 0,

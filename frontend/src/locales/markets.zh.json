@@ -1,0 +1,1277 @@
+[
+  {
+    "id": "btc-90k",
+    "question": "BTC 本周能否收于 $90,000 上方？",
+    "criteria": "CoinGecko 本周最后一日 00:00 UTC 的日收盘价。"
+  },
+  {
+    "id": "btc-100k",
+    "question": "BTC 本月能否创下高于 $105,000 的历史新高？",
+    "criteria": "本月内 Binance BTC/USDT 任意一笔高于 105,000 的成交。"
+  },
+  {
+    "id": "btc-dominance",
+    "question": "BTC 市占率能否在周五前持续高于 55%？",
+    "criteria": "CoinGecko 周五 00:00 UTC 的全球市值占比。"
+  },
+  {
+    "id": "eth-5k",
+    "question": "ETH 本月能否收于 $5,000 上方？",
+    "criteria": "CoinGecko 本月最后一日日收盘价。"
+  },
+  {
+    "id": "eth-etf-flow",
+    "question": "美国现货 ETH ETF 本周净流入能否超过 $500M？",
+    "criteria": "Farside Investors 周度净流入表。"
+  },
+  {
+    "id": "btc-etf-outflow",
+    "question": "美国现货 BTC ETF 本周是否会出现单日净流出？",
+    "criteria": "Farside 数据中任意单日总净流入为负。"
+  },
+  {
+    "id": "sol-300",
+    "question": "SOL 本月能否收于 $300 上方？",
+    "criteria": "CoinGecko 本月最后一日日收盘价。"
+  },
+  {
+    "id": "sol-etf",
+    "question": "SEC 是否会在季末前批准现货 SOL ETF？",
+    "criteria": "SEC 正式命令或批准通知。"
+  },
+  {
+    "id": "xrp-etf",
+    "question": "本季度是否会有现货 XRP ETF 开始交易？",
+    "criteria": "在美国交易所的首个交易日。"
+  },
+  {
+    "id": "stablecoin-bill",
+    "question": "美国稳定币法案能否在本届会期签署成法？",
+    "criteria": "Congress.gov 公布的总统签署。"
+  },
+  {
+    "id": "clarity-act",
+    "question": "市场结构法案本季度能否通过参议院？",
+    "criteria": "Senate.gov 记录的参议院最终表决。"
+  },
+  {
+    "id": "cpi-3",
+    "question": "美国 CPI 同比在下一次发布中能否低于 3.0%？",
+    "criteria": "BLS CPI 发布，整体同比数据。"
+  },
+  {
+    "id": "fed-cut",
+    "question": "美联储是否会在下次 FOMC 会议降息？",
+    "criteria": "FOMC 声明中的目标区间低于前次会议。"
+  },
+  {
+    "id": "fed-50",
+    "question": "下次降息幅度是否为 50bp 或更大？",
+    "criteria": "FOMC 声明目标区间变动 ≥ 50bp。"
+  },
+  {
+    "id": "treasury-5",
+    "question": "10 年期美债收益率本周能否收于 4.5% 上方？",
+    "criteria": "美国财政部每日收益率曲线，周五收盘。"
+  },
+  {
+    "id": "base-tvl",
+    "question": "Base TVL 本周能否维持在 $6B 上方？",
+    "criteria": "周末 DefiLlama 链上 TVL。"
+  },
+  {
+    "id": "l2-fees",
+    "question": "本周 Base 平均 gas 能否降至每笔兑换 $0.005 以下？",
+    "criteria": "L2Fees 周度快照的兑换手续费中位数。"
+  },
+  {
+    "id": "dex-volume",
+    "question": "主流 DEX 单日成交量能否超过 $40B？",
+    "criteria": "DefiLlama DEX 成交量汇总，本周任意一日。"
+  },
+  {
+    "id": "perp-funding",
+    "question": "BTC 永续合约资金费率能否连续 7 天为正？",
+    "criteria": "Binance BTCUSDT 永续资金费率，每 8 小时结算。"
+  },
+  {
+    "id": "hack-100m",
+    "question": "本月是否有 DeFi 协议因漏洞攻击损失超过 $100M？",
+    "criteria": "公开事后报告或 Rekt 确认的链上损失。"
+  },
+  {
+    "id": "unlock-arb",
+    "question": "ARB 在下次代币解锁后 24 小时是否走低？",
+    "criteria": "解锁时点后 24 小时的 CoinGecko 收盘价。"
+  },
+  {
+    "id": "memecoin-cap",
+    "question": "本月 meme 币总市值能否突破 $120B？",
+    "criteria": "CoinGecko 分类市值。"
+  },
+  {
+    "id": "btc-vol",
+    "question": "BTC 30 天隐含波动率能否收于 60 上方？",
+    "criteria": "周末 Deribit DVOL 指数。"
+  },
+  {
+    "id": "eth-burn",
+    "question": "本周 ETH 供应量能否继续收缩？",
+    "criteria": "Ultrasound.money 净发行量，7 日均值。"
+  },
+  {
+    "id": "rwa-tvl",
+    "question": "本季度代币化 RWA 的 TVL 能否突破 $20B？",
+    "criteria": "RWA.xyz 链上总价值。"
+  },
+  {
+    "id": "quantum-btc",
+    "question": "本季度是否有大型钱包服务商公布抗量子密钥方案？",
+    "criteria": "排名前 5 的钱包厂商的官方公告。"
+  },
+  {
+    "id": "midterms-house",
+    "question": "共和党能否在中选中保住众议院？",
+    "criteria": "AP 选举判定中的认证席位统计。"
+  },
+  {
+    "id": "midterms-senate",
+    "question": "民主党能否赢得参议院多数？",
+    "criteria": "AP 选举判定中的认证席位统计。"
+  },
+  {
+    "id": "gov-shutdown",
+    "question": "美国联邦政府本季度是否会停摆？",
+    "criteria": "OMB 指引或 Congress.gov 报道的拨款中断。"
+  },
+  {
+    "id": "supreme-court",
+    "question": "最高法院本任期是否会对关税案作出裁决？",
+    "criteria": "supremecourt.gov 发布的判决意见。"
+  },
+  {
+    "id": "tariff-25",
+    "question": "美国是否会将中国电动车关税提高至 25% 以上？",
+    "criteria": "USTR 联邦公报公告。"
+  },
+  {
+    "id": "china-stimulus",
+    "question": "中国本季度是否会宣布规模超过 1 万亿元人民币的刺激方案？",
+    "criteria": "国务院或中国人民银行的官方公告。"
+  },
+  {
+    "id": "opec-cut",
+    "question": "OPEC+ 是否会在下次会议上延长减产？",
+    "criteria": "OPEC 官方公报。"
+  },
+  {
+    "id": "ukraine-ceasefire",
+    "question": "本季度是否会签署正式停火协议？",
+    "criteria": "两家主要通讯社确认的已签署协议。"
+  },
+  {
+    "id": "gaza-deal",
+    "question": "人质释放协议是否会得到两家主要媒体确认？",
+    "criteria": "路透社、AP 或 BBC 的确认。"
+  },
+  {
+    "id": "taiwan-exercise",
+    "question": "中国本季度是否会在台湾周边举行大规模演习？",
+    "criteria": "解放军官方公告或路透社确认。"
+  },
+  {
+    "id": "uk-pm",
+    "question": "英国首相季末是否仍在任？",
+    "criteria": "唐宁街 10 号确认的辞职或领导层变动。"
+  },
+  {
+    "id": "japan-election",
+    "question": "自民党是否会在下次选举中失去众议院多数？",
+    "criteria": "选举管理委员会官方结果。"
+  },
+  {
+    "id": "india-election",
+    "question": "执政党能否在下次邦选举中保住多数？",
+    "criteria": "印度选举委员会结果。"
+  },
+  {
+    "id": "argentina-reform",
+    "question": "阿根廷改革法案本季度能否通过国会？",
+    "criteria": "议会两院官方表决记录。"
+  },
+  {
+    "id": "brazil-rate",
+    "question": "巴西央行本季度是否会再次降息？",
+    "criteria": "Copom 声明。"
+  },
+  {
+    "id": "ecb-cut",
+    "question": "欧洲央行是否会在下次会议降息？",
+    "criteria": "欧洲央行理事会决定。"
+  },
+  {
+    "id": "ecb-hold",
+    "question": "欧洲央行能否维持利率不变至年底？",
+    "criteria": "其余各次会议均无变动。"
+  },
+  {
+    "id": "fed-chair",
+    "question": "本季度是否会提名新任美联储主席？",
+    "criteria": "白宫向参议院提交的提名。"
+  },
+  {
+    "id": "ai-bill",
+    "question": "美国本届会期能否通过联邦 AI 监管立法？",
+    "criteria": "Congress.gov 报道的已签署法案。"
+  },
+  {
+    "id": "eu-ai-act",
+    "question": "欧盟《人工智能法案》实施细则本月能否生效？",
+    "criteria": "EUR-Lex 公布的实施法案。"
+  },
+  {
+    "id": "immigration-bill",
+    "question": "移民法案本季度能否通过参议院？",
+    "criteria": "Senate.gov 上的参议院最终表决。"
+  },
+  {
+    "id": "nato-spend",
+    "question": "今年是否还有三个北约成员国达到 2% 的军费目标？",
+    "criteria": "北约年度国防开支报告。"
+  },
+  {
+    "id": "nikkei-45k",
+    "question": "日经指数本季度能否收于 45,000 上方？",
+    "criteria": "日经官方收盘价。"
+  },
+  {
+    "id": "gold-3k",
+    "question": "黄金本周能否维持在 $3,000/盎司上方？",
+    "criteria": "LBMA 周五下午定盘价。"
+  },
+  {
+    "id": "oil-90",
+    "question": "布伦特原油本季度能否收于 $90 上方？",
+    "criteria": "ICE 布伦特近月结算价。"
+  },
+  {
+    "id": "ceasefire-redsea",
+    "question": "红海航运流量能否回升至 2023 年水平的 60% 以上？",
+    "criteria": "IMF PortWatch 周度过境指数。"
+  },
+  {
+    "id": "nba-celtics",
+    "question": "凯尔特人下一场能否取胜？",
+    "criteria": "NBA 官方最终比分。"
+  },
+  {
+    "id": "nba-lakers",
+    "question": "湖人能否进入附加赛？",
+    "criteria": "常规赛结束时的 NBA 排名。"
+  },
+  {
+    "id": "nba-mvp",
+    "question": "MVP 是否来自东部联盟？",
+    "criteria": "NBA 赛季末奖项公布。"
+  },
+  {
+    "id": "nba-70win",
+    "question": "本赛季是否有球队取得 70 胜？",
+    "criteria": "NBA 常规赛最终战绩。"
+  },
+  {
+    "id": "epl-arsenal",
+    "question": "阿森纳本轮能否战胜切尔西？",
+    "criteria": "英超官方赛果。"
+  },
+  {
+    "id": "epl-title",
+    "question": "阿森纳能否赢得英超冠军？",
+    "criteria": "最终联赛积分榜。"
+  },
+  {
+    "id": "epl-city",
+    "question": "曼城最终排名能否高于利物浦？",
+    "criteria": "最终联赛积分榜排名。"
+  },
+  {
+    "id": "epl-relegation",
+    "question": "三支升班马是否全部降级？",
+    "criteria": "最终联赛积分榜。"
+  },
+  {
+    "id": "ucl-final",
+    "question": "是否有西班牙俱乐部打进欧冠决赛？",
+    "criteria": "UEFA 官方赛果。"
+  },
+  {
+    "id": "ucl-upset",
+    "question": "是否有非 5 大联赛的俱乐部打进四分之一决赛？",
+    "criteria": "UEFA 官方赛果。"
+  },
+  {
+    "id": "f1-verstappen",
+    "question": "维斯塔潘能否赢得下一站大奖赛？",
+    "criteria": "FIA 官方成绩排名。"
+  },
+  {
+    "id": "f1-constructors",
+    "question": "迈凯伦能否赢得车队总冠军？",
+    "criteria": "FIA 最终排名。"
+  },
+  {
+    "id": "f1-pole",
+    "question": "诺里斯能否在下一场排位赛夺得杆位？",
+    "criteria": "FIA 排位赛成绩。"
+  },
+  {
+    "id": "f1-sprint",
+    "question": "冲刺赛周末的冠军是否与正赛冠军不同？",
+    "criteria": "该周末的 FIA 官方赛果。"
+  },
+  {
+    "id": "nfl-chiefs",
+    "question": "酋长本周客场能否取胜？",
+    "criteria": "NFL 官方最终比分。"
+  },
+  {
+    "id": "nfl-playoffs",
+    "question": "老鹰能否进入季后赛？",
+    "criteria": "NFL 最终排名。"
+  },
+  {
+    "id": "nfl-chiefs-sb",
+    "question": "酋长能否打进超级碗？",
+    "criteria": "AFC 冠军赛结果。"
+  },
+  {
+    "id": "mlb-dodgers",
+    "question": "道奇能否赢得世界大赛？",
+    "criteria": "MLB 官方赛果。"
+  },
+  {
+    "id": "tennis-slam",
+    "question": "阿尔卡拉斯能否赢得下一项大满贯？",
+    "criteria": "ATP 官方赛事结果。"
+  },
+  {
+    "id": "tennis-wta",
+    "question": "斯瓦泰克能否打进下一站 WTA 1000 决赛？",
+    "criteria": "WTA 官方赛果。"
+  },
+  {
+    "id": "boxing-title",
+    "question": "本季度重量级拳王头衔是否易主？",
+    "criteria": "官方认证机构结果。"
+  },
+  {
+    "id": "ufc-main",
+    "question": "冠军能否在下一场 UFC 主赛中卫冕？",
+    "criteria": "UFC 官方赛果。"
+  },
+  {
+    "id": "mma-ko",
+    "question": "UFC 主赛是否以 KO/TKO 结束？",
+    "criteria": "UFC 官方赛果判定方式。"
+  },
+  {
+    "id": "olympics-host",
+    "question": "下一届主办城市能否按期确认？",
+    "criteria": "国际奥委会官方公告。"
+  },
+  {
+    "id": "cricket-ipl",
+    "question": "孟买印度人能否打进 IPL 季后赛？",
+    "criteria": "IPL 官方排名。"
+  },
+  {
+    "id": "golf-major",
+    "question": "舍夫勒今年能否再赢一场大满贯？",
+    "criteria": "PGA 官方赛果。"
+  },
+  {
+    "id": "sports-scandal",
+    "question": "本赛季是否有前 10 大俱乐部被扣分？",
+    "criteria": "联赛官方纪律裁决。"
+  },
+  {
+    "id": "athletics-record",
+    "question": "下一站钻石联赛是否会产生世界纪录？",
+    "criteria": "世界田联官方认证。"
+  },
+  {
+    "id": "lol-t1",
+    "question": "T1 能否在全球总决赛淘汰赛阶段战胜 Movistar KOI？",
+    "criteria": "Riot Games 官方系列赛结果。"
+  },
+  {
+    "id": "lol-worlds",
+    "question": "是否有 LCK 战队赢得全球总决赛？",
+    "criteria": "官方赛事冠军。"
+  },
+  {
+    "id": "lol-final",
+    "question": "全球总决赛决赛是否打满五局？",
+    "criteria": "官方系列赛比分。"
+  },
+  {
+    "id": "cs2-major",
+    "question": "是否有欧洲阵容赢得 CS2 Major？",
+    "criteria": "经 HLTV 核实的官方结果。"
+  },
+  {
+    "id": "cs2-upset",
+    "question": "是否有前 8 种子在小组赛阶段被淘汰？",
+    "criteria": "HLTV 官方排名。"
+  },
+  {
+    "id": "cs2-map",
+    "question": "Mirage 是否会成为 Major 中被选次数最多的地图？",
+    "criteria": "HLTV 官方地图统计。"
+  },
+  {
+    "id": "vct-sentinels",
+    "question": "Sentinels 下一场 VCT 比赛能否以 2:0 取胜？",
+    "criteria": "VCT 官方比赛结果。"
+  },
+  {
+    "id": "vct-final",
+    "question": "是否有太平洋赛区战队打进 VCT 决赛？",
+    "criteria": "VCT 官方对阵表。"
+  },
+  {
+    "id": "dota-ti",
+    "question": "是否有东欧战队赢得国际邀请赛？",
+    "criteria": "Valve 官方结果。"
+  },
+  {
+    "id": "ow-final",
+    "question": "OWCS 冠军是否来自北美？",
+    "criteria": "暴雪官方结果。"
+  },
+  {
+    "id": "rlcs-final",
+    "question": "是否有欧洲战队赢得 RLCS？",
+    "criteria": "RLCS 官方结果。"
+  },
+  {
+    "id": "evo-gf",
+    "question": "EVO 冠军能否卫冕？",
+    "criteria": "EVO 官方结果。"
+  },
+  {
+    "id": "lol-poro",
+    "question": "赛事 MVP 是否为中单选手？",
+    "criteria": "官方 MVP 公布。"
+  },
+  {
+    "id": "cs2-awp",
+    "question": "赛事评分最高的选手是否为狙击手（AWPer）？",
+    "criteria": "HLTV 官方评分榜。"
+  },
+  {
+    "id": "vct-viewership",
+    "question": "峰值观看人数能否超过去年决赛？",
+    "criteria": "VCT 官方观看数据报告。"
+  },
+  {
+    "id": "mobile-legend",
+    "question": "是否有中国战队赢得 M 系列赛冠军？",
+    "criteria": "沐瞳官方结果。"
+  },
+  {
+    "id": "pubg-final",
+    "question": "PUBG 国家杯决赛是否打到最后一个圈？",
+    "criteria": "官方比赛日志。"
+  },
+  {
+    "id": "apex-lan",
+    "question": "是否有新战队赢得 Apex LAN？",
+    "criteria": "EA 官方结果。"
+  },
+  {
+    "id": "fifa-esports",
+    "question": "是否有欧洲选手赢得 FC Pro 冠军？",
+    "criteria": "EA SPORTS FC 官方结果。"
+  },
+  {
+    "id": "fortnite-duo",
+    "question": "FNCS 双人决赛是否由卫冕冠军组合夺冠？",
+    "criteria": "Epic 官方结果。"
+  },
+  {
+    "id": "esports-major-city",
+    "question": "下一届 Major 是否在欧洲以外举办？",
+    "criteria": "官方赛事公告。"
+  },
+  {
+    "id": "valo-rank",
+    "question": "是否会有新秀在下一站 LAN 的 ACS 数据中位列前 3？",
+    "criteria": "VCT 官方数据。"
+  },
+  {
+    "id": "lol-patch",
+    "question": "下一个版本是否会削弱赛事中最热门的英雄？",
+    "criteria": "Riot 官方版本说明。"
+  },
+  {
+    "id": "esports-prize",
+    "question": "奖金池能否超过去年？",
+    "criteria": "官方赛事奖金分配。"
+  },
+  {
+    "id": "ai-gpt6",
+    "question": "本季度是否有前沿实验室发布 GPT-5 级模型？",
+    "criteria": "排名前 3 的实验室的官方模型发布公告。"
+  },
+  {
+    "id": "ai-gemini",
+    "question": "Gemini 本季度能否登顶 LMSYS 竞技场？",
+    "criteria": "LMSYS Chatbot Arena 排行榜。"
+  },
+  {
+    "id": "ai-llama",
+    "question": "Meta 本季度是否会发布新的开放权重模型？",
+    "criteria": "Meta 官方发布。"
+  },
+  {
+    "id": "ai-agent-bench",
+    "question": "是否有智能体在 SWE-bench Verified 上得分超过 70%？",
+    "criteria": "官方排行榜提交。"
+  },
+  {
+    "id": "ai-context",
+    "question": "是否有正式上线的模型提供 10M token 的上下文窗口？",
+    "criteria": "服务商文档或发布说明。"
+  },
+  {
+    "id": "nvda-earnings",
+    "question": "英伟达下季度营收能否超过市场一致预期？",
+    "criteria": "公布的季度业绩与一致预期对比。"
+  },
+  {
+    "id": "nvda-5t",
+    "question": "英伟达市值本季度能否收于 $5T 上方？",
+    "criteria": "纳斯达克收盘市值。"
+  },
+  {
+    "id": "tsmc-2nm",
+    "question": "台积电本季度是否会宣布 2nm 量产？",
+    "criteria": "台积电官方声明。"
+  },
+  {
+    "id": "chip-export",
+    "question": "美国本季度是否会收紧芯片出口管制？",
+    "criteria": "BIS 联邦公报规则。"
+  },
+  {
+    "id": "asml-orders",
+    "question": "ASML 订单额能否超过一致预期？",
+    "criteria": "公布的季度订单额。"
+  },
+  {
+    "id": "apple-glasses",
+    "question": "苹果本季度是否会发布 AR 眼镜？",
+    "criteria": "苹果官方活动或新闻稿。"
+  },
+  {
+    "id": "apple-ai",
+    "question": "苹果本季度是否会推出新的端侧 AI 功能？",
+    "criteria": "已发布操作系统版本的更新说明。"
+  },
+  {
+    "id": "tesla-fsd",
+    "question": "特斯拉本季度是否会公布 robotaxi 里程碑？",
+    "criteria": "特斯拉官方披露。"
+  },
+  {
+    "id": "spacex-starship",
+    "question": "星舰下次飞行能否入轨？",
+    "criteria": "SpaceX 官方确认。"
+  },
+  {
+    "id": "quantum-qubit",
+    "question": "今年是否有实验室报告 1,000+ 逻辑量子比特的成果？",
+    "criteria": "同行评审发表。"
+  },
+  {
+    "id": "humanoid-ship",
+    "question": "本季度是否有人形机器人交付付费客户？",
+    "criteria": "公司披露或客户公告。"
+  },
+  {
+    "id": "openai-ipo",
+    "question": "OpenAI 今年是否会提交 IPO 申请？",
+    "criteria": "公开的 S-1 文件。"
+  },
+  {
+    "id": "ai-energy",
+    "question": "本季度是否有超大规模云厂商宣布核能购电协议？",
+    "criteria": "公司新闻稿。"
+  },
+  {
+    "id": "ai-copyright",
+    "question": "本季度美国法院是否会对 AI 训练合理使用作出裁决？",
+    "criteria": "已公布的法院判决意见。"
+  },
+  {
+    "id": "ai-model-ban",
+    "question": "监管机构是否会在主要市场禁售某前沿模型？",
+    "criteria": "官方监管命令。"
+  },
+  {
+    "id": "ai-voice",
+    "question": "实时语音模型能否以低于 200ms 的延迟上线？",
+    "criteria": "含实测延迟的服务商文档。"
+  },
+  {
+    "id": "robotics-cost",
+    "question": "人形机器人价格今年能否降至 $30k 以下？",
+    "criteria": "在售厂商公布的价格。"
+  },
+  {
+    "id": "cyber-ransom",
+    "question": "是否有《财富》500 强公司披露支付 $10M 以上赎金？",
+    "criteria": "SEC 8-K 或公开披露。"
+  },
+  {
+    "id": "data-center",
+    "question": "美国数据中心电力需求同比增速能否超过 15%？",
+    "criteria": "EIA 公布数据。"
+  },
+  {
+    "id": "ai-benchmark",
+    "question": "本季度是否有开源模型登顶公开编程基准？",
+    "criteria": "官方排行榜。"
+  },
+  {
+    "id": "tech-antitrust",
+    "question": "本季度是否有大型平台面临美国反垄断救济措施？",
+    "criteria": "法院命令或 DOJ/FTC 行动。"
+  },
+  {
+    "id": "geo-eu-defense",
+    "question": "欧盟理事会本季度是否会批准新的联合防务基金？",
+    "criteria": "理事会新闻稿或官方联合公报。"
+  },
+  {
+    "id": "geo-nato-spend",
+    "question": "今年是否有第三个北约成员国将国防开支提高至 GDP 的 3% 以上？",
+    "criteria": "北约年度国防开支报告。"
+  },
+  {
+    "id": "geo-un-ceasefire",
+    "question": "联合国安理会本月能否通过具有约束力的停火决议？",
+    "criteria": "un.org 上通过的决议文本。"
+  },
+  {
+    "id": "geo-g7-summit",
+    "question": "下一份 G7 公报是否会将 AI 监管列为共同优先事项？",
+    "criteria": "主办国政府发布的最终公报。"
+  },
+  {
+    "id": "geo-imo-shipping",
+    "question": "本季度是否有大型航运保险商暂停红海承保？",
+    "criteria": "劳合社上市承保人的公开通知。"
+  },
+  {
+    "id": "geo-opec-cut",
+    "question": "OPEC+ 是否会在下次会议上延长自愿减产？",
+    "criteria": "会后 OPEC 新闻稿。"
+  },
+  {
+    "id": "geo-us-cr",
+    "question": "美国能否在下一个拨款截止日前避免政府停摆？",
+    "criteria": "国会通过持续决议案。"
+  },
+  {
+    "id": "geo-eu-tariff",
+    "question": "欧盟是否会在季末前对中国电动车加征临时关税？",
+    "criteria": "官方公报上的法规。"
+  },
+  {
+    "id": "geo-jp-rate",
+    "question": "日本央行今年是否会将利率提高至 0.75% 以上？",
+    "criteria": "日本央行政策声明。"
+  },
+  {
+    "id": "geo-ecb-cut",
+    "question": "欧洲央行本半年是否会降息两次或以上？",
+    "criteria": "欧洲央行利率决定。"
+  },
+  {
+    "id": "geo-fed-cut",
+    "question": "美联储是否会在下次 FOMC 会议降息？",
+    "criteria": "FOMC 声明。"
+  },
+  {
+    "id": "geo-fed-hold",
+    "question": "美联储能否在接下来两次会议上维持利率不变？",
+    "criteria": "两次 FOMC 声明。"
+  },
+  {
+    "id": "geo-us-cpi",
+    "question": "美国 CPI 同比在下一次发布中能否低于 2.5%？",
+    "criteria": "BLS CPI 发布。"
+  },
+  {
+    "id": "geo-eu-cpi",
+    "question": "欧元区通胀在下一次数据中能否降至 2% 以下？",
+    "criteria": "欧盟统计局初步估值。"
+  },
+  {
+    "id": "geo-uk-budget",
+    "question": "英国是否会在秋季预算中宣布新的财富税？",
+    "criteria": "英国财政部红皮书。"
+  },
+  {
+    "id": "geo-jp-election",
+    "question": "日本执政联盟今年是否会失去众议院多数？",
+    "criteria": "官方选举结果。"
+  },
+  {
+    "id": "geo-india-gdp",
+    "question": "印度本季度 GDP 增速能否高于 7%？",
+    "criteria": "统计部发布数据。"
+  },
+  {
+    "id": "geo-brazil-rate",
+    "question": "巴西央行下次会议是否下调 Selic 利率？",
+    "criteria": "Copom 声明。"
+  },
+  {
+    "id": "geo-us-tariff",
+    "question": "美国本季度是否会对主要贸易伙伴宣布新的 10%+ 关税？",
+    "criteria": "USTR 联邦公报公告。"
+  },
+  {
+    "id": "geo-china-stimulus",
+    "question": "中国本季度是否会宣布新的消费刺激方案？",
+    "criteria": "国务院公告。"
+  },
+  {
+    "id": "geo-china-gdp",
+    "question": "中国今年能否实现官方增长目标？",
+    "criteria": "国家统计局年度发布。"
+  },
+  {
+    "id": "geo-taiwan-exports",
+    "question": "台湾出口订单在下一次数据中能否同比增长？",
+    "criteria": "经济部发布数据。"
+  },
+  {
+    "id": "geo-korea-rate",
+    "question": "韩国央行下次会议是否维持利率不变？",
+    "criteria": "韩国银行政策声明。"
+  },
+  {
+    "id": "geo-oil-80",
+    "question": "布伦特原油本月能否收于 $80 上方？",
+    "criteria": "ICE 布伦特近月结算价。"
+  },
+  {
+    "id": "geo-oil-100",
+    "question": "布伦特能否在年底前触及 $100？",
+    "criteria": "任意近月价格达到或高于 100。"
+  },
+  {
+    "id": "geo-gold-3k",
+    "question": "黄金本月能否创下历史新高？",
+    "criteria": "COMEX 现货纪录。"
+  },
+  {
+    "id": "geo-yields-5",
+    "question": "美国 10 年期国债收益率能否有一周收于 5% 上方？",
+    "criteria": "财政部每日收益率曲线。"
+  },
+  {
+    "id": "geo-dxy",
+    "question": "美元指数本月末能否收于 100 下方？",
+    "criteria": "ICE DXY 收盘价。"
+  },
+  {
+    "id": "geo-unemployment",
+    "question": "美国失业率在下一次数据中能否维持在 4.5% 以下？",
+    "criteria": "BLS 就业报告。"
+  },
+  {
+    "id": "geo-housing",
+    "question": "美国 30 年期房贷利率本季度能否降至 6% 以下？",
+    "criteria": "房地美周度调查。"
+  },
+  {
+    "id": "geo-eu-gas",
+    "question": "欧盟天然气库存冬季结束时能否高于 40%？",
+    "criteria": "GIE AGSI 汇总数据。"
+  },
+  {
+    "id": "geo-greece-rating",
+    "question": "本季度是否有评级机构将某个欧元区外围主权评级上调至 A？",
+    "criteria": "评级机构新闻稿。"
+  },
+  {
+    "id": "geo-arctic-route",
+    "question": "今年是否有商业集装箱班轮公司开通定期北极航线？",
+    "criteria": "承运人船期公布。"
+  },
+  {
+    "id": "geo-election-turnout",
+    "question": "下次欧盟重要选举的投票率能否超过 55%？",
+    "criteria": "官方投票率数据。"
+  },
+  {
+    "id": "geo-succession",
+    "question": "本季度是否有 G20 成员更换政府首脑？",
+    "criteria": "官方交接公告。"
+  },
+  {
+    "id": "geo-trade-deal",
+    "question": "欧盟今年能否签署新的自由贸易协定？",
+    "criteria": "欧盟委员会公布的签署文本。"
+  },
+  {
+    "id": "pop-box-office",
+    "question": "下一部重磅影片全球首映票房能否超过 $200M？",
+    "criteria": "片方公布的首周末票房。"
+  },
+  {
+    "id": "pop-streaming",
+    "question": "本季度是否有流媒体服务出现意外的订阅用户流失？",
+    "criteria": "公司财报发布。"
+  },
+  {
+    "id": "pop-grammy",
+    "question": "年度播放量最高的艺人能否赢得年度专辑？",
+    "criteria": "美国录音学院结果。"
+  },
+  {
+    "id": "pop-festival",
+    "question": "大型夏季音乐节能否在 48 小时内售罄？",
+    "criteria": "官方票务声明。"
+  },
+  {
+    "id": "pop-viral",
+    "question": "单条视频能否在一个月内突破 500M 播放量？",
+    "criteria": "平台公开计数。"
+  },
+  {
+    "id": "pop-game-launch",
+    "question": "下一款 AAA 大作首周销量能否超过前作？",
+    "criteria": "发行商新闻稿。"
+  },
+  {
+    "id": "pop-console",
+    "question": "新款主机改版机型能否在年底前上市？",
+    "criteria": "官方零售上架信息。"
+  },
+  {
+    "id": "pop-award-host",
+    "question": "颁奖典礼主持人能否在典礼前 30 天以上公布？",
+    "criteria": "官方播出公告。"
+  },
+  {
+    "id": "pop-merch",
+    "question": "巡演周边系列能否在一周内售罄？",
+    "criteria": "官方商店状态。"
+  },
+  {
+    "id": "pop-podcast",
+    "question": "本季度是否有播客网络宣布重大独家协议？",
+    "criteria": "行业媒体确认。"
+  },
+  {
+    "id": "tech-ipo",
+    "question": "今年是否有一家风投支持的 AI 公司提交 IPO 申请？",
+    "criteria": "向 SEC 提交的 S-1 文件。"
+  },
+  {
+    "id": "tech-mega-round",
+    "question": "今年是否有私营 AI 实验室单轮融资超过 $5B？",
+    "criteria": "经确认的融资轮公告。"
+  },
+  {
+    "id": "tech-down-round",
+    "question": "本季度是否有头部十分位独角兽接受折价融资？",
+    "criteria": "两家媒体报道确认的投资条款清单。"
+  },
+  {
+    "id": "tech-nvidia",
+    "question": "NVIDIA 下次财报营收能否超过一致预期？",
+    "criteria": "公司财报发布。"
+  },
+  {
+    "id": "tech-tsmc",
+    "question": "台积电下次电话会是否上调资本开支指引？",
+    "criteria": "财报电话会议记录。"
+  },
+  {
+    "id": "tech-chip-act",
+    "question": "本季度是否会公布第二笔超过 $5B 的《芯片法案》拨款？",
+    "criteria": "商务部公告。"
+  },
+  {
+    "id": "tech-ai-act",
+    "question": "欧盟《人工智能法案》能否按计划进入下一执行阶段？",
+    "criteria": "欧盟委员会实施法案。"
+  },
+  {
+    "id": "tech-browser",
+    "question": "今年是否有主流浏览器内置 AI 智能体？",
+    "criteria": "稳定版发布说明。"
+  },
+  {
+    "id": "tech-open-weights",
+    "question": "今年是否有前沿实验室发布 400B 参数以上的开放权重模型？",
+    "criteria": "模型卡或代码库发布。"
+  },
+  {
+    "id": "tech-robotaxi",
+    "question": "是否有 robotaxi 运营商在新城市实现单日 1,000 次以上无人驾驶载客？",
+    "criteria": "监管机构或运营商披露。"
+  },
+  {
+    "id": "tech-datacenter",
+    "question": "今年是否有超大规模云厂商宣布 5GW+ 数据中心园区？",
+    "criteria": "公司公告。"
+  },
+  {
+    "id": "tech-quantum",
+    "question": "今年是否有量子计算厂商宣称实现逻辑量子比特优势？",
+    "criteria": "同行评审或预印本声明。"
+  },
+  {
+    "id": "tech-cyber",
+    "question": "本季度是否有《财富》100 强公司披露八位数规模的入侵事件？",
+    "criteria": "8-K 或监管申报文件。"
+  },
+  {
+    "id": "tech-antitrust-2",
+    "question": "今年法院是否会对大型科技平台施加结构性救济？",
+    "criteria": "法院命令。"
+  },
+  {
+    "id": "tech-saas",
+    "question": "本季度 SaaS 增速指引中位数能否降至 12% 以下？",
+    "criteria": "汇总财报数据。"
+  },
+  {
+    "id": "tech-fintech",
+    "question": "今年是否有数字银行达到 10M 入金账户？",
+    "criteria": "公司披露。"
+  },
+  {
+    "id": "tech-stablecoin-bill",
+    "question": "美国稳定币法案今年能否在两院通过？",
+    "criteria": "国会记录。"
+  },
+  {
+    "id": "tech-ai-revenue",
+    "question": "是否有基础模型实验室披露超过 $2B 的年化营收？",
+    "criteria": "公司或投资方披露。"
+  },
+  {
+    "id": "tech-gpu-price",
+    "question": "本季度 H100 租赁价格能否降至每小时 $1.50 以下？",
+    "criteria": "汇总市场报价。"
+  },
+  {
+    "id": "tech-eu-fine",
+    "question": "欧盟今年是否会对 DMA 开出超过 1B EUR 的罚单？",
+    "criteria": "欧盟委员会决定。"
+  },
+  {
+    "id": "tech-semiconductor",
+    "question": "全球半导体销售额今年能否创下单月纪录？",
+    "criteria": "SIA 月度报告。"
+  },
+  {
+    "id": "tech-ev",
+    "question": "本季度是否有主要车企推迟电动车工厂项目？",
+    "criteria": "公司声明。"
+  },
+  {
+    "id": "tech-battery",
+    "question": "今年是否有固态电池搭载于量产车型交付？",
+    "criteria": "整车厂或供应商确认。"
+  },
+  {
+    "id": "tech-space",
+    "question": "今年是否有私营发射公司以可重复使用助推器入轨？",
+    "criteria": "发射确认。"
+  },
+  {
+    "id": "tech-dev-tools",
+    "question": "今年是否有 AI 编程工具突破 5M 付费席位？",
+    "criteria": "公司披露。"
+  },
+  {
+    "id": "tech-ai-export",
+    "question": "美国本季度是否会收紧 AI 芯片出口规则？",
+    "criteria": "BIS 规则发布。"
+  },
+  {
+    "id": "tech-superapp",
+    "question": "今年是否有即时通讯应用推出应用内预测产品？",
+    "criteria": "官方产品公告。"
+  },
+  {
+    "id": "crypto-btc-120k",
+    "question": "本季度 BTC 能否有一周收于 $120,000 上方？",
+    "criteria": "CoinGecko 周收盘价。"
+  },
+  {
+    "id": "crypto-btc-70k",
+    "question": "本季度 BTC 是否跌破 $70,000？",
+    "criteria": "CoinGecko 任意日收盘价低于 70,000。"
+  },
+  {
+    "id": "crypto-eth-btc",
+    "question": "ETH/BTC 本季度末能否高于 0.05？",
+    "criteria": "季末收盘比率。"
+  },
+  {
+    "id": "crypto-l2-tvl",
+    "question": "L2 合计 TVL 今年能否突破 $80B？",
+    "criteria": "L2Beat 汇总数据。"
+  },
+  {
+    "id": "crypto-stables",
+    "question": "稳定币供应量今年能否突破 $300B？",
+    "criteria": "DefiLlama 汇总数据。"
+  },
+  {
+    "id": "crypto-defi-yield",
+    "question": "本季度是否有前 10 大协议对稳定币存款提供高于 15% 的收益？",
+    "criteria": "协议数据面板。"
+  },
+  {
+    "id": "crypto-hack",
+    "question": "今年是否还会发生另一起九位数规模的协议漏洞攻击？",
+    "criteria": "对损失的链上验证。"
+  },
+  {
+    "id": "crypto-restaking",
+    "question": "再质押 TVL 今年能否在现有水平上翻倍？",
+    "criteria": "DefiLlama 再质押分类。"
+  },
+  {
+    "id": "crypto-base-tvl",
+    "question": "Base TVL 今年能否突破 $20B？",
+    "criteria": "L2Beat 的 Base 页面。"
+  },
+  {
+    "id": "crypto-sol-flip",
+    "question": "本季度 SOL 能否在周度 DEX 成交量上至少一次反超 ETH？",
+    "criteria": "DefiLlama 链上成交量。"
+  },
+  {
+    "id": "crypto-meme",
+    "question": "本季度是否有 meme 币进入市值前 20？",
+    "criteria": "CoinGecko 排名。"
+  },
+  {
+    "id": "crypto-etf-btc-flow",
+    "question": "现货 BTC ETF 能否出现单周 $2B+ 的净流入？",
+    "criteria": "Farside 周度合计。"
+  },
+  {
+    "id": "crypto-perp-oi",
+    "question": "永续合约总未平仓量今年能否突破 $100B？",
+    "criteria": "Coinglass 汇总数据。"
+  },
+  {
+    "id": "crypto-funding",
+    "question": "BTC 资金费率能否连续 30 天为正？",
+    "criteria": "交易所资金费率历史。"
+  },
+  {
+    "id": "crypto-airdrop",
+    "question": "今年是否有前 5 大 L2 进行代币空投？",
+    "criteria": "官方领取页面上线。"
+  },
+  {
+    "id": "crypto-reg",
+    "question": "SEC 今年是否会批准新的加密 ETP 类别？",
+    "criteria": "批准命令。"
+  },
+  {
+    "id": "crypto-onchain-fees",
+    "question": "主流链月度链上手续费今年能否创下新高？",
+    "criteria": "DefiLlama 手续费数据。"
+  },
+  {
+    "id": "crypto-validator",
+    "question": "是否有主流公链将解质押期缩短至 7 天以下？",
+    "criteria": "协议升级说明。"
+  },
+  {
+    "id": "crypto-oracle",
+    "question": "本季度是否有头部预言机新增一类资产的数据馈送？",
+    "criteria": "服务商更新日志。"
+  },
+  {
+    "id": "crypto-dao",
+    "question": "本季度是否有前 20 名 DAO 通过国库多元化投票？",
+    "criteria": "链上治理结果。"
+  },
+  {
+    "id": "crypto-l2-fee",
+    "question": "本季度 L2 交易手续费中位数能否降至 $0.01 以下？",
+    "criteria": "L2Beat 手续费追踪。"
+  },
+  {
+    "id": "crypto-bridge",
+    "question": "今年是否有跨链桥月度成交量突破 $5B？",
+    "criteria": "DefiLlama 跨链桥成交量。"
+  },
+  {
+    "id": "sport-ucl",
+    "question": "欧冠决赛是否进入加时？",
+    "criteria": "官方比赛记录。"
+  },
+  {
+    "id": "sport-epl-title",
+    "question": "英超冠军是否要到最后一日才决出？",
+    "criteria": "最终积分榜。"
+  },
+  {
+    "id": "sport-nba-finals",
+    "question": "NBA 总决赛是否打到第七场？",
+    "criteria": "官方系列赛结果。"
+  },
+  {
+    "id": "sport-nfl-mvp",
+    "question": "NFL MVP 是否来自前四种子之外的球队？",
+    "criteria": "AP 奖项公布。"
+  },
+  {
+    "id": "sport-f1",
+    "question": "F1 车手总冠军是否在最后一站决出？",
+    "criteria": "官方排名。"
+  },
+  {
+    "id": "sport-wimbledon",
+    "question": "今年温网是否会产生首次夺冠的冠军？",
+    "criteria": "官方签表结果。"
+  },
+  {
+    "id": "sport-olympics",
+    "question": "下一届主办国能否在奖牌榜位列前三？",
+    "criteria": "官方奖牌榜。"
+  },
+  {
+    "id": "sport-cricket",
+    "question": "IPL 决赛是否由后攻方获胜？",
+    "criteria": "比赛结果。"
+  },
+  {
+    "id": "sport-rugby",
+    "question": "六国赛冠军是否以大满贯方式获得？",
+    "criteria": "最终排名。"
+  },
+  {
+    "id": "sport-mma",
+    "question": "下一场 UFC 付费赛事是否会有头衔易主？",
+    "criteria": "官方结果。"
+  },
+  {
+    "id": "sport-golf",
+    "question": "大满贯冠军是否由世界排名前 20 之外的球员获得？",
+    "criteria": "官方领先榜。"
+  },
+  {
+    "id": "sport-marathon",
+    "question": "今年男子马拉松世界纪录是否会被打破？",
+    "criteria": "世界田联认证。"
+  },
+  {
+    "id": "sport-soccer-transfer",
+    "question": "本转会窗是否有超过 150M EUR 的转会完成？",
+    "criteria": "俱乐部公告。"
+  },
+  {
+    "id": "sport-esports-crossover",
+    "question": "今年是否有电竞组织收购传统体育球队股份？",
+    "criteria": "交易确认。"
+  },
+  {
+    "id": "sport-formula-e",
+    "question": "Formula E 下赛季是否会有新厂商加入？",
+    "criteria": "FIA 参赛名单。"
+  },
+  {
+    "id": "esp-lol-worlds",
+    "question": "今年是否有 LCK 战队赢得全球总决赛？",
+    "criteria": "官方对阵结果。"
+  },
+  {
+    "id": "esp-cs-major",
+    "question": "下一届 CS Major 是否由排名前 3 的战队夺冠？",
+    "criteria": "官方排名。"
+  },
+  {
+    "id": "esp-dota-ti",
+    "question": "TI 总决赛是否打到决胜的第五局？",
+    "criteria": "官方系列赛结果。"
+  },
+  {
+    "id": "esp-valorant",
+    "question": "是否有新赛区战队打进 Valorant 全球冠军赛决赛？",
+    "criteria": "官方对阵表。"
+  },
+  {
+    "id": "esp-lol-msi",
+    "question": "MSI 冠军是否由主办赛区的战队获得？",
+    "criteria": "官方结果。"
+  },
+  {
+    "id": "esp-apex",
+    "question": "本赛段是否有手柄玩家在 Apex ALGS 小组赛中排名第一？",
+    "criteria": "官方排名。"
+  },
+  {
+    "id": "esp-rocket",
+    "question": "是否有北美阵容赢得 Rocket League Major？",
+    "criteria": "官方对阵表。"
+  },
+  {
+    "id": "esp-esl",
+    "question": "ESL 今年是否会宣布新的六位数奖金 LAN 巡回赛？",
+    "criteria": "官方公告。"
+  },
+  {
+    "id": "esp-viewership",
+    "question": "今年单个赛事的峰值同时在线观看人数能否超过 7M？",
+    "criteria": "公开追踪平台峰值。"
+  },
+  {
+    "id": "esp-mobile",
+    "question": "今年是否有移动电竞赛事观看时长突破 1B 小时？",
+    "criteria": "公开追踪平台累计数据。"
+  },
+  {
+    "id": "esp-org-ipo",
+    "question": "今年是否有电竞组织公开上市？",
+    "criteria": "交易所上市。"
+  },
+  {
+    "id": "esp-franchise",
+    "question": "下赛季是否有一级联赛扩展至新赛区？",
+    "criteria": "联赛官方公告。"
+  },
+  {
+    "id": "esp-female",
+    "question": "今年女子赛事决赛峰值观众能否超过 300K？",
+    "criteria": "公开追踪平台峰值。"
+  },
+  {
+    "id": "esp-ai-coach",
+    "question": "今年是否有一级战队披露 AI 教练工具？",
+    "criteria": "战队官方声明。"
+  },
+  {
+    "id": "esp-university",
+    "question": "今年是否有高校战队打进一级 LAN 季后赛？",
+    "criteria": "官方对阵表。"
+  }
+]

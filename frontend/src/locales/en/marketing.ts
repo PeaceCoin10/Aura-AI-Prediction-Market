@@ -18,14 +18,16 @@ export const marketing = {
       "Ranked from the sample book, not real accounts: 0 live wallets, {{fills}} on-chain fills since deploy. Every number here is simulated FAKE-USDC.",
   },
   ticker: {
-    title: "Live fills",
+    title: "Order flow",
     sample: "sample stream",
     live: "live",
-    hint: "simulated book · refreshes every 7s",
+    hint: "Binance spot · real prints",
   },
   spotlight: {
     eyebrow: "AI desk · spotlight",
     title: "255 markets. Five verticals. One curve.",
+    markets: "{{count}} markets",
+    volume: "{{amount}} USDC volume",
     body: "Politics, crypto, sport, esports and frontier tech — priced by the same constant-product market maker that settles on Base.",
     cta: "Browse the full book",
   },

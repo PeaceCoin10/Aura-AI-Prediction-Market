@@ -29,14 +29,14 @@ export const terminal = {
   },
   whale: {
     title: "Whale flow",
-    hint: "$25k+ tickets",
+    hint: "$25k+ tickets · Binance spot",
     sample: "Simulated tape",
     live: "Live tape",
     bought: "bought",
     sold: "sold",
     ago: "{{mins}}m ago",
     justNow: "just now",
-    note: "Prints above $25k only.",
+    note: "Real exchange prints, not fills on this book.",
   },
   depth: {
     title: "Market depth",

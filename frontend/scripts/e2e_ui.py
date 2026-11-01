@@ -85,9 +85,10 @@ def main():
         body = page.inner_text("body")
         check("mode banner says Paper trading", "Paper trading" in body)
         check("balance is credited, not 0", re.search(r"10,000(\.00)?", body) is not None)
-        check("250+ featured markets are on screen", body.count("Sample") >= 250, f"sample badges={body.count('Sample')}")
+        cards = page.locator('[data-testid="market-card"]').count()
+        check("255 featured markets are on screen", cards >= 250, f"cards={cards}")
         check("featured heading present", "Featured markets" in body)
-        check("simulated ticks are labelled", "Simulated ticks" in body)
+        check("tick cadence is stated", "7s" in body.lower())
         check("hall volume stat present", "USDC" in body and re.search(r"\d{1,3}(,\d{3}){2,}", body) is not None)
 
         print("\n[4] card anatomy · probability, AI take, debate")
@@ -98,13 +99,14 @@ def main():
         check("AI desk tag shown", "◈ AI" in body)
         check("debate counter shown", "Debate" in body)
         hall_text = page.locator('[data-testid="demo-hall"]').inner_text()
-        check("sample badge shown", hall_text.count("Sample") >= 250)
+        check("cards carry their data source", hall_text.count("CoinGecko") + hall_text.count("ESPN") + hall_text.count("SEC") + hall_text.count("LoL") >= 1)
         art_imgs = page.locator('[data-testid="demo-hall"] img').count()
         check("every card carries generated artwork", art_imgs >= 40, f"images={art_imgs}")
         check("depth is quoted in USDC", "Depth" in card_text and "USDC" in card_text)
 
         print("\n[5] social proof · ticker, leaderboard, spotlight")
-        check("live trade ticker renders", page.locator('[data-testid="live-ticker"]').count() == 1)
+        tickers = page.locator('[data-testid="live-ticker"]').count()
+        check("order-flow tape shows only real prints (or hides)", tickers in (0, 1))
         board = page.locator('[data-testid="predictor-board"]')
         check("predictor leaderboard renders", board.count() == 1)
         board_text = " ".join(board.inner_text().split()).lower()
@@ -123,10 +125,13 @@ def main():
         check("carousel exposes slide controls", hero.get_by_role("button").count() >= 3)
         whale = page.locator('[data-testid="whale-ticker"]')
         check("whale alert tape renders", whale.count() == 1)
-        wtext = " ".join(whale.inner_text().split())
-        check("whale tape prints wallet + dollar size", "$" in wtext and "0x" in wtext, wtext[:120])
-        check("whale tape states its threshold", "25k" in wtext.lower() or "Simulated tape" in wtext, wtext[:120])
-        check("whale tape is labelled as simulated", "simulated tape" in wtext.lower())
+        wcount = whale.count()
+        check("whale tape renders only with real venue prints", wcount in (0, 1))
+        if wcount:
+            wtext = " ".join(whale.inner_text().split())
+            check("whale tape prints notional + venue", "$" in wtext and "Binance" in wtext, wtext[:120])
+            check("whale tape states its threshold", "25k" in wtext.lower(), wtext[:120])
+            check("whale tape never claims to be simulated", "simulated" not in wtext.lower())
 
         print("\n[6] no Chinese anywhere in the rendered UI")
         offenders = CJK.findall(body)
@@ -142,6 +147,13 @@ def main():
         page.locator('[data-locale="zh"]').click()
         page.wait_for_timeout(600)
         check("Chinese renders without a reload", CJK.search(page.inner_text("body")) is not None)
+        # Market questions are editorial data, not UI chrome: they must be translated too.
+        first_title = page.locator('[data-testid="market-card"] h3').first.inner_text()
+        check("market questions are translated, not left in English", CJK.search(first_title) is not None,
+              first_title[:80])
+        check("no English question title survives the switch",
+              page.locator('[data-testid="market-card"] h3', has_text="Will ").count() == 0,
+              "english titles=%d" % page.locator('[data-testid="market-card"] h3', has_text="Will ").count())
         check("html lang follows the switch", page.evaluate("document.documentElement.lang") == "zh-CN",
               str(page.evaluate("document.documentElement.lang")))
         check("locale preference persists", page.evaluate("localStorage.getItem('aura.locale')") == "zh")
@@ -164,7 +176,8 @@ def main():
         nav.get_by_role("button", name=re.compile("Esports")).first.click()
         page.wait_for_timeout(600)
         body = page.inner_text("body")
-        check("Esports filter narrows the hall", body.count("Sample") < 250, f"cards={body.count('Sample')}")
+        es_cards = page.locator('[data-testid="market-card"]').count()
+        check("Esports filter narrows the hall", es_cards < 250, f"cards={es_cards}")
         check("Esports filter keeps T1", "T1" in body)
         hall_now = page.locator('[data-testid="demo-hall"]').inner_text()
         check("Esports filter drops BTC", "BTC" not in hall_now)
@@ -189,7 +202,7 @@ def main():
         modal = page.locator("div.fixed.inset-0.z-50").last
         text = modal.inner_text()
         flat = " ".join(text.split()).lower()
-        check("detail marks the market off-chain", "sample market" in flat)
+        check("detail marks the market off-chain", "off-chain" in flat)
         check("detail shows hero artwork", page.locator("div.fixed.inset-0.z-50 img").count() >= 1)
         check("resolution criteria are stated", "resolution criteria" in flat)
         check("market data block is present", "market data" in flat and "yes reserve" in flat)

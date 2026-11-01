@@ -10,6 +10,8 @@ import { social } from "./social";
 import { airdrop } from "./airdrop";
 import { ui } from "./ui";
 import { terminal } from "./terminal";
+import { affiliate } from "./affiliate";
+import { live } from "./live";
 
 /**
  * English message tree — the reference implementation every other locale must satisfy.
@@ -28,6 +30,8 @@ export const en = {
   airdrop,
   ui,
   terminal,
+  affiliate,
+  live,
 } as const;
 
 /**

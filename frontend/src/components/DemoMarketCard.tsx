@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usdc } from "../lib/format";
 import type { DemoMarket } from "../lib/demo";
-import { NAV_LABEL, groupOf } from "../lib/nav";
+import { groupOf } from "../lib/nav";
+import { useMarketText } from "../lib/marketText";
+import type { LiveMarket } from "../lib/liveCrypto";
+import { liveTitle } from "./LiveMarkets";
 import { listComments, subscribe, type Comment } from "../lib/comments";
 import { CommentsWall } from "./CommentsWall";
 import { Countdown, ProbabilityBar } from "./ui";
@@ -50,6 +53,7 @@ function useTalk(marketId: string): { count: number; latest: Comment | null } {
 /** One-line AI take on the hall card (brain output first, local inference as fallback). */
 function useCardInsight(market: DemoMarket, priceYes: bigint, depth: bigint): Insight {
   const [tick, setTick] = useState(0);
+  const t = useT();
   useEffect(() => {
     let alive = true;
     void refreshInsights().then(() => alive && setTick((t) => t + 1));
@@ -72,15 +76,18 @@ function useCardInsight(market: DemoMarket, priceYes: bigint, depth: bigint): In
         depth,
         volume: BigInt(Math.round(market.volumeUsdc)) * 1_000_000n,
         resolutionTime: market.resolutionAt,
-      })
+      }, t.content.insights)
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [market, priceYes, depth, tick]);
+  }, [market, priceYes, depth, tick, t]);
 }
 
 export function DemoMarketCard({ market, onOpen }: { market: DemoMarket; onOpen: () => void }) {
   const live = useLivePool(market);
   const prob = live.prob;
+  const mt = useMarketText();
+  const t = useT();
+  const title = (market as LiveMarket).live ? liveTitle(market as LiveMarket, t, mt.intl) : mt.q(market);
   /** 1e18 fixed-point probability, the unit expected by localInsight / AIInsights */
   const priceYes = BigInt(Math.round(prob * 1e18));
   const depth = market.yesReserve + market.noReserve;
@@ -88,7 +95,6 @@ export function DemoMarketCard({ market, onOpen }: { market: DemoMarket; onOpen:
   const talk = useTalk(market.id);
   const insight = useCardInsight(market, priceYes, depth);
   const { paper } = useMode();
-  const t = useT();
   const pos = paper.positions[market.id];
   const pv = useMemo(
     () =>
@@ -121,11 +127,14 @@ export function DemoMarketCard({ market, onOpen }: { market: DemoMarket; onOpen:
   }, [prob]);
 
   return (
-    <div className="flow-border demo-glow card card-hover group relative flex flex-col gap-3 p-4">
+    <div
+      data-testid="market-card"
+      className="flow-border demo-glow card card-hover group relative flex flex-col gap-3 p-4"
+    >
       <button onClick={onOpen} className="flex flex-1 flex-col gap-3 text-left">
         <MarketArt
           id={market.id}
-          question={market.question}
+          question={title}
           category={market.category}
           ratio="aspect-[16/9]"
           className="-mx-4 -mt-4 mb-1 rounded-t-2xl"
@@ -133,7 +142,7 @@ export function DemoMarketCard({ market, onOpen }: { market: DemoMarket; onOpen:
         <div className="flex items-start justify-between gap-2 pr-14">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className={`rounded-full border px-2 py-0.5 text-[11px] ${CAT_STYLE[market.category] ?? "border-white/10 bg-white/5 text-slate-300"}`}>
-              {NAV_LABEL[g] ?? market.category}
+              {t.shell.nav[g as keyof typeof t.shell.nav] ?? market.category}
             </span>
             <span className="chip text-[10px]">{market.source}</span>
             {pos && (pos.yes > 0n || pos.no > 0n) && (
@@ -145,7 +154,7 @@ export function DemoMarketCard({ market, onOpen }: { market: DemoMarket; onOpen:
         </div>
 
         <h3 className="line-clamp-2 text-[15px] font-medium leading-snug text-slate-100 transition-colors group-hover:text-brand">
-          {market.question}
+          {title}
         </h3>
 
         <div className="flex items-end justify-between">
@@ -207,14 +216,10 @@ export function DemoMarketCard({ market, onOpen }: { market: DemoMarket; onOpen:
         )}
       </button>
 
-      <span className="pointer-events-none absolute right-3 top-3 rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[10px] font-medium text-brand">
-        {t.paper.card.sample}
-      </span>
-
       <div className="flex items-center justify-between border-t border-white/5 pt-2">
         <span className="text-[10px] text-slate-600">{t.paper.card.tickNote}</span>
         <div className="absolute bottom-3 left-3">
-          <TelegramShare marketId={market.id} question={market.question} />
+          <TelegramShare marketId={market.id} question={title} />
         </div>
         <ShareButton
           compact
@@ -239,6 +244,9 @@ export function DemoDetail({ market, onClose }: { market: DemoMarket; onClose: (
   const live = useLivePool(market);
   const prob = live.prob;
   const t = useT();
+  const mt = useMarketText();
+  const title = (market as LiveMarket).live ? liveTitle(market as LiveMarket, t, mt.intl) : mt.q(market);
+  const criteria = mt.c(market);
   // Quotes and probability share the hall's simulated book, otherwise users see two prices.
   const marketRef = {
     id: market.id,
@@ -255,7 +263,7 @@ export function DemoDetail({ market, onClose }: { market: DemoMarket; onClose: (
       <div className="glass-panel w-full max-w-4xl overflow-hidden rounded-3xl p-4 sm:p-5">
         <MarketArt
           id={market.id}
-          question={market.question}
+          question={title}
           category={market.category}
           ratio="aspect-[21/6]"
           className="-mx-4 -mt-4 mb-3 rounded-t-3xl sm:-mx-5 sm:-mt-5"
@@ -266,19 +274,19 @@ export function DemoDetail({ market, onClose }: { market: DemoMarket; onClose: (
               <span className="rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-brand">
                 {t.paper.detail.offchainBadge}
               </span>
-              <span className={`rounded-full border px-2 py-0.5 ${CAT_STYLE[market.category] ?? "border-white/10 text-slate-300"}`}>
-                {NAV_LABEL[g] ?? market.category}
-              </span>
-              <span className="mono">
-                {format(t.paper.detail.settledAt, {
-                  time: new Date(market.resolutionAt * 1000).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }),
-                })}
-              </span>
+                      <span className={`rounded-full border px-2 py-0.5 ${CAT_STYLE[market.category] ?? "border-white/10 text-slate-300"}`}>
+                        {t.shell.nav[g as keyof typeof t.shell.nav] ?? market.category}
+                      </span>
+                      <span className="mono">
+                        {format(t.paper.detail.settledAt, {
+                          time: new Date(market.resolutionAt * 1000).toLocaleString(mt.intl, { dateStyle: "medium", timeStyle: "short" }),
+                        })}
+                      </span>
               <span className="mono text-slate-400">
                 <Countdown target={market.resolutionAt} prefix={t.paper.detail.remainingPrefix} />
               </span>
             </div>
-            <h2 className="text-lg font-semibold leading-snug text-slate-100">{market.question}</h2>
+            <h2 className="text-lg font-semibold leading-snug text-slate-100">{title}</h2>
           </div>
           <ShareButton
             input={{
@@ -313,7 +321,7 @@ export function DemoDetail({ market, onClose }: { market: DemoMarket; onClose: (
 
             <div className="rounded-xl border border-brand/15 bg-brand/[0.04] p-3">
               <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-brand/80">{t.paper.detail.criteriaTitle}</h3>
-              <p className="text-[12.5px] leading-relaxed text-slate-300">{market.criteria}</p>
+              <p className="text-[12.5px] leading-relaxed text-slate-300">{criteria}</p>
             </div>
 
             <div className="sheen rounded-xl border border-white/8 bg-white/[0.03] p-3">
@@ -322,7 +330,7 @@ export function DemoDetail({ market, onClose }: { market: DemoMarket; onClose: (
 
             <AIInsights
               marketId={market.id}
-              question={market.question}
+              question={title}
               category={market.category}
               priceYes={BigInt(Math.round(prob * 1e18))}
               depth={market.yesReserve + market.noReserve}

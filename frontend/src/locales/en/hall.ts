@@ -44,6 +44,9 @@ export const hall = {
   },
   connect: {
     title: "Connect a wallet",
+    google: "Google",
+    email: "Email",
+    socialNote: "One-tap smart account — the first trades are gas-sponsored.",
     body:
       "EIP-6963 discovery covers every injected wallet — MetaMask, Coinbase, Rabby, any EOA. Connecting prompts a switch to Base mainnet (8453).",
     empty:

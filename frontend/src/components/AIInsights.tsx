@@ -57,7 +57,7 @@ export function AIInsights({
   const insight: Insight = useMemo(() => {
     const fromBrain = brainInsight(marketId);
     if (fromBrain) return fromBrain;
-    return localInsight({ marketId, question, category, priceYes, depth, volume, resolutionTime });
+    return localInsight({ marketId, question, category, priceYes, depth, volume, resolutionTime }, t.content.insights);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [marketId, question, category, priceYes, depth, volume, resolutionTime, tick]);
 

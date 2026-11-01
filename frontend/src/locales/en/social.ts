@@ -59,6 +59,11 @@ export const social = {
       "Written by rules / the brain from public data. Not investment advice. Source: frontend rule engine, brain offline.",
   },
   share: {
+    deepLink: "Deep link",
+    copied: "Copied",
+    shareIn: "Share inside Telegram",
+    shareSheet: "Open the Telegram share sheet",
+    template: "Trade it on Aura → #PredictionMarkets #Base #AI",
     label: "Share",
     tooltip: "Render a share card for X",
     generating: "Rendering…",

@@ -1,0 +1,1277 @@
+[
+  {
+    "id": "btc-90k",
+    "question": "BTCは今週、$90,000を上回って引けるか？",
+    "criteria": "CoinGeckoの週最終日00:00 UTC時点のデイリー終値。"
+  },
+  {
+    "id": "btc-100k",
+    "question": "BTCは今月、$105,000を上回る過去最高値を更新するか？",
+    "criteria": "月内にBinanceのBTC/USDTで105,000超の約定が1件でもあること。"
+  },
+  {
+    "id": "btc-dominance",
+    "question": "BTCドミナンスは金曜まで55%超を維持するか？",
+    "criteria": "CoinGeckoの金曜00:00 UTC時点の時価総額シェア。"
+  },
+  {
+    "id": "eth-5k",
+    "question": "ETHは今月、$5,000を上回って引けるか？",
+    "criteria": "CoinGeckoの月末最終日のデイリー終値。"
+  },
+  {
+    "id": "eth-etf-flow",
+    "question": "米国の現物ETH ETFは今週、$500M超の純流入となるか？",
+    "criteria": "Farside Investorsの週次純流出入表。"
+  },
+  {
+    "id": "btc-etf-outflow",
+    "question": "米国の現物BTC ETFは今週、純流出の日が生じるか？",
+    "criteria": "Farsideのデータで合計純流出入がマイナスとなる日が1日でもあること。"
+  },
+  {
+    "id": "sol-300",
+    "question": "SOLは今月、$300を上回って引けるか？",
+    "criteria": "CoinGeckoの月末最終日のデイリー終値。"
+  },
+  {
+    "id": "sol-etf",
+    "question": "SECは四半期終了までに現物SOL ETFを承認するか？",
+    "criteria": "SECの公式命令または承認通知。"
+  },
+  {
+    "id": "xrp-etf",
+    "question": "今四半期に現物XRP ETFが取引を開始するか？",
+    "criteria": "米国取引所での最初の取引日。"
+  },
+  {
+    "id": "stablecoin-bill",
+    "question": "今議会で米国のステーブルコイン法案が署名・成立するか？",
+    "criteria": "Congress.govで報じられる大統領署名。"
+  },
+  {
+    "id": "clarity-act",
+    "question": "市場構造法案は今四半期に上院を通過するか？",
+    "criteria": "Senate.govに記録された上院本会議の最終採決。"
+  },
+  {
+    "id": "cpi-3",
+    "question": "次回発表の米CPIは前年同月比3.0%を下回るか？",
+    "criteria": "BLSのCPI発表における総合指数の前年同月比。"
+  },
+  {
+    "id": "fed-cut",
+    "question": "FRBは次回FOMCで利下げするか？",
+    "criteria": "FOMC声明の誘導目標レンジが前回会合を下回ること。"
+  },
+  {
+    "id": "fed-50",
+    "question": "次回の利下げは50bp以上となるか？",
+    "criteria": "FOMC声明の誘導目標レンジの変化幅が50bp以上。"
+  },
+  {
+    "id": "treasury-5",
+    "question": "10年米国債利回りは今週、4.5%を上回って引けるか？",
+    "criteria": "米財務省のデイリー利回り曲線、金曜終値。"
+  },
+  {
+    "id": "base-tvl",
+    "question": "BaseのTVLは今週を通じて$6B超を維持するか？",
+    "criteria": "DefiLlamaの週末時点のチェーンTVL。"
+  },
+  {
+    "id": "l2-fees",
+    "question": "Baseの平均ガス代は今週、1スワップあたり$0.005を下回るか？",
+    "criteria": "L2Feesの週次スナップショットによるスワップ手数料中央値。"
+  },
+  {
+    "id": "dex-volume",
+    "question": "主要DEXの合計出来高は1日で$40Bを超えるか？",
+    "criteria": "DefiLlamaのDEX出来高集計、今週のいずれかの日。"
+  },
+  {
+    "id": "perp-funding",
+    "question": "BTCの無期限先物ファンディングは7日連続でプラスを維持するか？",
+    "criteria": "BinanceのBTCUSDT無期限先物ファンディングレート、8時間ごとの決済すべて。"
+  },
+  {
+    "id": "hack-100m",
+    "question": "今月、$100M超の損失となるDeFiエクスプロイトは発生するか？",
+    "criteria": "公開されたポストモーテム、またはRektが確認したオンチェーン上の損失。"
+  },
+  {
+    "id": "unlock-arb",
+    "question": "ARBは次回トークンアンロックの24時間後に下落するか？",
+    "criteria": "アンロック時刻から24時間後のCoinGecko終値。"
+  },
+  {
+    "id": "memecoin-cap",
+    "question": "ミームコインの時価総額合計は今月、$120Bを超えるか？",
+    "criteria": "CoinGeckoのカテゴリー別時価総額。"
+  },
+  {
+    "id": "btc-vol",
+    "question": "BTCの30日インプライドボラティリティは週末に60を上回って引けるか？",
+    "criteria": "DeribitのDVOL指数、週末時点。"
+  },
+  {
+    "id": "eth-burn",
+    "question": "ETHの供給量は今週も減少を続けるか？",
+    "criteria": "Ultrasound.moneyの純発行量、7日移動平均。"
+  },
+  {
+    "id": "rwa-tvl",
+    "question": "トークン化RWAのTVLは今四半期に$20Bを超えるか？",
+    "criteria": "RWA.xyzのオンチェーン総価値。"
+  },
+  {
+    "id": "quantum-btc",
+    "question": "今四半期に大手ウォレット事業者が耐量子鍵を発表するか？",
+    "criteria": "上位5社のウォレットベンダーによる公式発表。"
+  },
+  {
+    "id": "midterms-house",
+    "question": "中間選挙で共和党は下院の多数派を維持するか？",
+    "criteria": "APの当選確定に基づく確定議席数。"
+  },
+  {
+    "id": "midterms-senate",
+    "question": "民主党は上院の多数派を獲得するか？",
+    "criteria": "APの当選確定に基づく確定議席数。"
+  },
+  {
+    "id": "gov-shutdown",
+    "question": "今四半期に米連邦政府はシャットダウンするか？",
+    "criteria": "OMBの通達、またはCongress.govが報じる歳出予算の失効。"
+  },
+  {
+    "id": "supreme-court",
+    "question": "最高裁は今期、関税訴訟で判断を示すか？",
+    "criteria": "supremecourt.govに公開された判決。"
+  },
+  {
+    "id": "tariff-25",
+    "question": "米国は中国製EVへの関税を25%超に引き上げるか？",
+    "criteria": "USTRの連邦公報通知。"
+  },
+  {
+    "id": "china-stimulus",
+    "question": "中国は今四半期に¥1tn超の景気対策を発表するか？",
+    "criteria": "国務院または中国人民銀行の公式発表。"
+  },
+  {
+    "id": "opec-cut",
+    "question": "OPEC+は次回会合で減産を延長するか？",
+    "criteria": "OPECの公式コミュニケ。"
+  },
+  {
+    "id": "ukraine-ceasefire",
+    "question": "今四半期に正式な停戦合意が署名されるか？",
+    "criteria": "大手通信社2社が確認した署名済み合意。"
+  },
+  {
+    "id": "gaza-deal",
+    "question": "人質解放の合意は大手メディア2社で確認されるか？",
+    "criteria": "Reuters／AP／BBCによる確認。"
+  },
+  {
+    "id": "taiwan-exercise",
+    "question": "中国は今四半期に台湾周辺で大規模演習を行うか？",
+    "criteria": "中国人民解放軍の公式発表、またはReutersの確認。"
+  },
+  {
+    "id": "uk-pm",
+    "question": "英首相は四半期末時点で在任しているか？",
+    "criteria": "辞任または指導部交代に関するNo 10の確認。"
+  },
+  {
+    "id": "japan-election",
+    "question": "自民党は次回選挙で衆院の単独過半数を失うか？",
+    "criteria": "選挙管理委員会の公式結果。"
+  },
+  {
+    "id": "india-election",
+    "question": "与党は次回の州議会選挙で過半数を維持するか？",
+    "criteria": "インド選挙管理委員会の結果。"
+  },
+  {
+    "id": "argentina-reform",
+    "question": "アルゼンチンの改革法案は今四半期に議会を通過するか？",
+    "criteria": "議会の公式採決記録。"
+  },
+  {
+    "id": "brazil-rate",
+    "question": "ブラジル中銀は今四半期に再び利下げするか？",
+    "criteria": "Copomの声明。"
+  },
+  {
+    "id": "ecb-cut",
+    "question": "ECBは次回会合で利下げするか？",
+    "criteria": "ECB理事会の決定。"
+  },
+  {
+    "id": "ecb-hold",
+    "question": "ECBは年末まで金利を据え置くか？",
+    "criteria": "残りの会合すべてで変更なし。"
+  },
+  {
+    "id": "fed-chair",
+    "question": "今四半期に新たなFRB議長が指名されるか？",
+    "criteria": "上院に送付されたホワイトハウスの指名。"
+  },
+  {
+    "id": "ai-bill",
+    "question": "米国は今議会で連邦AI規制を成立させるか？",
+    "criteria": "Congress.govが報じる署名成立した法律。"
+  },
+  {
+    "id": "eu-ai-act",
+    "question": "EU AI法の施行規則は今月発効するか？",
+    "criteria": "EUR-Lexでの施行規則の公布。"
+  },
+  {
+    "id": "immigration-bill",
+    "question": "移民法案は今四半期に上院を通過するか？",
+    "criteria": "Senate.govでの上院本会議の最終採決。"
+  },
+  {
+    "id": "nato-spend",
+    "question": "今年、さらに3カ国がNATOの2%目標を達成するか？",
+    "criteria": "NATOの年間国防支出報告書。"
+  },
+  {
+    "id": "nikkei-45k",
+    "question": "日経平均は今四半期に45,000を上回って引けるか？",
+    "criteria": "日経平均の公式終値。"
+  },
+  {
+    "id": "gold-3k",
+    "question": "金は今週を通じて$3,000/oz超を維持するか？",
+    "criteria": "LBMAの金曜PMフィックス。"
+  },
+  {
+    "id": "oil-90",
+    "question": "ブレント原油は今四半期に$90を上回って引けるか？",
+    "criteria": "ICEブレント期近限月の清算値。"
+  },
+  {
+    "id": "ceasefire-redsea",
+    "question": "紅海の海運通航量は2023年比60%超まで回復するか？",
+    "criteria": "IMF PortWatchの週次通航指数。"
+  },
+  {
+    "id": "nba-celtics",
+    "question": "セルティックスは次の試合に勝利するか？",
+    "criteria": "NBA公式の最終スコア。"
+  },
+  {
+    "id": "nba-lakers",
+    "question": "レイカーズはプレーイン・トーナメントに進出するか？",
+    "criteria": "レギュラーシーズン終了時点のNBA順位表。"
+  },
+  {
+    "id": "nba-mvp",
+    "question": "MVPはイースタン・カンファレンスの選手となるか？",
+    "criteria": "NBAのシーズン終了時アワード発表。"
+  },
+  {
+    "id": "nba-70win",
+    "question": "今季70勝を挙げるチームは現れるか？",
+    "criteria": "NBAレギュラーシーズンの最終成績。"
+  },
+  {
+    "id": "epl-arsenal",
+    "question": "アーセナルは今節チェルシーに勝利するか？",
+    "criteria": "プレミアリーグの公式結果。"
+  },
+  {
+    "id": "epl-title",
+    "question": "アーセナルはプレミアリーグ優勝を果たすか？",
+    "criteria": "最終順位表。"
+  },
+  {
+    "id": "epl-city",
+    "question": "マンチェスター・シティはリバプールを上回る順位で終えるか？",
+    "criteria": "最終順位表の順位。"
+  },
+  {
+    "id": "epl-relegation",
+    "question": "昇格3クラブがすべて降格するか？",
+    "criteria": "最終順位表。"
+  },
+  {
+    "id": "ucl-final",
+    "question": "スペインのクラブがCL決勝に進出するか？",
+    "criteria": "UEFAの公式結果。"
+  },
+  {
+    "id": "ucl-upset",
+    "question": "欧州5大リーグ以外のクラブが準々決勝に進出するか？",
+    "criteria": "UEFAの公式結果。"
+  },
+  {
+    "id": "f1-verstappen",
+    "question": "フェルスタッペンは次戦GPで優勝するか？",
+    "criteria": "FIAの公式リザルト。"
+  },
+  {
+    "id": "f1-constructors",
+    "question": "マクラーレンはコンストラクターズ・タイトルを獲得するか？",
+    "criteria": "FIAの最終ランキング。"
+  },
+  {
+    "id": "f1-pole",
+    "question": "ノリスは次回予選でポールポジションを獲得するか？",
+    "criteria": "FIAの予選リザルト。"
+  },
+  {
+    "id": "f1-sprint",
+    "question": "スプリント週末でスプリントと決勝の勝者は異なるか？",
+    "criteria": "当該週末のFIA公式リザルト。"
+  },
+  {
+    "id": "nfl-chiefs",
+    "question": "チーフスは今週のアウェー戦に勝利するか？",
+    "criteria": "NFL公式の最終スコア。"
+  },
+  {
+    "id": "nfl-playoffs",
+    "question": "イーグルスはプレーオフに進出するか？",
+    "criteria": "NFLの最終順位表。"
+  },
+  {
+    "id": "nfl-chiefs-sb",
+    "question": "チーフスはスーパーボウルに進出するか？",
+    "criteria": "AFC選手権の結果。"
+  },
+  {
+    "id": "mlb-dodgers",
+    "question": "ドジャースはワールドシリーズを制するか？",
+    "criteria": "MLBの公式結果。"
+  },
+  {
+    "id": "tennis-slam",
+    "question": "アルカラスは次回グランドスラムで優勝するか？",
+    "criteria": "ATP公式の大会結果。"
+  },
+  {
+    "id": "tennis-wta",
+    "question": "シフィオンテクは次回WTA1000で決勝に進出するか？",
+    "criteria": "WTAの公式結果。"
+  },
+  {
+    "id": "boxing-title",
+    "question": "今四半期にヘビー級王座が移動するか？",
+    "criteria": "公式認定団体の裁定結果。"
+  },
+  {
+    "id": "ufc-main",
+    "question": "次回UFCメインイベントで王者は防衛するか？",
+    "criteria": "UFCの公式結果。"
+  },
+  {
+    "id": "mma-ko",
+    "question": "UFCメインイベントはKO/TKOで決着するか？",
+    "criteria": "UFC公式の決着方法。"
+  },
+  {
+    "id": "olympics-host",
+    "question": "次回開催都市は予定どおり確定するか？",
+    "criteria": "IOCの公式発表。"
+  },
+  {
+    "id": "cricket-ipl",
+    "question": "ムンバイ・インディアンズはIPLプレーオフに進出するか？",
+    "criteria": "IPLの公式順位表。"
+  },
+  {
+    "id": "golf-major",
+    "question": "シェフラーは今年さらにメジャーを制するか？",
+    "criteria": "PGAの公式結果。"
+  },
+  {
+    "id": "sports-scandal",
+    "question": "今季、トップ10クラブが勝ち点剥奪処分を受けるか？",
+    "criteria": "リーグの公式懲罰裁定。"
+  },
+  {
+    "id": "athletics-record",
+    "question": "次回ダイヤモンドリーグで世界記録が更新されるか？",
+    "criteria": "ワールドアスレティックスの公式公認。"
+  },
+  {
+    "id": "lol-t1",
+    "question": "T1はWorldsのノックアウトステージでMovistar KOIに勝利するか？",
+    "criteria": "Riot Games公式のシリーズ結果。"
+  },
+  {
+    "id": "lol-worlds",
+    "question": "LCKのチームがWorldsを制するか？",
+    "criteria": "公式の大会優勝チーム。"
+  },
+  {
+    "id": "lol-final",
+    "question": "Worlds決勝は第5ゲームまでもつれるか？",
+    "criteria": "公式のシリーズスコア。"
+  },
+  {
+    "id": "cs2-major",
+    "question": "CS2メジャーを欧州籍のロースターが制するか？",
+    "criteria": "HLTVが確認した公式結果。"
+  },
+  {
+    "id": "cs2-upset",
+    "question": "シード上位8チームのいずれかがグループステージで敗退するか？",
+    "criteria": "HLTVの公式順位表。"
+  },
+  {
+    "id": "cs2-map",
+    "question": "メジャーでMirageが最もピックされるマップとなるか？",
+    "criteria": "HLTVの公式マップ統計。"
+  },
+  {
+    "id": "vct-sentinels",
+    "question": "Sentinelsは次戦のVCTで2:0で勝利するか？",
+    "criteria": "VCT公式の試合結果。"
+  },
+  {
+    "id": "vct-final",
+    "question": "パシフィックのチームがVCT決勝に進出するか？",
+    "criteria": "VCT公式のブラケット。"
+  },
+  {
+    "id": "dota-ti",
+    "question": "東欧のチームがThe Internationalを制するか？",
+    "criteria": "Valveの公式結果。"
+  },
+  {
+    "id": "ow-final",
+    "question": "OWCS王者はNAのチームとなるか？",
+    "criteria": "Blizzardの公式結果。"
+  },
+  {
+    "id": "rlcs-final",
+    "question": "欧州のチームがRLCSを制するか？",
+    "criteria": "RLCSの公式結果。"
+  },
+  {
+    "id": "evo-gf",
+    "question": "EVO王者はタイトルを防衛するか？",
+    "criteria": "EVOの公式結果。"
+  },
+  {
+    "id": "lol-poro",
+    "question": "大会MVPはミッドレーナーとなるか？",
+    "criteria": "公式のMVP発表。"
+  },
+  {
+    "id": "cs2-awp",
+    "question": "大会の最高評価選手はAWPerとなるか？",
+    "criteria": "HLTV公式のレーティングランキング。"
+  },
+  {
+    "id": "vct-viewership",
+    "question": "ピーク視聴者数は昨年の決勝を上回るか？",
+    "criteria": "VCT公式の視聴データ報告。"
+  },
+  {
+    "id": "mobile-legend",
+    "question": "中国のチームがMシリーズのタイトルを獲得するか？",
+    "criteria": "Moontonの公式結果。"
+  },
+  {
+    "id": "pubg-final",
+    "question": "PUBG Nations Cup決勝は最終サークルまでもつれるか？",
+    "criteria": "公式の試合ログ。"
+  },
+  {
+    "id": "apex-lan",
+    "question": "ApexのLAN大会を新たなチームが制するか？",
+    "criteria": "EAの公式結果。"
+  },
+  {
+    "id": "fifa-esports",
+    "question": "欧州の選手がFC Proのタイトルを獲得するか？",
+    "criteria": "EA Sports FCの公式結果。"
+  },
+  {
+    "id": "fortnite-duo",
+    "question": "FNCSデュオ決勝は連覇となるか？",
+    "criteria": "Epicの公式結果。"
+  },
+  {
+    "id": "esports-major-city",
+    "question": "次回メジャーは欧州外で開催されるか？",
+    "criteria": "公式の大会開催発表。"
+  },
+  {
+    "id": "valo-rank",
+    "question": "次回LANで新人選手がACSトップ3に入るか？",
+    "criteria": "VCTの公式スタッツ。"
+  },
+  {
+    "id": "lol-patch",
+    "question": "次回パッチで大会最多ピックのチャンピオンがナーフされるか？",
+    "criteria": "Riot公式のパッチノート。"
+  },
+  {
+    "id": "esports-prize",
+    "question": "賞金総額は昨年を上回るか？",
+    "criteria": "公式の大会賞金配分。"
+  },
+  {
+    "id": "ai-gpt6",
+    "question": "今四半期にフロンティアラボがGPT-5級のモデルを提供開始するか？",
+    "criteria": "上位3ラボによる公式のモデル公開発表。"
+  },
+  {
+    "id": "ai-gemini",
+    "question": "Geminiは今四半期にLMSYSアリーナで首位となるか？",
+    "criteria": "LMSYS Chatbot Arenaのリーダーボード。"
+  },
+  {
+    "id": "ai-llama",
+    "question": "Metaは今四半期に新たなオープンウェイトモデルを公開するか？",
+    "criteria": "Metaの公式リリース。"
+  },
+  {
+    "id": "ai-agent-bench",
+    "question": "SWE-bench Verifiedで70%超を記録するエージェントは現れるか？",
+    "criteria": "公式リーダーボードへの提出。"
+  },
+  {
+    "id": "ai-context",
+    "question": "実運用モデルが10M-tokenのコンテキストウィンドウを提供するか？",
+    "criteria": "プロバイダーのドキュメントまたはリリースノート。"
+  },
+  {
+    "id": "nvda-earnings",
+    "question": "Nvidiaは次四半期に売上高で市場予想を上回るか？",
+    "criteria": "発表された四半期決算と市場予想の比較。"
+  },
+  {
+    "id": "nvda-5t",
+    "question": "Nvidiaの時価総額は今四半期に$5Tを上回って引けるか？",
+    "criteria": "Nasdaqの終値ベース時価総額。"
+  },
+  {
+    "id": "tsmc-2nm",
+    "question": "TSMCは今四半期に2nmの量産入りを発表するか？",
+    "criteria": "TSMCの公式発表。"
+  },
+  {
+    "id": "chip-export",
+    "question": "米国は今四半期に対中半導体輸出規制を強化するか？",
+    "criteria": "BISの連邦公報規則。"
+  },
+  {
+    "id": "asml-orders",
+    "question": "ASMLの受注額は市場予想を上回るか？",
+    "criteria": "発表された四半期受注額。"
+  },
+  {
+    "id": "apple-glasses",
+    "question": "Appleは今四半期にARグラスを発表するか？",
+    "criteria": "Appleの公式イベントまたはプレスリリース。"
+  },
+  {
+    "id": "apple-ai",
+    "question": "Appleは今四半期に新たなオンデバイスAI機能を提供するか？",
+    "criteria": "提供済みOSのリリースノート。"
+  },
+  {
+    "id": "tesla-fsd",
+    "question": "Teslaは今四半期にロボタクシーに関する節目を報告するか？",
+    "criteria": "Teslaの公式開示。"
+  },
+  {
+    "id": "spacex-starship",
+    "question": "Starshipは次回飛行で軌道到達を果たすか？",
+    "criteria": "SpaceXの公式確認。"
+  },
+  {
+    "id": "quantum-qubit",
+    "question": "今年、1,000+論理量子ビットの成果が報告されるか？",
+    "criteria": "査読済み論文。"
+  },
+  {
+    "id": "humanoid-ship",
+    "question": "今四半期にヒューマノイドロボットが有償顧客へ出荷されるか？",
+    "criteria": "企業の開示または顧客の発表。"
+  },
+  {
+    "id": "openai-ipo",
+    "question": "OpenAIは今年IPOを申請するか？",
+    "criteria": "公開されたS-1提出書類。"
+  },
+  {
+    "id": "ai-energy",
+    "question": "今四半期にハイパースケーラーが原子力PPAを発表するか？",
+    "criteria": "企業のプレスリリース。"
+  },
+  {
+    "id": "ai-copyright",
+    "question": "米国の裁判所は今四半期にAI学習のフェアユースを判断するか？",
+    "criteria": "公開された判決。"
+  },
+  {
+    "id": "ai-model-ban",
+    "question": "規制当局が主要市場でフロンティアモデルを禁止するか？",
+    "criteria": "公式の規制命令。"
+  },
+  {
+    "id": "ai-voice",
+    "question": "200ms未満のレイテンシで動作するリアルタイム音声モデルは登場するか？",
+    "criteria": "実測レイテンシを示したプロバイダーのドキュメント。"
+  },
+  {
+    "id": "robotics-cost",
+    "question": "今年、ヒューマノイドロボットの価格は$30kを下回るか？",
+    "criteria": "出荷ベンダーが公表した価格。"
+  },
+  {
+    "id": "cyber-ransom",
+    "question": "Fortune 500企業が$10M超の身代金支払いを開示するか？",
+    "criteria": "SECの8-Kまたは公開開示。"
+  },
+  {
+    "id": "data-center",
+    "question": "米国のデータセンター電力需要は前年比15%超で伸びるか？",
+    "criteria": "EIAが報告した数値。"
+  },
+  {
+    "id": "ai-benchmark",
+    "question": "今四半期にオープンモデルが公開コーディングベンチマークで首位となるか？",
+    "criteria": "公式リーダーボード。"
+  },
+  {
+    "id": "tech-antitrust",
+    "question": "今四半期に大手プラットフォームが米国の独占禁止是正措置を受けるか？",
+    "criteria": "裁判所命令またはDOJ／FTCの措置。"
+  },
+  {
+    "id": "geo-eu-defense",
+    "question": "EU理事会は今四半期に新たな共同防衛基金を承認するか？",
+    "criteria": "理事会のプレスリリースまたは公式共同声明。"
+  },
+  {
+    "id": "geo-nato-spend",
+    "question": "今年、3カ国目のNATO加盟国が国防費をGDP比3%超に引き上げるか？",
+    "criteria": "NATOの年間国防支出報告書。"
+  },
+  {
+    "id": "geo-un-ceasefire",
+    "question": "国連安保理は今月、拘束力のある停戦決議を採択するか？",
+    "criteria": "un.orgに掲載された採択決議文。"
+  },
+  {
+    "id": "geo-g7-summit",
+    "question": "次回G7共同声明はAI規制を共通優先課題として明記するか？",
+    "criteria": "議長国政府が公表する最終共同声明。"
+  },
+  {
+    "id": "geo-imo-shipping",
+    "question": "今四半期に大手海上保険会社が紅海のカバーを停止するか？",
+    "criteria": "ロイズ上場アンダーライターによる公示。"
+  },
+  {
+    "id": "geo-opec-cut",
+    "question": "OPEC+は次回会合で自主減産を延長するか？",
+    "criteria": "会合後のOPECプレスリリース。"
+  },
+  {
+    "id": "geo-us-cr",
+    "question": "米国は次の財源期限で政府機関閉鎖を回避するか？",
+    "criteria": "議会によるつなぎ予算（CR）の可決。"
+  },
+  {
+    "id": "geo-eu-tariff",
+    "question": "EUは四半期末までに中国製EVへ暫定関税を課すか？",
+    "criteria": "官報の規則。"
+  },
+  {
+    "id": "geo-jp-rate",
+    "question": "日銀は今年、政策金利を0.75%超に引き上げるか？",
+    "criteria": "日銀の政策声明。"
+  },
+  {
+    "id": "geo-ecb-cut",
+    "question": "ECBは下半期に2回以上利下げするか？",
+    "criteria": "ECBの政策金利決定。"
+  },
+  {
+    "id": "geo-fed-cut",
+    "question": "FRBは次回FOMCで利下げするか？",
+    "criteria": "FOMC声明。"
+  },
+  {
+    "id": "geo-fed-hold",
+    "question": "FRBは次の2会合を通じて金利を据え置くか？",
+    "criteria": "両会合のFOMC声明。"
+  },
+  {
+    "id": "geo-us-cpi",
+    "question": "次回発表の米CPIは前年同月比2.5%を下回るか？",
+    "criteria": "BLSのCPI発表。"
+  },
+  {
+    "id": "geo-eu-cpi",
+    "question": "次回発表のユーロ圏インフレ率は2%を下回るか？",
+    "criteria": "Eurostatの速報値。"
+  },
+  {
+    "id": "geo-uk-budget",
+    "question": "英国は秋の予算で新たな富裕税を発表するか？",
+    "criteria": "HM Treasuryのレッドブック。"
+  },
+  {
+    "id": "geo-jp-election",
+    "question": "日本の与党連合は今年、衆院の過半数を失うか？",
+    "criteria": "公式の選挙結果。"
+  },
+  {
+    "id": "geo-india-gdp",
+    "question": "インドは今四半期に7%超のGDP成長率を記録するか？",
+    "criteria": "統計省の発表。"
+  },
+  {
+    "id": "geo-brazil-rate",
+    "question": "ブラジル中銀は次回会合でSelicを引き下げるか？",
+    "criteria": "Copomの声明。"
+  },
+  {
+    "id": "geo-us-tariff",
+    "question": "米国は今四半期に主要貿易相手国へ10%超の新関税を発表するか？",
+    "criteria": "USTRの連邦公報通知。"
+  },
+  {
+    "id": "geo-china-stimulus",
+    "question": "中国は今四半期に新たな消費刺激策を発表するか？",
+    "criteria": "国務院の発表。"
+  },
+  {
+    "id": "geo-china-gdp",
+    "question": "中国は今年、公式の成長目標を達成するか？",
+    "criteria": "国家統計局の年次発表。"
+  },
+  {
+    "id": "geo-taiwan-exports",
+    "question": "次回発表の台湾の輸出受注は前年比で増加するか？",
+    "criteria": "経済部の発表。"
+  },
+  {
+    "id": "geo-korea-rate",
+    "question": "韓国銀行は次回会合で金利を据え置くか？",
+    "criteria": "BOKの政策声明。"
+  },
+  {
+    "id": "geo-oil-80",
+    "question": "ブレント原油は今月、$80を上回って引けるか？",
+    "criteria": "ICEブレント期近限月の清算値。"
+  },
+  {
+    "id": "geo-oil-100",
+    "question": "ブレント原油は年末までに$100に到達するか？",
+    "criteria": "期近限月で100以上の約定が1件でもあること。"
+  },
+  {
+    "id": "geo-gold-3k",
+    "question": "金は今月、過去最高値を更新するか？",
+    "criteria": "COMEXのスポット最高値。"
+  },
+  {
+    "id": "geo-yields-5",
+    "question": "米10年債利回りは週終値で5%を上回るか？",
+    "criteria": "財務省のデイリー利回り曲線。"
+  },
+  {
+    "id": "geo-dxy",
+    "question": "ドル指数は月末に100を下回って引けるか？",
+    "criteria": "ICE DXYの終値。"
+  },
+  {
+    "id": "geo-unemployment",
+    "question": "次回発表の米失業率は4.5%を下回るか？",
+    "criteria": "BLSの雇用統計。"
+  },
+  {
+    "id": "geo-housing",
+    "question": "米30年住宅ローン金利は今四半期に6%を下回るか？",
+    "criteria": "Freddie Macの週次調査。"
+  },
+  {
+    "id": "geo-eu-gas",
+    "question": "EUの天然ガス貯蔵率は冬期末に40%を上回るか？",
+    "criteria": "GIE AGSIの集計値。"
+  },
+  {
+    "id": "geo-greece-rating",
+    "question": "今四半期に格付会社がユーロ圏周辺国のソブリン格付をAへ引き上げるか？",
+    "criteria": "格付会社のプレスリリース。"
+  },
+  {
+    "id": "geo-arctic-route",
+    "question": "今年、商業コンテナ船社が北極海航路の定期便を開設するか？",
+    "criteria": "船社のスケジュール公表。"
+  },
+  {
+    "id": "geo-election-turnout",
+    "question": "次回の主要EU選挙の投票率は55%を超えるか？",
+    "criteria": "公式の投票率。"
+  },
+  {
+    "id": "geo-succession",
+    "question": "今四半期にG20加盟国の首脳が交代するか？",
+    "criteria": "公式の政権移行発表。"
+  },
+  {
+    "id": "geo-trade-deal",
+    "question": "EUは今年、新たな自由貿易協定に署名するか？",
+    "criteria": "欧州委員会が公表した署名済み文書。"
+  },
+  {
+    "id": "pop-box-office",
+    "question": "次回の大作の世界興行収入は公開初週に$200Mを超えるか？",
+    "criteria": "スタジオが発表した初週末興収。"
+  },
+  {
+    "id": "pop-streaming",
+    "question": "今四半期に配信サービスが予想外の解約増を報告するか？",
+    "criteria": "企業の決算発表。"
+  },
+  {
+    "id": "pop-grammy",
+    "question": "年間最多ストリーミングのアーティストが年間最優秀アルバム賞を受賞するか？",
+    "criteria": "Recording Academyの結果。"
+  },
+  {
+    "id": "pop-festival",
+    "question": "主要な夏フェスが48時間以内に完売するか？",
+    "criteria": "公式のチケット販売発表。"
+  },
+  {
+    "id": "pop-viral",
+    "question": "1本の動画が1カ月以内に5億回再生を超えるか？",
+    "criteria": "プラットフォームの公開カウンター。"
+  },
+  {
+    "id": "pop-game-launch",
+    "question": "次回のAAAタイトルは前作の初週販売本数を上回るか？",
+    "criteria": "パブリッシャーのプレスリリース。"
+  },
+  {
+    "id": "pop-console",
+    "question": "今年中に新型コンソールの改良モデルが出荷されるか？",
+    "criteria": "公式の小売向け掲載。"
+  },
+  {
+    "id": "pop-award-host",
+    "question": "授賞式の司会は本番の30日以上前に発表されるか？",
+    "criteria": "公式の放送発表。"
+  },
+  {
+    "id": "pop-merch",
+    "question": "ツアーの公式グッズが1週間以内に完売するか？",
+    "criteria": "公式ストアの在庫状況。"
+  },
+  {
+    "id": "pop-podcast",
+    "question": "今四半期にポッドキャストネットワークが大型独占契約を発表するか？",
+    "criteria": "業界メディアによる確認。"
+  },
+  {
+    "id": "tech-ipo",
+    "question": "今年、VC出資のAI企業がIPOを申請するか？",
+    "criteria": "SECへのS-1提出。"
+  },
+  {
+    "id": "tech-mega-round",
+    "question": "今年、非上場AIラボが単一ラウンドで$5B超を調達するか？",
+    "criteria": "確認された調達ラウンドの発表。"
+  },
+  {
+    "id": "tech-down-round",
+    "question": "今四半期に上位10%のユニコーンがダウンラウンドを受け入れるか？",
+    "criteria": "2社のメディアが確認したタームシート。"
+  },
+  {
+    "id": "tech-nvidia",
+    "question": "NVIDIAは次回決算で売上高が市場予想を上回るか？",
+    "criteria": "企業の決算発表。"
+  },
+  {
+    "id": "tech-tsmc",
+    "question": "TSMCは次回決算説明会で設備投資計画を引き上げるか？",
+    "criteria": "決算説明会の書き起こし。"
+  },
+  {
+    "id": "tech-chip-act",
+    "question": "今四半期に$5B超の第2弾CHIPS法助成が発表されるか？",
+    "criteria": "商務省の通知。"
+  },
+  {
+    "id": "tech-ai-act",
+    "question": "EU AI法は予定どおり次の執行段階に移行するか？",
+    "criteria": "欧州委員会の施行規則。"
+  },
+  {
+    "id": "tech-browser",
+    "question": "今年、主要ブラウザが内蔵AIエージェントを提供するか？",
+    "criteria": "安定版チャネルのリリースノート。"
+  },
+  {
+    "id": "tech-open-weights",
+    "question": "今年、フロンティアラボが4,000億パラメータ超のオープンウェイトモデルを公開するか？",
+    "criteria": "モデルカードまたはリポジトリの公開。"
+  },
+  {
+    "id": "tech-robotaxi",
+    "question": "ロボタクシー事業者が新都市で1日1,000回超の無人運行を達成するか？",
+    "criteria": "規制当局または事業者の開示。"
+  },
+  {
+    "id": "tech-datacenter",
+    "question": "今年、ハイパースケーラーが5GW超のデータセンター群を発表するか？",
+    "criteria": "企業の発表。"
+  },
+  {
+    "id": "tech-quantum",
+    "question": "今年、量子ベンダーが論理量子ビットの優位性を主張するか？",
+    "criteria": "査読論文またはプレプリントでの主張。"
+  },
+  {
+    "id": "tech-cyber",
+    "question": "今四半期にFortune 100企業が8桁規模の情報漏洩を開示するか？",
+    "criteria": "8-Kまたは規制当局への提出。"
+  },
+  {
+    "id": "tech-antitrust-2",
+    "question": "今年、裁判所が大手テック企業に構造的是正措置を命じるか？",
+    "criteria": "裁判所命令。"
+  },
+  {
+    "id": "tech-saas",
+    "question": "今四半期にSaaS企業の成長ガイダンス中央値は12%を下回るか？",
+    "criteria": "決算データの集計。"
+  },
+  {
+    "id": "tech-fintech",
+    "question": "今年、ネオバンクが1,000万口座の資金保有を達成するか？",
+    "criteria": "企業の開示。"
+  },
+  {
+    "id": "tech-stablecoin-bill",
+    "question": "今年、米国のステーブルコイン法案が両院を通過するか？",
+    "criteria": "議会の議事録。"
+  },
+  {
+    "id": "tech-ai-revenue",
+    "question": "基盤モデルラボが年換算売上$2B超を開示するか？",
+    "criteria": "企業または投資家の開示。"
+  },
+  {
+    "id": "tech-gpu-price",
+    "question": "H100のレンタル価格は今四半期に時間$1.50を下回るか？",
+    "criteria": "マーケットプレイス価格の集計。"
+  },
+  {
+    "id": "tech-eu-fine",
+    "question": "今年、EUがDMAに基づき1B EUR超の制裁金を科すか？",
+    "criteria": "欧州委員会の決定。"
+  },
+  {
+    "id": "tech-semiconductor",
+    "question": "今年、世界の半導体売上高が月次で過去最高を更新するか？",
+    "criteria": "SIAの月次レポート。"
+  },
+  {
+    "id": "tech-ev",
+    "question": "今四半期に主要自動車メーカーがEV工場の計画を延期するか？",
+    "criteria": "企業の声明。"
+  },
+  {
+    "id": "tech-battery",
+    "question": "今年、全固体電池を搭載した量産車が出荷されるか？",
+    "criteria": "OEMまたはサプライヤーの確認。"
+  },
+  {
+    "id": "tech-space",
+    "question": "今年、民間打ち上げ企業が再使用ブースターで軌道到達を果たすか？",
+    "criteria": "打ち上げの確認。"
+  },
+  {
+    "id": "tech-dev-tools",
+    "question": "今年、AIコーディングツールが有償席500万を突破するか？",
+    "criteria": "企業の開示。"
+  },
+  {
+    "id": "tech-ai-export",
+    "question": "米国は今四半期にAI半導体の輸出規則を強化するか？",
+    "criteria": "BISの規則公布。"
+  },
+  {
+    "id": "tech-superapp",
+    "question": "今年、メッセージアプリがアプリ内予測市場商品を開始するか？",
+    "criteria": "公式の製品発表。"
+  },
+  {
+    "id": "crypto-btc-120k",
+    "question": "BTCは今四半期に$120,000を上回る週終値を記録するか？",
+    "criteria": "CoinGeckoの週次終値。"
+  },
+  {
+    "id": "crypto-btc-70k",
+    "question": "BTCは今四半期に$70,000を下回るか？",
+    "criteria": "CoinGeckoのデイリー終値で70,000を下回る日が1日でもあること。"
+  },
+  {
+    "id": "crypto-eth-btc",
+    "question": "ETH/BTCは四半期末に0.05を上回るか？",
+    "criteria": "四半期終了時点のレシオ。"
+  },
+  {
+    "id": "crypto-l2-tvl",
+    "question": "L2のTVL合計は今年$80Bを超えるか？",
+    "criteria": "L2Beatの集計値。"
+  },
+  {
+    "id": "crypto-stables",
+    "question": "ステーブルコインの供給量は今年$300Bを超えるか？",
+    "criteria": "DefiLlamaの集計値。"
+  },
+  {
+    "id": "crypto-defi-yield",
+    "question": "今四半期にトップ10プロトコルがステーブル預金で15%超の利回りを提示するか？",
+    "criteria": "プロトコルのダッシュボード。"
+  },
+  {
+    "id": "crypto-hack",
+    "question": "今年、さらに9桁規模のプロトコルエクスプロイトが発生するか？",
+    "criteria": "損失額のオンチェーン検証。"
+  },
+  {
+    "id": "crypto-restaking",
+    "question": "リステーキングのTVLは今年、現在の水準から倍増するか？",
+    "criteria": "DefiLlamaのリステーキングカテゴリー。"
+  },
+  {
+    "id": "crypto-base-tvl",
+    "question": "BaseのTVLは今年$20Bを超えるか？",
+    "criteria": "L2BeatのBaseページ。"
+  },
+  {
+    "id": "crypto-sol-flip",
+    "question": "SOLは今四半期に一度でも週次DEX出来高でETHを上回るか？",
+    "criteria": "DefiLlamaのチェーン別出来高。"
+  },
+  {
+    "id": "crypto-meme",
+    "question": "今四半期にミームコインが時価総額トップ20に入るか？",
+    "criteria": "CoinGeckoのランキング。"
+  },
+  {
+    "id": "crypto-etf-btc-flow",
+    "question": "現物BTC ETFは週次$2B超の流入を記録するか？",
+    "criteria": "Farsideの週次合計。"
+  },
+  {
+    "id": "crypto-perp-oi",
+    "question": "無期限先物の未決済建玉合計は今年$100Bを超えるか？",
+    "criteria": "Coinglassの集計値。"
+  },
+  {
+    "id": "crypto-funding",
+    "question": "BTCのファンディングは30日連続でプラスを維持するか？",
+    "criteria": "取引所のファンディング履歴。"
+  },
+  {
+    "id": "crypto-airdrop",
+    "question": "今年、トップ5のL2がトークンエアドロップを実施するか？",
+    "criteria": "公式クレームページの公開。"
+  },
+  {
+    "id": "crypto-reg",
+    "question": "SECは今年、新たな暗号資産ETP区分を承認するか？",
+    "criteria": "承認命令。"
+  },
+  {
+    "id": "crypto-onchain-fees",
+    "question": "今年、主要チェーンの月次オンチェーン手数料が過去最高を更新するか？",
+    "criteria": "DefiLlamaの手数料データ。"
+  },
+  {
+    "id": "crypto-validator",
+    "question": "主要チェーンがアンステーキング期間を7日未満に短縮するか？",
+    "criteria": "プロトコルアップグレードのノート。"
+  },
+  {
+    "id": "crypto-oracle",
+    "question": "今四半期に大手オラクルが新たな資産クラスのフィードを追加するか？",
+    "criteria": "プロバイダーの変更履歴。"
+  },
+  {
+    "id": "crypto-dao",
+    "question": "今四半期にトップ20のDAOが財務多様化の投票を可決するか？",
+    "criteria": "オンチェーンガバナンスの結果。"
+  },
+  {
+    "id": "crypto-l2-fee",
+    "question": "L2取引手数料の中央値は今四半期に$0.01を下回るか？",
+    "criteria": "L2Beatの手数料トラッカー。"
+  },
+  {
+    "id": "crypto-bridge",
+    "question": "今年、クロスチェーンブリッジが月間$5B超の出来高を記録するか？",
+    "criteria": "DefiLlamaのブリッジ出来高。"
+  },
+  {
+    "id": "sport-ucl",
+    "question": "CL決勝は延長戦にもつれるか？",
+    "criteria": "公式の試合記録。"
+  },
+  {
+    "id": "sport-epl-title",
+    "question": "プレミアリーグの優勝は最終節で決まるか？",
+    "criteria": "最終順位表。"
+  },
+  {
+    "id": "sport-nba-finals",
+    "question": "NBAファイナルは第7戦までもつれるか？",
+    "criteria": "公式のシリーズ結果。"
+  },
+  {
+    "id": "sport-nfl-mvp",
+    "question": "NFLのMVPはシード上位4チーム以外の選手となるか？",
+    "criteria": "APのアワード発表。"
+  },
+  {
+    "id": "sport-f1",
+    "question": "F1ドライバーズタイトルは最終戦で決まるか？",
+    "criteria": "公式ランキング。"
+  },
+  {
+    "id": "sport-wimbledon",
+    "question": "今年、ウィンブルドン初優勝の選手が誕生するか？",
+    "criteria": "公式のドロー結果。"
+  },
+  {
+    "id": "sport-olympics",
+    "question": "次回開催国はメダル表で3位以内に入るか？",
+    "criteria": "公式のメダル表。"
+  },
+  {
+    "id": "sport-cricket",
+    "question": "IPL決勝は後攻のチームが制するか？",
+    "criteria": "試合結果。"
+  },
+  {
+    "id": "sport-rugby",
+    "question": "シックス・ネイションズはグランドスラム達成で優勝するか？",
+    "criteria": "最終順位表。"
+  },
+  {
+    "id": "sport-mma",
+    "question": "次回UFC PPVで王座が移動するか？",
+    "criteria": "公式結果。"
+  },
+  {
+    "id": "sport-golf",
+    "question": "メジャーは世界ランキング20位以下の選手が制するか？",
+    "criteria": "公式リーダーボード。"
+  },
+  {
+    "id": "sport-marathon",
+    "question": "今年、男子マラソンの世界記録が更新されるか？",
+    "criteria": "ワールドアスレティックスの公認。"
+  },
+  {
+    "id": "sport-soccer-transfer",
+    "question": "今ウィンドウで150M EUR超の移籍が成立するか？",
+    "criteria": "クラブの発表。"
+  },
+  {
+    "id": "sport-esports-crossover",
+    "question": "今年、eスポーツ組織が伝統的スポーツチームの持分を取得するか？",
+    "criteria": "取引の確認。"
+  },
+  {
+    "id": "sport-formula-e",
+    "question": "フォーミュラEは来季、新たなマニュファクチャラーを追加するか？",
+    "criteria": "FIAのエントリーリスト。"
+  },
+  {
+    "id": "esp-lol-worlds",
+    "question": "今年、LCKのチームがWorldsを制するか？",
+    "criteria": "公式ブラケットの結果。"
+  },
+  {
+    "id": "esp-cs-major",
+    "question": "次回CSメジャーはランキング上位3チームが制するか？",
+    "criteria": "公式順位表。"
+  },
+  {
+    "id": "esp-dota-ti",
+    "question": "TIのグランドファイナルは第5戦までもつれるか？",
+    "criteria": "公式のシリーズ結果。"
+  },
+  {
+    "id": "esp-valorant",
+    "question": "新たなリージョンのチームがValorant Champions決勝に進出するか？",
+    "criteria": "公式ブラケット。"
+  },
+  {
+    "id": "esp-lol-msi",
+    "question": "MSIは開催地域のチームが制するか？",
+    "criteria": "公式結果。"
+  },
+  {
+    "id": "esp-apex",
+    "question": "今スプリット、コントローラー勢がApex ALGSのロビーで首位となるか？",
+    "criteria": "公式順位表。"
+  },
+  {
+    "id": "esp-rocket",
+    "question": "Rocket Leagueのメジャーは北米ロースターが制するか？",
+    "criteria": "公式ブラケット。"
+  },
+  {
+    "id": "esp-esl",
+    "question": "今年、ESLが6桁規模の新たなLANサーキットを発表するか？",
+    "criteria": "公式発表。"
+  },
+  {
+    "id": "esp-viewership",
+    "question": "今年、単一イベントで同時接続ピークが700万を超えるか？",
+    "criteria": "公開トラッカーのピーク値。"
+  },
+  {
+    "id": "esp-mobile",
+    "question": "今年、モバイルeスポーツが総視聴10億時間を超えるか？",
+    "criteria": "公開トラッカーの合計値。"
+  },
+  {
+    "id": "esp-org-ipo",
+    "question": "今年、eスポーツ組織が株式公開するか？",
+    "criteria": "取引所への上場。"
+  },
+  {
+    "id": "esp-franchise",
+    "question": "来季、ティア1リーグが新たなリージョンへ拡大するか？",
+    "criteria": "リーグの公式発表。"
+  },
+  {
+    "id": "esp-female",
+    "question": "今年、女子サーキットの決勝がピーク視聴者30万人を超えるか？",
+    "criteria": "公開トラッカーのピーク値。"
+  },
+  {
+    "id": "esp-ai-coach",
+    "question": "今年、ティア1チームがAIコーチングツールを開示するか？",
+    "criteria": "チームの公式声明。"
+  },
+  {
+    "id": "esp-university",
+    "question": "今年、大学チームがティア1のLANプレーオフに進出するか？",
+    "criteria": "公式ブラケット。"
+  }
+]

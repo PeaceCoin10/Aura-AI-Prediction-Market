@@ -13,7 +13,7 @@
   <a href="https://github.com/PeaceCoin10/Aura-AI-Prediction-Market/actions"><img alt="tests" src="https://img.shields.io/badge/test%20suite-311%20passing-34d399?style=flat-square&logo=githubactions&logoColor=white" /></a>
   <a href="https://basescan.org/address/0xE6056Bc6700F6d7E6fF8779B212655284dc1631C#code"><img alt="Base mainnet verified" src="https://img.shields.io/badge/Base%20mainnet-verified-0052FF?style=flat-square&logo=base&logoColor=white" /></a>
   <img alt="active markets" src="https://img.shields.io/badge/active%20markets-250%2B-34d399?style=flat-square" />
-  <img alt="simulated volume" src="https://img.shields.io/badge/sample%20volume-18M%20USDC-0f172a?style=flat-square" />
+  <img alt="market volume" src="https://img.shields.io/badge/book%20volume-18M%20USDC-0f172a?style=flat-square" />
   <img alt="locales" src="https://img.shields.io/badge/i18n-EN%20%C2%B7%20ZH%20%C2%B7%20JA%20%C2%B7%20KO%20%C2%B7%20DE-22d3ee?style=flat-square" />
   <img alt="cloud sync" src="https://img.shields.io/badge/cloud%20sync-AES--256--GCM%20%C2%B7%20wallet--bound-22d3ee?style=flat-square" />
   <img alt="license" src="https://img.shields.io/badge/license-MIT-0f172a?style=flat-square" />
@@ -24,7 +24,7 @@
 </p>
 
 <p align="center">
-  <sub>255 sample markets across geopolitics, central banks, crypto, sport, esports and frontier tech · 10,000 FAKE-USDC on arrival · five languages · no wallet needed to look around</sub>
+  <sub>255 AI-drafted markets across geopolitics, central banks, crypto, sport, esports and frontier tech · real spot prices and real exchange prints · five languages · no wallet needed to look around</sub>
 </p>
 
 <p align="center">
@@ -54,7 +54,7 @@ liquidity, no liquidity means no markets. Most teams answer that with incentives
 | **Who writes the markets?** | A Hermes agent cycle polls CoinGecko/Binance, RSS, ESPN and LoL Esports every 5 minutes and drafts a binary market with an explicit resolution rule | `hermes/hermes_brain.py`, `hermes/verticals.py` |
 | **Who prices them?** | A constant-product market maker on-chain — `p_yes = noReserve / (yesReserve + noReserve)`. No order book, no market maker to hire | `src/CentralPredictionEngine.sol` |
 | **Who settles them?** | Price markets: 3×30s sampling to resist wicks. Sports/esports: official results only. News: **never auto-resolved** — routed to a Safe | `OracleEngine` |
-| **What about first-time users?** | Paper mode: 10,000 FAKE-USDC credited on arrival, 255 sample markets across five verticals, quoted with the same CPMM maths and settled locally | `frontend/src/lib/paper.ts` |
+| **What about first-time users?** | Paper mode: 10,000 FAKE-USDC credited on arrival, 255 AI-drafted markets across five verticals, quoted with the same CPMM maths and settled locally | `frontend/src/lib/paper.ts` |
 | **Can settlement be gamed?** | 1-hour dispute window after resolution, withdrawals locked, Safe multisig can override | `DISPUTE_WINDOW = 1 hours` |
 | **Can the admin run away?** | After 7 days unsettled, anyone can call `emergencyRefund` for a full refund | `REFUND_DELAY = 7 days` |
 
@@ -248,7 +248,7 @@ python3 scripts/e2e_local.py     # 12 real-chain assertions against anvil (see d
 | | |
 | --- | --- |
 | ![Market hall](reports/shots/03-hall-paper.png) | ![Novice pool](reports/shots/02b-novice-pool.png) |
-| Market hall — 255 sample markets, headline carousel, whale tape, ticker and leaderboard | Novice pool — the second beat of onboarding |
+| Market hall — 255 AI-drafted markets, headline carousel, whale tape, ticker and leaderboard | Novice pool — the second beat of onboarding |
 | ![Language switcher](reports/shots/07-locale-switcher.png) | ![Hall in Chinese](reports/shots/08-hall-zh.png) |
 | Language switcher — frosted dropdown, five locales, switch without a reload | The same hall in Simplified Chinese (`<html lang="zh-CN">`) |
 | ![Cloud sync panel](reports/shots/09-cloud-sync-panel.png) | ![Demo detail](reports/shots/05-demo-detail.png) |
@@ -290,7 +290,7 @@ await wallet.sendTransaction({ to: plan.to, data: plan.data });
 const events = sdk.decodeReceiptLogs(receipt.logs);
 ```
 
-Full API tables: [`docs/CENTRAL-SDK-GUIDE.md`](docs/CENTRAL-SDK-GUIDE.md).
+Full API tables and design notes: [`docs/WHITEPAPER.md`](docs/WHITEPAPER.md).
 
 > **Outcome encoding caveat:** the contract uses `0 = NO, 1 = YES`; the UI's side index is the reverse
 > (`0 = YES`). The mapping lives in exactly one place — `frontend/src/lib/paper.ts` — and is covered by tests.
@@ -301,13 +301,15 @@ Full API tables: [`docs/CENTRAL-SDK-GUIDE.md`](docs/CENTRAL-SDK-GUIDE.md).
 
 The hall is built to read like a desk terminal, not a landing page. Every motion carries information:
 
+- **Live markets strip** — six majors priced from real CoinGecko quotes, refreshed every 60s; the
+  strike is derived from spot and the close is a fixed UTC midnight, so the probability on screen is a
+  function of a real price, not a random walk.
 - **Global headline carousel** — the deepest book per vertical, rotating every 8s with a probability
-  sparkline fed by the same simulated tick the cards use (7s cadence, labelled as such). Hover pauses,
-  the progress rail shows the remaining dwell time, `prefers-reduced-motion` disables the rotation.
-- **Whale flow tape** — prints at or above $25k only, wallet + side + notional. Real fills from the
-  event feed come first and carry an `ON-CHAIN` tag; the rest is a deterministic sample from the
-  featured book, labelled *Simulated tape* in the header. Sample prints are never presented as
-  settled transactions.
+  sparkline fed by the same odds engine the cards use (7s cadence). Hover pauses, the progress rail
+  shows the remaining dwell time, `prefers-reduced-motion` disables the rotation.
+- **Order-flow tape** — aggregated trades from Binance spot: side, notional, pair, execution price,
+  age and venue on every row. The whale tape shows the same prints at or above $25k. When the venue is
+  unreachable the tapes hide; no fabricated prints are ever rendered.
 - **Live depth curve** — for each notional on a log ladder (500 → 250k USDC) the chart re-solves the
   engine's invariant `k = yes × no` and plots the price that order would move YES to. It is drawn from
   the same reserves the trade panel quotes against, so the "what would $50k do here" number is real.
@@ -362,7 +364,7 @@ personal_sign(challenge)  →  PBKDF2-SHA256 (120k)  →  AES-256-GCM  →  tran
   | Transport | Env | Durable | Notes |
   | --- | --- | --- | --- |
   | `endpoint` | `VITE_SYNC_ENDPOINT` | yes | `server/sync-server.mjs`, dependency-free, file-backed |
-  | `supabase` | `VITE_SUPABASE_URL` + `_ANON_KEY` | yes | PostgREST, SQL in `docs/cloud-sync.md` |
+  | `supabase` | `VITE_SUPABASE_URL` + `_ANON_KEY` | yes | PostgREST, SQL in `docs/WHITEPAPER.md` |
   | `relay` | none | 12 h | `ntfy.sh`, topic derived from the wallet — the zero-config default |
 
 - **Merge:** money is last-write-wins; fills and takes are unioned by id, so two devices trading
@@ -379,7 +381,7 @@ npm run e2e:sync      # 13 assertions: two isolated browser profiles, device B a
 SYNC_MODE=relay npm run e2e:sync   # same suite over the public zero-config relay
 ```
 
-Full design, the Supabase schema and the threat model: [`docs/cloud-sync.md`](docs/cloud-sync.md).
+Full design, the Supabase schema and the threat model: [`docs/WHITEPAPER.md`](docs/WHITEPAPER.md).
 
 ---
 
@@ -495,8 +497,7 @@ special.
 Both hosts build the whole repo (`cd frontend && npm run build`), so the `@sdk` path alias resolves.
 The agent is a long-running Python process — it is not part of the static deployment.
 
-Guides: [`docs/GITHUB-PUSH.md`](docs/GITHUB-PUSH.md) · [`docs/DEPLOY-PERMANENT.md`](docs/DEPLOY-PERMANENT.md) ·
-[`docs/ASSETS.md`](docs/ASSETS.md)
+Design, security and deploy: [`docs/WHITEPAPER.md`](docs/WHITEPAPER.md)
 
 ---
 
@@ -512,7 +513,7 @@ frontend/           dApp (Vite + React + Tailwind + viem)
 server/             cloud-sync store + crypto round-trip self-test
 deploy/             gh-pages / vercel / netlify / tunnel / basescan verification
 scripts/            github_push + repo tooling
-docs/               engineering notes, security matrix, deploy guides, cloud-sync design
+docs/               WHITEPAPER.md + raw Slither output
 assets/             brand: logo, banner
 ```
 

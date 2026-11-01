@@ -5,7 +5,7 @@
  *
  * This block is a compliance surface. Wording stays literal and unambiguous —
  * it is a risk disclosure, not marketing. Every figure here is a real result
- * from this repository (see `docs/SECURITY.md`); never round or restate them
+ * from this repository (see `docs/WHITEPAPER.md`); never round or restate them
  * as ranges.
  *
  * Templates use `{{var}}` and are rendered with `format()` from `lib/i18n`.

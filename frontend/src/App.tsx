@@ -35,6 +35,9 @@ import { LiveTicker } from "./components/LiveTicker";
 import { PredictorBoard } from "./components/PredictorBoard";
 import { HeroCarousel } from "./components/HeroCarousel";
 import { WhaleTicker } from "./components/WhaleTicker";
+import { useExchangeTape } from "./lib/exchangeTape";
+import { useLiveCrypto } from "./lib/liveCrypto";
+import { LiveMarkets } from "./components/LiveMarkets";
 
 function ConnectModal({ onClose }: { onClose: () => void }) {
   const { providers, connect, connectSocial, connecting, error } = useWallet();
@@ -57,7 +60,7 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
             }}
           >
             <span aria-hidden>G</span>
-            <span>Google</span>
+            <span>{t.hall.connect.google}</span>
           </button>
           <button
             data-testid="connect-email"
@@ -69,11 +72,11 @@ function ConnectModal({ onClose }: { onClose: () => void }) {
             }}
           >
             <span aria-hidden>@</span>
-            <span>Email</span>
+            <span>{t.hall.connect.email}</span>
           </button>
         </div>
         <div className="mb-3 text-center text-[10px] text-slate-600">
-          One-tap smart account — first trades are gas-sponsored.
+          {t.hall.connect.socialNote}
         </div>
 
         <div className="space-y-2">
@@ -162,6 +165,10 @@ function Dashboard() {
   const { markets, total, loading, error, refresh } = useMarkets(15_000);
   const { positions, balance, refresh: refreshPortfolio } = usePortfolio(markets, account);
   const { items, error: feedError } = useEventFeed(true, 8_000);
+  /** Real exchange prints for the two tapes (Binance spot, CORS-enabled public market data). */
+  const tape = useExchangeTape();
+  /** Live crypto markets built from real CoinGecko quotes. */
+  const liveCrypto = useLiveCrypto();
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
@@ -418,8 +425,10 @@ function Dashboard() {
 
             <CategoryNav value={nav} onChange={setNav} counts={counts} />
 
-            <WhaleTicker />
-            <LiveTicker />
+            <LiveMarkets markets={liveCrypto.markets} updatedAt={liveCrypto.updatedAt} onOpen={setDemoSelected} />
+
+            <WhaleTicker prints={tape.prints} />
+            <LiveTicker prints={tape.prints} />
 
             <div className="grid gap-3 lg:grid-cols-[1fr_380px]">
               <section className="card relative overflow-hidden" data-testid="spotlight">
@@ -443,8 +452,8 @@ function Dashboard() {
                     <span className="rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-brand">
                       {t.hall.sections.featuredBadge}
                     </span>
-                    <span className="chip">{DEMO_MARKETS.length} markets</span>
-                    <span className="chip">{demoVolume.toLocaleString()} USDC simulated</span>
+                    <span className="chip">{format(t.marketing.spotlight.markets, { count: DEMO_MARKETS.length })}</span>
+                    <span className="chip">{format(t.marketing.spotlight.volume, { amount: demoVolume.toLocaleString() })}</span>
                     <a
                       href="#featured-hall"
                       className="btn-primary px-3 py-1 text-[11px]"
@@ -456,7 +465,7 @@ function Dashboard() {
                       data-testid="affiliate-open"
                       className="rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-brand transition hover:bg-brand/20"
                     >
-                      Affiliate · 20% of fees
+                      {t.shell.actions.affiliate}
                     </button>
                   </div>
                 </div>

@@ -57,6 +57,7 @@ export const shell = {
     refresh: "Refresh",
     refreshing: "Refreshing…",
     close: "Close",
+    affiliate: "Affiliate · 20% of fees",
     search: "Search markets, categories, teams…",
     newMarket: "New market",
     claimChips: "Claim 10,000 chips",

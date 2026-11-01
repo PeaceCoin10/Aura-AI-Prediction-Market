@@ -1,92 +1,46 @@
 import { useMemo } from "react";
 import { useT } from "../lib/i18n";
-import { DEMO_MARKETS } from "../data/markets";
+import { money, type ExchangePrint } from "../lib/exchangeTape";
 
 /**
- * Whale-flow tape: the standing institutional tell that money is moving.
+ * Whale-flow tape.
  *
- * Honesty boundary, same as the trade ticker: real fills from the event feed are shown first and
- * tagged ON-CHAIN; the rest is a deterministic sample derived from the featured book, labelled
- * "Simulated tape" in the header. A sample print is never dressed up as a settled transaction.
- *
- * Only tickets at or above $25k appear — that is the threshold the header advertises, and it is
- * enforced in `buildSample`, not just in the copy.
+ * Every row is a real print from Binance spot (aggregated trades), filtered to tickets at or above
+ * $25k notional and sorted by size. Nothing here is invented: if the venue is unreachable the tape
+ * renders nothing instead of dressing a sample up as flow. The venue is named in the header so a
+ * spot print is never mistaken for a fill on this venue's own book.
  */
-const MIN_USDC = 25_000;
+const MIN_NOTIONAL = 25_000;
 
-export interface WhalePrint {
-  id: string;
-  wallet: string;
-  side: "YES" | "NO";
-  usdc: number;
-  question: string;
-  ageMin: number;
-  real?: boolean;
-}
-
-function hash(s: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) h = (h ^ s.charCodeAt(i)) * 16777619;
-  return Math.abs(h);
-}
-
-function walletOf(seed: string): string {
-  const h1 = hash(`${seed}:a`).toString(16).padStart(8, "0");
-  const h2 = hash(`${seed}:b`).toString(16).padStart(8, "0");
-  return `0x${h1.slice(0, 4)}…${h2.slice(-4)}`;
-}
-
-/** Deterministic sample: the deepest books get the biggest prints. */
-export function buildWhaleSample(limit = 28): WhalePrint[] {
-  const top = [...DEMO_MARKETS].sort((a, b) => b.volumeUsdc - a.volumeUsdc).slice(0, limit);
-  return top.map((m, i) => {
-    const h = hash(`${m.id}:whale`);
-    // $25k → $480k, weighted so the biggest books carry the loudest tickets.
-    const tier = 1 - i / Math.max(1, top.length);
-    const usdc = Math.round((MIN_USDC + (h % 455_000) * (0.35 + tier * 0.65)) / 500) * 500;
-    return {
-      id: `w-${m.id}`,
-      wallet: walletOf(m.id),
-      side: h % 3 === 0 ? "NO" : "YES",
-      usdc,
-      question: m.question,
-      ageMin: 1 + (h % 47),
-    };
-  });
-}
-
-const money = (v: number) => `$${v.toLocaleString()}`;
-
-export function WhaleTicker({ realPrints = [] }: { realPrints?: WhalePrint[] }) {
+export function WhaleTicker({ prints = [] }: { prints?: ExchangePrint[] }) {
   const t = useT();
-  const items = useMemo(() => {
-    const real = realPrints.filter((p) => p.usdc >= MIN_USDC);
-    const sample = buildWhaleSample();
-    const seen = new Set(real.map((p) => p.id));
-    return [...real, ...sample.filter((p) => !seen.has(p.id))];
-  }, [realPrints]);
+  const items = useMemo(
+    () => prints.filter((p) => p.notional >= MIN_NOTIONAL).sort((a, b) => b.notional - a.notional).slice(0, 24),
+    [prints],
+  );
 
   if (items.length === 0) return null;
-  const live = realPrints.some((p) => p.usdc >= MIN_USDC);
 
-  const row = (p: WhalePrint) => (
-    <span key={p.id} className="inline-flex items-center gap-2 border-r border-white/[0.06] px-3 py-1.5">
-      <span className="mono text-[10px] text-slate-500">{p.real ? "◆" : "◇"}</span>
-      <span className="mono text-[11px] text-slate-400">{p.wallet}</span>
-      <span className={`text-[11px] ${p.side === "YES" ? "text-brand" : "text-danger"}`}>
-        {p.side === "YES" ? t.terminal.whale.bought : t.terminal.whale.sold}
+  const row = (p: ExchangePrint) => {
+    const mins = Math.max(0, Math.round((Date.now() - p.ts) / 60_000));
+    return (
+      <span key={p.id} className="inline-flex items-center gap-2 border-r border-white/[0.06] px-3 py-1.5">
+        <span className="mono text-[10px] text-brand/70">◆</span>
+        <span className="mono text-[11px] text-slate-300">{p.symbol}</span>
+        <span className={`text-[11px] ${p.side === "BUY" ? "text-brand" : "text-danger"}`}>
+          {p.side === "BUY" ? t.terminal.whale.bought : t.terminal.whale.sold}
+        </span>
+        <span className="mono text-[11.5px] font-semibold text-slate-100">{money(p.notional)}</span>
+        <span className="mono text-[10px] text-slate-500">
+          {p.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+        </span>
+        <span className="mono text-[9.5px] text-slate-600">
+          {mins <= 0 ? t.terminal.whale.justNow : t.terminal.whale.ago.replace("{{mins}}", String(mins))}
+        </span>
+        <span className="rounded-full bg-white/5 px-1.5 text-[9px] uppercase tracking-wide text-slate-500">{p.venue}</span>
       </span>
-      <span className="mono text-[11.5px] font-semibold text-slate-100">{money(p.usdc)}</span>
-      <span className={`mono rounded px-1 text-[9.5px] ${p.side === "YES" ? "bg-brand/15 text-brand" : "bg-danger/15 text-danger"}`}>
-        {p.side}
-      </span>
-      <span className="max-w-[240px] truncate text-[11px] text-slate-500">{p.question}</span>
-      <span className="mono text-[9.5px] text-slate-600">
-        {p.ageMin <= 1 ? t.terminal.whale.justNow : t.terminal.whale.ago.replace("{{mins}}", String(p.ageMin))}
-      </span>
-      {p.real && <span className="rounded-full bg-cyan-400/15 px-1.5 text-[9px] text-cyan-300">ON-CHAIN</span>}
-    </span>
-  );
+    );
+  };
 
   return (
     <div
@@ -98,8 +52,9 @@ export function WhaleTicker({ realPrints = [] }: { realPrints?: WhalePrint[] }) 
           ◆
         </span>
         <span className="text-[10px] uppercase tracking-[0.2em] text-slate-300">{t.terminal.whale.title}</span>
-        <span className="rounded-full border border-white/10 bg-white/5 px-1.5 text-[9px] uppercase tracking-wide text-slate-500">
-          {live ? t.terminal.whale.live : t.terminal.whale.sample}
+        <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-1.5 text-[9px] uppercase tracking-wide text-slate-400">
+          <span className="h-1 w-1 rounded-full bg-brand" />
+          {t.terminal.whale.live}
         </span>
         <span className="mono text-[9.5px] text-slate-600">{t.terminal.whale.hint}</span>
         <span className="ml-auto text-[9.5px] text-slate-600">{t.terminal.whale.note}</span>
