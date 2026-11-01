@@ -348,6 +348,283 @@ def load_catalogue(path: Path) -> list[Market]:
     return out
 
 
+
+# --------------------------------------------------------------------------------------
+# DeepSeek layer: the model writes the prose, the numbers come from here
+# --------------------------------------------------------------------------------------
+
+LLM_MODEL = "deepseek-chat"
+LLM_BATCH = 6
+TONE_ENUM = ("bull", "bear", "warn", "geek", "calm")
+
+SYSTEM_PROMPT = (
+    "You are the research desk of a binary prediction market. For each market you receive the "
+    "question, the live probability, its change since the previous snapshot, pool depth, traded "
+    "volume, whale prints from Binance spot, and the tone of current headlines.\n\n"
+    "Write ONE paragraph per market, 60-110 words, plain prose, no bullet points, no headings, "
+    "no preamble. Be specific and dry: a good sell-side note, not marketing copy.\n\n"
+    "Hard rules:\n"
+    "1. Cite the YES probability exactly as given (one decimal, e.g. 'YES 42.0%'). Never invent a "
+    "probability, a price, a volume, a date or a statistic that is not in the input, and do not "
+    "derive new numbers (no cost-to-reprice, no ratios, no multiples like '3x depth', no "
+    "annualised figures): quote only values from the market's quotable_numbers list.\n"
+    "2. If the headlines describe an exploit, hack, lawsuit, ban or macro shock, treat it as a "
+    "risk channel: say explicitly how it would reprice this book. If the market's probability "
+    "stands high despite that risk, name the divergence instead of pretending it does not exist. "
+    "Never claim the market has already priced something the numbers do not show.\n"
+    "3. If there are no whale prints, say there is no large-trader read; do not invent flow.\n"
+    "4. Reason about the actual settlement rule of the market: what has to be true, and by when.\n"
+    "4b. Whale discipline: if prints_over_25k is greater than zero, describe that flow using the "
+    "given buy/sell figures; if it is zero, say there is no large-trader read. Never state the "
+    "opposite of the field you were given.\n"
+    "4c. No cross-market comparisons. Never call a book the deepest, most active, largest or "
+    "shortest on the board unless the input explicitly says so.\n"
+    "5. No advice to buy or sell, no promises of returns, no 'as an AI'.\n\n"
+    'Return strict JSON: {"items":[{"id":"<market id>","text":"<paragraph>","tone":"bull|bear|warn|geek|calm"}]} '
+    "with exactly one entry per market supplied, in the same order."
+)
+
+
+def _num_variants(x: float) -> set[str]:
+    """Accepted spellings of one measured value: 182400 / 182,400 / 182.4k / 0.18m."""
+    out: set[str] = set()
+    for dp in (0, 1, 2):
+        s = f"{x:,.{dp}f}"
+        out.add(s)
+        out.add(s.replace(",", ""))
+    if abs(x) >= 1_000:
+        for dp in (1, 2):
+            s = f"{x / 1_000:,.{dp}f}"
+            out.add(s)
+            out.add(s.replace(",", ""))
+    if abs(x) >= 1_000_000:
+        out.add(f"{x / 1_000_000:.2f}")
+        out.add(f"{x / 1_000_000:.1f}")
+    return out
+
+
+def allowed_numbers(m: Market, headlines: list[str]) -> set[str]:
+    """Every number the model is allowed to quote: measured inputs plus constants of the protocol."""
+    vals = [
+        m.prob * 100,
+        m.depth,
+        m.volume,
+        m.whale_buy,
+        m.whale_sell,
+        abs(m.whale_buy - m.whale_sell),
+        m.whale_prints,
+        m.hours_left,
+        m.hours_left / 24,
+        m.depth * IMPACT_CAP_BPS / 10_000,
+        m.mood,
+    ]
+    if m.prev_prob is not None:
+        vals += [m.prev_prob * 100, abs(m.prob - m.prev_prob) * 100]
+    vals.append(min(95.0, m.prob * 100 + 10))  # the repricing target quoted in the computed text
+    if m.depth > 0 and 0 < m.prob < 0.95:
+        try:
+            vals.append(impact_cost(m.depth, m.prob, min(0.95, m.prob + 0.1)))
+        except ValueError:
+            pass
+    out: set[str] = set()
+    for v in vals:
+        out |= _num_variants(float(v))
+    out |= {"1.5", "0.5", "5", "25", "25000", "25,000", "100"}
+    for src in [m.question, *(headlines or [])]:
+        for tok in re.findall(r"\d[\d,\.]*", src or ""):
+            out.add(tok)
+            out.add(tok.replace(",", "").rstrip("."))
+    out |= {str(y) for y in range(2026, 2032)}
+    return out
+
+
+def quotable(m: Market) -> list[str]:
+    """The exact figures the prose may quote for this market — nothing else is allowed through."""
+    vals = [f"{m.prob * 100:.1f}%"]
+    for v in (m.depth, m.volume):
+        vals.append(f"{v:,.0f}")
+    if m.whale_prints:
+        vals += [f"{m.whale_buy:,.0f}", f"{m.whale_sell:,.0f}", f"{abs(m.whale_buy - m.whale_sell):,.0f}",
+                 f"{m.whale_prints}"]
+    if m.prev_prob is not None:
+        vals.append(f"{abs(m.prob - m.prev_prob) * 100:.1f}")
+    if m.hours_left:
+        vals.append(f"{m.hours_left:,.0f}")
+    if m.depth > 0 and 0 < m.prob < 0.95:
+        try:
+            vals.append(f"{impact_cost(m.depth, m.prob, min(0.95, m.prob + 0.1)):,.0f}")
+        except ValueError:
+            pass
+    return vals
+
+
+def market_payload(m: Market) -> dict:
+    return {
+        "quotable_numbers": quotable(m),
+        "id": m.mid,
+        "question": m.question,
+        "category": m.category,
+        "prob_yes_pct": round(m.prob * 100, 1),
+        "delta_pts_since_last_snapshot": None if m.prev_prob is None else round((m.prob - m.prev_prob) * 100, 1),
+        "depth_usdc": round(m.depth),
+        "volume_usdc": round(m.volume),
+        "hours_to_settlement": round(m.hours_left, 1),
+        "whale": {
+            "prints_over_25k": m.whale_prints,
+            "buy_usdc": round(m.whale_buy),
+            "sell_usdc": round(m.whale_sell),
+            "net_usdc": round(m.whale_buy - m.whale_sell),
+            "largest": None if not m.top_print else {
+                "symbol": m.top_print[0], "side": m.top_print[2], "notional_usdc": round(m.top_print[1]),
+            },
+        },
+        "news": {"tone_score": m.mood, "headlines": [m.mood_title] if m.mood_title else []},
+    }
+
+
+def build_messages(batch: list[Market], context: dict) -> list[dict]:
+    user = {
+        "as_of_utc": context.get("as_of"),
+        "chain": "Base 8453",
+        "engine": context.get("engine"),
+        "global_headlines": context.get("headlines", []),
+        "markets": [market_payload(m) for m in batch],
+    }
+    return [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": json.dumps(user, ensure_ascii=False)},
+    ]
+
+
+def _close_enough(tok: str, allowed: set[str]) -> bool:
+    """Accept a rounded spelling of a measured value (182,400 quoted as 182.4k / 182400)."""
+    try:
+        val = float(tok.replace(",", ""))
+    except ValueError:
+        return False
+    if abs(val) < 1000:
+        return False
+    for a in allowed:
+        try:
+            ref = float(a.replace(",", ""))
+        except ValueError:
+            continue
+        if ref >= 1000 and abs(val - ref) / ref <= 0.02:
+            return True
+    return False
+
+
+def validate_items(raw: str, batch: list[Market], headlines: list[str]) -> dict[str, dict]:
+    """Parse and police the model output. Anything that fails is dropped, never patched up."""
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"model did not return JSON: {exc}") from exc
+    items = data.get("items") if isinstance(data, dict) else None
+    if not isinstance(items, list):
+        raise ValueError("model JSON has no items array")
+
+    by_id = {m.mid: m for m in batch}
+    out: dict[str, dict] = {}
+    for row in items:
+        if not isinstance(row, dict):
+            continue
+        mid = row.get("id")
+        text = (row.get("text") or "").strip()
+        tone = (row.get("tone") or "").strip().lower()
+        m = by_id.get(mid) if isinstance(mid, str) else None
+        if m is None or not text:
+            continue
+        if not (45 <= len(text) <= 900):
+            log.warning("drop %s: length %d out of bounds", mid, len(text))
+            continue
+        lowered = text.lower()
+        if "as an ai" in lowered or "i cannot" in lowered:
+            log.warning("drop %s: refusal language", mid)
+            continue
+        prob_txt = f"{m.prob * 100:.1f}%"
+        if "yes" not in lowered or prob_txt not in text:
+            log.warning("drop %s: missing the real probability %s", mid, prob_txt)
+            continue
+        allowed = allowed_numbers(m, headlines)
+        bad = []
+        for tok in re.findall(r"\d[\d,\.]*", text):
+            clean = tok.rstrip(".,")
+            if len(clean.replace(",", "").replace(".", "")) <= 1:
+                continue  # single digits are ordinal/list noise, not claims
+            plain = clean.replace(",", "")
+            if clean in allowed or plain in allowed or _close_enough(plain, allowed):
+                continue
+            bad.append(tok)
+        if bad:
+            log.warning("drop %s: numbers not in the input: %s", mid, bad[:4])
+            continue
+        no_flow_claims = ("no whale", "zero print", "no large-trader", "no large trader", "no prints")
+        if m.whale_prints > 0 and any(p in lowered for p in no_flow_claims):
+            log.warning("drop %s: claims no flow while %d prints were supplied", mid, m.whale_prints)
+            continue
+        if m.whale_prints == 0 and ("net buy" in lowered or "net sell" in lowered):
+            log.warning("drop %s: invents flow with zero prints", mid)
+            continue
+        superlatives = ("deepest", "most active", "largest book", "shortest horizon on the board")
+        if any(p in lowered for p in superlatives) and "rank" not in lowered:
+            log.warning("drop %s: unverified cross-market superlative", mid)
+            continue
+        out[mid] = {"text": text, "tone": tone if tone in TONE_ENUM else tone_for(m)}
+    return out
+
+
+REWRITE_PROMPT = (
+    "Rewrite each market's paragraph so that it contains NO numerals other than the YES "
+    "probability (one decimal) and, if present, a single volume or depth figure copied exactly "
+    "as digits with commas. Remove every other number, ratio, multiple or derived figure. Keep "
+    "the reasoning, the settlement rule and the risk read intact. Same JSON schema, same ids."
+)
+
+
+def _repair_messages(batch: list[Market], context: dict) -> list[dict]:
+    msgs = build_messages(batch, context)
+    msgs[0] = {"role": "system", "content": SYSTEM_PROMPT + "\n\n" + REWRITE_PROMPT}
+    return msgs
+
+
+def generate_llm(
+    markets: list[Market],
+    context: dict,
+    chat_fn=None,
+    batch_size: int = LLM_BATCH,
+) -> dict[str, dict]:
+    """Ask DeepSeek for commentary in batches. Raises DeepSeekError only if nothing came back."""
+    if chat_fn is None:
+        from deepseek import chat as chat_fn  # local import: keeps offline paths import-free
+
+    headlines = context.get("headlines", [])
+    out: dict[str, dict] = {}
+    failures = 0
+    for i in range(0, len(markets), batch_size):
+        batch = markets[i:i + batch_size]
+        try:
+            raw = chat_fn(build_messages(batch, context), model=LLM_MODEL, temperature=0.35,
+                          max_tokens=1400, json_mode=True)
+            validated = validate_items(raw, batch, headlines)
+            out.update(validated)
+            missing = [m for m in batch if m.mid not in validated]
+            if missing:
+                # One repair pass: strip the offending figures instead of losing the market.
+                try:
+                    raw2 = chat_fn(_repair_messages(missing, context), model=LLM_MODEL,
+                                   temperature=0.2, max_tokens=1200, json_mode=True)
+                    out.update(validate_items(raw2, missing, headlines))
+                except Exception as exc:  # noqa: BLE001
+                    log.warning("llm repair failed: %s", exc)
+        except Exception as exc:  # noqa: BLE001 - one bad batch must not kill the run
+            failures += 1
+            log.warning("llm batch %d failed: %s", i // batch_size, exc)
+    if failures:
+        log.warning("llm: %d/%d batches failed", failures, math.ceil(len(markets) / batch_size))
+    return out
+
+
 def generate(
     workdir: Path,
     out: Path,
@@ -355,6 +632,8 @@ def generate(
     engine: str,
     catalogue: Path | None = None,
     whale: bool = True,
+    llm: bool = False,
+    chat_fn=None,
 ) -> dict:
     news = NewsFeed()
     mood, mood_title = news_mood(news)
@@ -396,6 +675,18 @@ def generate(
                 )
             )
 
+    # ---- DeepSeek pass: prose from the model, every number still from the inputs ----
+    llm_items: dict[str, dict] = {}
+    headlines = [mood_title] if mood_title else []
+    if llm and markets:
+        context = {
+            "as_of": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(now)),
+            "engine": engine,
+            "headlines": headlines,
+        }
+        llm_items = generate_llm(markets, context, chat_fn=chat_fn)
+        log.info("llm: %d/%d markets answered by %s", len(llm_items), len(markets), LLM_MODEL)
+
     items: dict[str, dict] = {}
     for m in markets:
         m.mood, m.mood_title = mood, mood_title
@@ -412,11 +703,13 @@ def generate(
         if prev and isinstance(prev.get("prob"), (int, float)):
             m.prev_prob = float(prev["prob"])
             m.prev_ts = int(prev.get("ts", now))
+        written = llm_items.get(m.mid)
         items[m.mid] = {
-            "text": render(m),
-            "tone": tone_for(m),
+            "text": written["text"] if written else render(m),
+            "tone": written["tone"] if written else tone_for(m),
             "ts": int(time.time() * 1000),
             "basis": basis_for(m),
+            "source": "deepseek" if written else "computed",
         }
         history[m.mid] = {"prob": round(m.prob, 6), "ts": now}
 
@@ -427,6 +720,7 @@ def generate(
         "engine": engine,
         "source": "hermes-brain",
         "newsMood": mood,
+        "llm": {"enabled": bool(llm), "model": LLM_MODEL, "answered": len(llm_items)},
         "whale": {
             "ok": flow["ok"],
             "prints": flow["prints"],
@@ -452,6 +746,8 @@ def main() -> int:
     ap.add_argument("--engine", default=DEFAULT_ENGINE)
     ap.add_argument("--catalogue", default=None, help="path to frontend/src/data/markets.ts")
     ap.add_argument("--no-whale", action="store_true", help="skip Binance prints")
+    ap.add_argument("--llm", choices=("deepseek", "off"), default="deepseek",
+                    help="write commentary with DeepSeek (needs DEEPSEEK_API_KEY); 'off' = computed only")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args()
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
@@ -463,6 +759,7 @@ def main() -> int:
         args.engine,
         Path(args.catalogue) if args.catalogue else None,
         whale=not args.no_whale,
+        llm=args.llm == "deepseek",
     )
     print(json.dumps({"ok": True, "markets": len(payload["items"]), "out": args.out}, ensure_ascii=False))
     return 0

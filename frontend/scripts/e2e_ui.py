@@ -59,6 +59,15 @@ def main():
         ack.first.click()
         page.wait_for_timeout(500)
 
+        print("\n[1b] official channels")
+        for key, host in (("x", "x.com"), ("telegram", "t.me"), ("github", "github.com")):
+            link = page.locator(f'[data-testid="social-{key}"]').first
+            href = link.get_attribute("href") or ""
+            check(f"{key} shortcut is in the header", link.count() == 1 and host in href, href)
+        foot = page.locator('[data-testid="socials-full"]')
+        check("channel row is repeated in the footer", foot.count() == 1)
+        check("footer row carries all three links", foot.locator("a").count() == 3)
+
         print("\n[2] welcome bonus · 10,000 FAKE-USDC")
         body = page.inner_text("body")
         check("bonus modal headline", "Welcome bonus" in body)
@@ -272,11 +281,15 @@ def main():
         page.locator('[data-testid="open-partners"]').click()
         page.wait_for_timeout(700)
         drawer = page.locator("div.fixed.inset-0.z-\\[65\\]").last
-        check("partners portal opens", drawer.locator('[data-testid="partners-lp"]').count() == 1)
+        check("institutional portal opens", drawer.locator('[data-testid="partners-integrations"]').count() == 1)
         ptext = " ".join(drawer.inner_text().split())
-        check("LP programme is stated", "1.5%" in ptext and "10,000" in ptext.replace(",", ","), ptext[:120])
-        check("oracle + builder tracks are present", drawer.locator('[data-testid="partners-oracle"]').count() == 1
-              and drawer.locator('[data-testid="partners-dev"]').count() == 1)
+        check("integrations name the real stack", "Base" in ptext and "CoinGecko" in ptext and "USDC" in ptext,
+              ptext[:140])
+        check("all four strategic tracks are present",
+              all(drawer.locator(f'[data-testid="partners-{k}"]').count() == 1
+                  for k in ("mm", "oracle", "audit", "infra")))
+        check("audit truth is stated", "No third-party audit has been performed" in ptext)
+        check("no endorsement is implied", "not be read as a partnership" in ptext or "Nothing here" in ptext)
         drawer.locator('[data-testid="partners-submit"]').click()
         page.wait_for_timeout(300)
         check("empty application is refused", "Fill in name" in drawer.inner_text())

@@ -221,7 +221,7 @@ forge test                                              # 62 tests
 cd sdk && npm install && npm test && cd ..               # 70 tests
 
 # agent
-python3 -m unittest discover -s hermes -p 'test_*.py'    # 79 tests
+python3 -m unittest discover -s hermes -p 'test_*.py'    # 86 tests
 
 # cloud-sync store (optional: durable transport for the ledger)
 node server/sync-server.mjs                              # :8787

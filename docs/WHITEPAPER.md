@@ -1,209 +1,231 @@
-# Aura Protocol — Architecture, Market Model and Security Whitepaper
+<div align="center">
 
-**Version 1.2 · Base mainnet (chain 8453) · November 2026**
+# Aura Protocol
+
+**Binary prediction markets on Base — architecture, market model and security**
+
+![chain](https://img.shields.io/badge/chain-Base%208453-0052FF?style=flat-square)
+![forge](https://img.shields.io/badge/forge-62%20tests-2ea44f?style=flat-square)
+![invariants](https://img.shields.io/badge/invariants-100%2C000%20calls-2ea44f?style=flat-square)
+![slither](https://img.shields.io/badge/slither-0%20high%20%C2%B7%200%20medium-2ea44f?style=flat-square)
+![audit](https://img.shields.io/badge/audit-not%20performed-orange?style=flat-square)
+
+*Version 1.3 · November 2026 · engine `0xE6056Bc…1631C`*
+
+</div>
+
+> [!NOTE]
+> **What this document is.** The single technical reference for Aura: how a market is created, how
+> it is priced, how it settles, and what has actually been verified. Every figure below is
+> reproducible from this repository — contract source, invariant harness, raw Slither output and
+> test suite are all in-tree. Marketing claims are not part of this document.
+
+> [!WARNING]
+> **What this document is not.** It is not an audit, not investment advice, and not a promise of
+> returns. No third-party audit has been performed. Trading is real money on Base mainnet; the
+> paper mode is labelled paper wherever it appears.
 
 ---
 
-## Abstract
+## Contents
+
+```
+docs/
+└── WHITEPAPER.md
+    ├── 1  Overview .............. goals, non-goals, audience
+    ├── 2  Architecture .......... contracts, data plane, client
+    ├── 3  Market lifecycle ...... object, state machine, constraints
+    ├── 4  Pricing engine ........ CPMM maths, worked example, impact cap
+    ├── 5  Fees .................. 1.5% / 0.5%, vault, distribution
+    ├── 6  Settlement ............ oracle, dispute, refund, pause
+    ├── 7  Risk framework ........ vectors → controls, solvency
+    ├── 8  Security evidence ..... Slither, invariants, test matrix
+    ├── 9  Operations ............ addresses, runbook, centralisation
+    ├── 10 Ecosystem ............. integrations, desks, community
+    ├── 11 AI research layer ..... DeepSeek commentary, guards
+    └── A  Parameters ............ every constant in one table
+```
+
+---
+
+## 1 · Overview
 
 Aura is a binary prediction market protocol and trading terminal. Markets are drafted by an
-automated research agent from public data feeds, priced by a constant-product market maker
-(CPMM) held entirely inside one contract, and settled against a written rule with a one-hour
-dispute window. The terminal is a static client: no account, no backend session, no custody of
-user keys.
-
-The protocol is deliberately narrow. It does not do leverage, does not do scalar outcomes, does
-not hold user funds outside a position, and has no upgrade path. Every number in this document is
-reproducible from this repository: the contract source, the invariant harness, the raw Slither
-output and the test suite are all in-tree.
-
-Two claims are made and defended below: **the pricing engine is path-consistent and fee-safe**,
-and **the deployed bytecode has no High or Medium static-analysis findings and survived 100,000
-randomised invariant calls without breaking a single property**.
-
----
-
-## 1. Design goals and non-goals
+automated research agent from public data feeds, priced by a constant-product market maker held
+entirely inside one contract, and settled against a written rule with a one-hour dispute window.
+The terminal is a static client: no account, no backend session, no custody of user keys.
 
 **Goals**
 
-1. A question, a price and a settlement date that any competent third party can verify.
-2. One pricing formula shared by the quote, the paper simulator and the on-chain fill, so the
-   number a trader sees is the number a trader gets.
-3. Fee revenue accounted for at fill time, never minted, never socialised into the pool.
-4. A failure mode for every external dependency: dead feed, dead oracle, dead RPC, wrong ruling.
-5. A client that reads honestly — paper fills are labelled paper, external prints are attributed
-   to the venue that printed them.
+| # | Goal | Where it is enforced |
+| --- | --- | --- |
+| 1 | A question, price and settlement date any third party can verify | `criteria` on every market, public feeds |
+| 2 | One formula for quote, paper fill and on-chain trade | `priceYes()` mirrored in the client |
+| 3 | Fees accounted at fill time, never minted | `buyShares` / `sellShares` → `ProtocolFeeVault` |
+| 4 | A defined failure mode for every external dependency | feed skip, INVALID, dispute, refund, pause |
+| 5 | Honest client labelling | paper mode, venue attribution, no fake prints |
 
 **Non-goals (v1)**
 
-- Permissionless market creation. Creation is gated by `CREATOR_ROLE`; the brain drafts, an
-  operator signs. Opening this up requires a creation bond and a resolution-arbitration market.
-- Cross-chain settlement, leveraged positions, options.
-- Decentralised governance. Admin and treasury are an EOA today; §8.4 discloses exactly what that
-  means instead of hiding it.
+- **Permissionless creation.** Gated by `CREATOR_ROLE`: the brain drafts, an operator signs.
+  Opening it needs a creation bond and a resolution-arbitration market first.
+- **Leverage, scalar outcomes, options, cross-chain settlement.**
+- **Decentralised governance.** Admin and treasury are one EOA — disclosed in §9.4, not hidden.
 
 ---
 
-## 2. System topology
+## 2 · Architecture
 
 ```
-                      ┌──────────────────────── public data plane ────────────────────────┐
-   CoinGecko ─┐       │  Binance aggTrades · ESPN scoreboard · LoL Esports · RSS wires     │
-   (spot)     ├──────▶│  read at draft time and at render time, never persisted as truth  │
-              │       └───────────────┬──────────────────────────────────────────────────┘
-              │                       │ draft + validate
-              ▼                       ▼
-      ┌──────────────┐        ┌──────────────────┐    createMarket    ┌──────────────────────┐
-      │ live strip   │        │  Hermes agent    │──────────────────▶ │ CentralPrediction-   │
-      │ (client)     │        │  hermes/*.py     │   seedLiquidity    │ Engine (Base 8453)   │
-      └──────┬───────┘        └────────┬─────────┘                    │  CPMM + escrow       │
-             │                         │ insights.json                └───────┬──────────────┘
-             │                         ▼                                      │ 1.5% fee
-             │                 ┌──────────────┐                             ▼
-             │                 │ static host  │                    ┌──────────────────┐
-             └────────────────▶│ (Pages/CDN)  │◀───── reads ───────│ ProtocolFeeVault │
-                               └──────┬───────┘                    └──────────────────┘
-                                      │ serves bundle
-                                      ▼
-                              ┌────────────────┐   personal_sign → PBKDF2 → AES-GCM
-                              │ browser client │──────────────▶ cloud sync (self-host/Supabase/ntfy)
-                              └────────────────┘
+                    ┌──────────────────── public data plane ────────────────────┐
+ CoinGecko ─┐       │  Binance aggTrades · ESPN scoreboard · LoL Esports · RSS  │
+ (spot)     ├──────▶│  read at draft time and at render time, never "truth"      │
+            │       └──────────────┬───────────────────────────────────────────┘
+            │                      │ draft + validate
+            ▼                      ▼
+   ┌──────────────┐      ┌──────────────────┐  createMarket  ┌─────────────────────┐
+   │ live strip   │      │  Hermes agent    │───────────────▶│ CentralPrediction-  │
+   │ (client)     │      │  hermes/*.py     │  seedLiquidity │ Engine (Base 8453)  │
+   └──────┬───────┘      └────────┬─────────┘                │ CPMM + escrow       │
+          │                       │ insights.json            └──────────┬──────────┘
+          │                       ▼                                    │ 1.5% fee
+          │               ┌──────────────┐                           ▼
+          └──────────────▶│ static host  │◀─────────── reads ──┌──────────────────┐
+                          │ (Pages/CDN)  │                     │ ProtocolFeeVault │
+                          └──────┬───────┘                     └──────────────────┘
+                                 │ serves bundle
+                                 ▼
+                         ┌────────────────┐  personal_sign → PBKDF2 → AES-GCM
+                         │ browser client │────────────▶ cloud sync (self/Supabase/ntfy)
+                         └────────────────┘
 ```
 
-Contracts: `CentralPredictionEngine` (market state, CPMM, escrow, resolution), `ProtocolFeeVault`
-(fee custody and distribution), `ReferralLedger` (off-book attribution ledger, optional).
+| Contract | Responsibility |
+| --- | --- |
+| `CentralPredictionEngine` | market state, CPMM, escrow, resolution, pause |
+| `ProtocolFeeVault` | fee custody; `autoDistributeFee()` takes no parameters |
+| `ReferralLedger` | optional off-book attribution ledger |
 
-The client never trusts a server for prices: quotes are recomputed from reserves with the same
-formula as the contract, and write calls carry `minSharesOut` / `minAmountOut` guards.
+> [!IMPORTANT]
+> The client never trusts a server for prices. Quotes are recomputed from reserves with the same
+> formula as the contract, and every write carries `minSharesOut` / `minAmountOut`.
 
 ---
 
-## 3. Market object and lifecycle
+## 3 · Market lifecycle
 
 ```solidity
 struct Market {
-    string  question;      string  category;      // displayed and used as the settlement rule
+    string  question;      string  category;          // category doubles as settlement note
     uint256 resolutionTime; uint256 createdAt;
     address creator;
-    uint256 yesReserve;    uint256 noReserve;     // CPMM inventory (6 dp)
-    uint256 cash;                                 // market-scoped USDC book
-    uint256 owed;                                 // payouts promised, not yet redeemed (gross)
-    uint256 totalVolume;                          // cumulative traded volume (reconciliation)
-    uint8   outcome;                              // 0 NO · 1 YES · 2 INVALID
+    uint256 yesReserve;    uint256 noReserve;         // CPMM inventory (6 dp)
+    uint256 cash;                                     // market-scoped USDC book
+    uint256 owed;                                     // promised payouts, not yet redeemed
+    uint256 totalVolume;                              // cumulative volume (reconciliation)
+    uint8   outcome;                                  // 0 NO · 1 YES · 2 INVALID
     bool    resolved;      bool    exists;
-    uint64  disputeEndsAt;                        // 0 = not yet ruled
-    bool    finalized;                            // window lapsed, finalize, or emergency refund
-    uint8   disputes;                             // how many times the ruling was overridden
-    uint256 yesUserAtSettle; uint256 noUserAtSettle;  // share snapshot, for re-ruling
+    uint64  disputeEndsAt;                            // 0 = not yet ruled
+    bool    finalized;                                // window lapsed / finalize / emergency refund
+    uint8   disputes;                                 // number of overrides (audit trail)
+    uint256 yesUserAtSettle; uint256 noUserAtSettle;  // share snapshot for re-ruling
 }
 ```
 
 ```
- draft ──▶ created ──▶ seeded ──▶ trading ──▶ resolution proposed ──▶ [1h dispute] ──▶ settled
-                                     │                                   │
-                                     │ (global pause() freezes fills and redeems)
-                                     └──▶ refundable (resolutionTime + 7d, bypasses pause)
+draft ──▶ created ──▶ seeded ──▶ trading ──▶ proposed ──▶ [1h dispute] ──▶ settled
+                                    │                          │
+                                    │  global pause()          │
+                                    ▼                          ▼
+                              fills+redeems frozen      ruling becomes final
+                                    │
+                                    └──▶ refundable after resolutionTime + 7d
 ```
 
-| Phase | Constraint enforced on-chain |
+| Phase | On-chain constraint |
 | --- | --- |
 | create | `1h ≤ resolutionTime − now ≤ 365d`; question and category non-empty; `CREATOR_ROLE` |
-| seed | `amount ≥ MIN_SEED = 10 USDC`, added to **both** reserves, so the book opens at 50/50 with real depth |
-| trade | `5 USDC ≤ amountIn ≤ 10,000 USDC`; notional ≤ 5% of pool depth; `paused == false`; `now < resolutionTime` |
-| propose | `ORACLE_ROLE` only; sets `disputeEndsAt = now + 1h`; increments `disputes` on every override |
-| dispute | redeems frozen during the window; admin may re-rule; `owed` is recomputed from the share snapshot |
-| settle | after the window the ruling is final with no further transaction; `INVALID` refunds both sides fee-free |
-| refund | if unresolved at `resolutionTime + 7d`, `emergencyRefund` pays both sides and every read path bypasses pause |
-
-The 7-day refund delay is a deliberate trade: it gives the oracle time to rule on a delayed event,
-and it caps how long a position can be stuck if the oracle never acts.
+| seed | `amount ≥ 10 USDC`, added to **both** reserves — the book opens 50/50 with real depth |
+| trade | `5 ≤ amountIn ≤ 10,000 USDC`; notional ≤ 5% of depth; not paused; `now < resolutionTime` |
+| propose | `ORACLE_ROLE` only; sets `disputeEndsAt = now + 1h`; `disputes++` on each override |
+| dispute | redeems frozen; admin may re-rule; `owed` recomputed from the share snapshot |
+| settle | ruling final with no further transaction; `INVALID` refunds both sides fee-free |
+| refund | unresolved at `resolutionTime + 7d` → `emergencyRefund`, both sides made whole |
 
 ---
 
-## 4. Pricing engine
+## 4 · Pricing engine
 
 ### 4.1 State and price
 
-A market holds two reserves: `y` (YES-side) and `n` (NO-side), denominated in collateral units
-(USDC, 6 dp). The curve is the constant product
-
-```
-k = y · n            (invariant, non-decreasing across trades)
-p_yes = n / (y + n)  (1e18 fixed point, priceYes())
-p_no  = y / (y + n)
+```text
+k      = y · n                 invariant, non-decreasing across trades
+p_yes  = n / (y + n)           1e18 fixed point, priceYes()
+p_no   = y / (y + n)           p_yes + p_no = 1 by construction
 ```
 
-`p_yes + p_no = 1` by construction. A market seeded at 40% holds `y = 30,000`, `n = 20,000`, i.e.
-`k = 6·10⁸`.
+A market at 40% holds `y = 30,000`, `n = 20,000`, so `k = 6·10⁸`.
 
 ### 4.2 Buying
 
-A YES buy of gross `G` charges `fee = ceil(G · 150 / 10_000)` and mints `net = G − fee` complete
-pairs (one YES + one NO) into the pool. The pool then releases YES shares from reserve:
-
-```
-fee     = ceil(G · 1.5%)
-net     = G − fee
-n'      = n + net
-y'      = ceil( y · n / n' )        // rounded up: the pool never gives away a wei
-shares  = net + (y − y')            // pairs minted + reserve released
+```text
+fee    = ceil(G · 1.5%)              charged on gross, forwarded to the vault
+net    = G − fee                     complete pairs minted into the pool
+n'     = n + net
+y'     = ceil(y · n / n')            rounded up: the pool never gives away a wei
+shares = net + (y − y')              pairs minted + reserve released
 ```
 
-A NO buy is the mirror image with `y` and `n` swapped. Rounding is always against the trader
-(`mulDivUp` on the reserve side, `mulDivDown` on payouts), so no sequence of dust trades can drain
-the pool.
-
-**Worked example.** Pool `y = 30,000`, `n = 20,000` (`p_yes = 40.0%`). Buy YES with `G = 1,000`:
-
-```
-fee     = ceil(1,000 · 0.015) = 15
-net     = 985
-n'      = 20,985
-y'      = ceil(30,000 · 20,000 / 20,985) = 28,592
-shares  = 985 + (30,000 − 28,592) = 2,393 YES
-p_yes'  = 20,985 / (28,592 + 20,985) = 42.33%
-```
-
-The trader paid 1,000 for 2,393 shares — an average of 0.4179 against a 0.4000 open, i.e. the fill
-crossed 2.33 points of impact and paid 1.5% of fee. Selling the same size back immediately returns
-less than 1,000: curve plus fee is a strict round-trip loss for the taker, which is the property
-that keeps the pool solvent without an external maker.
+> [!TIP]
+> **Worked example** — pool `y = 30,000`, `n = 20,000` (`p_yes = 40.0%`), buy YES with `G = 1,000`:
+>
+> ```text
+> fee    = 15          net = 985
+> n'     = 20,985      y'  = ceil(30,000 · 20,000 / 20,985) = 28,592
+> shares = 985 + (30,000 − 28,592) = 2,393 YES
+> p_yes' = 20,985 / (28,592 + 20,985) = 42.33%
+> ```
+>
+> The trader paid 1,000 for 2,393 shares — average 0.4179 against a 0.4000 open: 2.33 points of
+> impact plus the 1.5% fee. Selling the same size back immediately returns less than 1,000.
 
 ### 4.3 Selling
 
-```
-gross   = midpoint of pre- and post-trade price × sharesIn     // no free lunch on the way out
-fee     = ceil(gross · 1.5%)
-payout  = gross − fee
+```text
+gross  = midpoint(pre, post) × sharesIn     // no free lunch on the way out
+fee    = ceil(gross · 1.5%)
+payout = gross − fee
 ```
 
-The midpoint convention (rather than the post-trade price) removes the "sell into your own
-impact" arbitrage that naive CPMM implementations leak.
+The midpoint convention removes the "sell into your own impact" arbitrage that naive CPMM
+implementations leak.
 
 ### 4.4 Impact cap
 
+```text
+amountIn ≤ (y + n) · 5%     // buys
+sharesIn ≤ (y + n) · 5%     // sells, valued at spot
 ```
-amountIn  ≤ (y + n) · 5%      // buys
-sharesIn  ≤ (y + n) · 5%      // sells, valued at spot
+
+> [!CAUTION]
+> This is a **notional cap per fill**, not a promise that price impact stays under five points.
+> It bounds single-transaction damage on a shallow book — it does not protect a trader from a 30%
+> move executed across ten transactions.
+
+---
+
+## 5 · Fees
+
+```text
+trade  (1.5%) ──▶ ProtocolFeeVault ──▶ autoDistributeFee() ──▶ treasury
+redeem (0.5%) ──┘        anyone may call · no recipient parameter
 ```
 
-This is a **notional cap per fill**, not a promise that price impact stays under 5 points. It
-bounds single-transaction damage on a shallow book — the failure this protocol can actually
-control. It does not protect a trader from a 30% move executed across ten transactions.
-
-### 4.5 Settlement
-
-Winning shares redeem at `1.0 − 0.5%`. Under `INVALID` both sides redeem at par with **no fee**.
-The settlement fee is charged at redeem time, not at resolution, so unclaimed positions never
-accrue phantom liabilities in the fee accounting.
-
-### 4.6 Fee flow
-
-```
-trade (1.5%)  ──▶ ProtocolFeeVault ──▶ autoDistributeFee() ──▶ treasury
-redeem (0.5%) ──┘        (anyone may call; no recipient parameter)
-```
+| Fee | Rate | Charged | Destination |
+| --- | --- | --- | --- |
+| Trading | 1.5% of notional | at fill | `ProtocolFeeVault` |
+| Settlement | 0.5% of payout | at redeem | `ProtocolFeeVault` |
+| `INVALID` refund | 0% | at redeem | — |
 
 The vault holds no logic beyond custody: `autoDistributeFee()` takes no arguments, so a caller
 cannot redirect funds; `renounceOwnership()` is disabled so `setTreasury` can never be bricked by
@@ -211,111 +233,104 @@ accident. `pendingFees()` exposes the balance for monitoring.
 
 ---
 
-## 5. Settlement and oracle model
+## 6 · Settlement, dispute and pause
 
-- `proposeResolution(marketId, outcome)` is `ORACLE_ROLE`. It stamps `disputeEndsAt = now + 1h`.
-- During the window, redeems are frozen. The admin may submit a corrected ruling; the last ruling
-  before the window closes is the one that pays.
-- When the window lapses, the ruling is final with no further transaction. There is no path for
-  the admin to move collateral to itself: `redeem` pays share holders pro rata, and `sweep` only
-  touches collateral that is not owed to a winning share.
-- Settlement sources, per vertical: CoinGecko daily close (crypto), official final score (sport),
-  official `gameWins` (esports), named regulator / issuer publication (news, tech).
-- News markets are **never auto-settled**. The brain may draft them; a human signs the ruling.
+- `proposeResolution(marketId, outcome)` is `ORACLE_ROLE`; it stamps `disputeEndsAt = now + 1h`.
+- During the window redeems are frozen and the admin may re-rule; the last ruling before the window
+  closes is the one that pays.
+- After the window the ruling is final with no further transaction. The admin cannot pay itself:
+  `redeem` pays share holders pro rata and `sweep` only touches collateral not owed to winners.
+- Sources by vertical: CoinGecko daily close (crypto), official final score (sport), official
+  `gameWins` (esports), named regulator / issuer publication (news, tech).
+- **News is never auto-settled.** The brain may draft it; a human signs the ruling.
 
-**Circuit breakers, in plain terms.** `pause()` is a single global switch (`onlyAdmin`): it stops
-new fills and also stops redemptions, because during an incident an operator should be able to
-freeze the book before paying anyone. What it cannot do is trap principal forever — `redeemGuard`
-lets any market past `resolutionTime + 7d` bypass the pause entirely, so the worst case is a delay,
-never a loss of access. The ruling path has its own brake: during the one-hour dispute window
-redemptions are frozen so a wrong ruling can still be corrected, and the freeze lifts by itself
-when the window closes. If nobody rules at all, the 7-day refund makes both sides whole. None of
-these paths can move a user's position to the operator.
+> [!WARNING]
+> **Oracle risk is the dominant trust assumption of v1.** A wrong or captured oracle can mispay a
+> market. Mitigations: 1-hour dispute window, public criteria, `INVALID` escape hatch, 7-day
+> refund. Not mitigated: no on-chain escalation market yet — which is why resolution stays gated.
 
-**Oracle risk is the dominant trust assumption of v1.** A wrong or captured oracle can mispay a
-market. Mitigations in place: one-hour dispute window, public criteria on every market, INVALID as
-an escape hatch, and a 7-day refund if nobody rules at all. Mitigation not in place: an on-chain
-escalation market. It is on the roadmap, and it is why resolution stays gated.
+**Circuit breakers in plain terms.** `pause()` is one global switch (`onlyAdmin`): it stops new
+fills and redemptions, because during an incident an operator should be able to freeze the book
+before paying anyone. It cannot trap principal forever — `redeemGuard` lets any market past
+`resolutionTime + 7d` bypass the pause. Worst case is a delay, never loss of access.
 
 ---
 
-## 6. Economic risk framework
+## 7 · Risk framework
 
 | Risk | Vector | Control |
 | --- | --- | --- |
-| Pool drain by dust | rounding in the trader's favour, repeated | reserve maths rounds against the trader; `k` never decreases |
-| Single-fill impact | shallow book, one large order | notional ≤ 5% of depth; `MIN_SEED = 10 USDC` per side; `MAX_BET = 10,000 USDC` |
-| Stale quote | price moves between quote and inclusion | mandatory `minSharesOut` / `minAmountOut`; client re-quotes on receipt |
-| Round-trip farming | buy and sell in one block | sells price at the midpoint; fee charged on both legs |
-| Create-then-refund | instant market, immediate refund | `MIN_TRADING_WINDOW = 1h`; refund only after `resolutionTime + 7d` |
-| Reentrancy | ERC-20 hooks on transfer | CEI ordering + `nonReentrant`; state written before transfers |
-| Oracle capture | wrong ruling | 1h dispute window, admin re-rule, INVALID, public criteria |
-| Admin key loss | one EOA holds admin and treasury | disclosed in §8.4; Safe migration before volume |
+| Pool drain by dust | rounding in the trader's favour, repeated | all reserve maths rounds against the trader; `k` never decreases |
+| Single-fill impact | shallow book, one large order | notional ≤ 5% of depth; seed floor 10 USDC; max bet 10,000 USDC |
+| Stale quote | price moves between quote and inclusion | mandatory `minSharesOut` / `minAmountOut`; client re-quotes |
+| Round-trip farming | buy and sell in one block | sells price at the midpoint; fee on both legs |
+| Create-then-refund | instant market, immediate refund | 1h minimum window; refund only after `resolutionTime + 7d` |
+| Reentrancy | ERC-20 hooks on transfer | CEI ordering + `nonReentrant` |
+| Oracle capture | wrong ruling | dispute window, admin re-rule, `INVALID`, public criteria |
+| Admin key loss | one EOA holds admin and treasury | disclosed in §9.4; Safe migration before volume |
 | Fee misdirection | caller-chosen recipient | `autoDistributeFee()` takes no parameters |
 
 **Solvency invariant.** For every market, collateral held equals
-`Σ unredeemed winning shares + seed remainder + undistributed fees`, and the pool's `k` is
-non-decreasing. Both are exercised by the harness in §7.2.
+`Σ unredeemed winning shares + seed remainder + undistributed fees`, and `k` is non-decreasing.
+Both are exercised by the harness in §8.2.
 
 ---
 
-## 7. Security evidence
+## 8 · Security evidence
 
-### 7.1 Static analysis
+### 8.1 Static analysis
 
-Slither 0.10.0 against `src/` with the Foundry build:
-
-| Severity | Count | Notes |
+| Severity | Count | Detail |
 | --- | --- | --- |
 | High | **0** | — |
 | Medium | **0** | — |
-| Low | 12 | all `block.timestamp` comparisons (deadlines, dispute window, refund delay) |
-| Informational | 7 | solc version pin, complexity, naming |
+| Low | 12 | all `block.timestamp` comparisons (deadlines, dispute, refund) |
+| Informational | 7 | solc pin, complexity, naming |
 
-Raw JSON: `docs/security/slither-report.json`. Timestamp use is intentional: every comparison is a
-deadline, none is randomness or a price input.
+Raw output: `docs/security/slither-report.json`. Timestamp use is intentional — every comparison is
+a deadline, none is randomness or a price input.
 
-### 7.2 Invariant campaign
+### 8.2 Invariant campaign
 
-Foundry handler suite `test/CentralEngineInvariant.t.sol`, 1,000 runs × depth 100 = **100,000 handler
-calls**, zero breaks. The properties as named on disk:
+`test/CentralEngineInvariant.t.sol` — **1,000 runs × depth 100 = 100,000 handler calls, zero
+breaks**:
 
 | Property | Statement |
 | --- | --- |
-| `invariant_CashCoversOwed` | vault balance ≥ total unredeemed winning liability |
+| `invariant_CashCoversOwed` | balance ≥ total unredeemed winning liability |
 | `invariant_CashCoversBothSides` | balance covers both sides' claims simultaneously |
-| `invariant_NoHiddenCash` | no collateral unaccounted for between reserves, supply and fees |
-| `invariant_DisputeWindowProtectsOwed` | owed funds cannot be swept while the dispute window is open |
-| `invariant_SupplyMatchesInventory` | `yesSupply == noSupply`, and both match pool inventory |
+| `invariant_NoHiddenCash` | no collateral unaccounted between reserves, supply and fees |
+| `invariant_DisputeWindowProtectsOwed` | owed funds cannot be swept while the window is open |
+| `invariant_SupplyMatchesInventory` | `yesSupply == noSupply`, and both match inventory |
 
-### 7.3 Test matrix
+### 8.3 Test matrix
 
+```bash
+forge test                                                    # 62 passed, 0 failed
+cd sdk && npm test                                            # 70 passed, 116 assertions
+python3 -m unittest discover -s hermes -p 'test_*.py'          # 86 passed
+node server/sync-selftest.mjs                                 # 11 passed
+python3 frontend/scripts/e2e_ui.py <url>                      # 108 passed
+python3 frontend/scripts/e2e_sync.py <url>                    # 13 passed
+npx tsc --noEmit                                              # 0 errors
 ```
-forge test                                                  62 passed, 0 failed
-cd sdk && npm test                                          70 passed (116 assertions)
-python3 -m unittest discover -s hermes -p 'test_*.py'         79 passed
-node server/sync-selftest.mjs                                11 passed
-python3 frontend/scripts/e2e_ui.py <url>                    101 passed
-python3 frontend/scripts/e2e_sync.py <url>                   13 passed
-npx tsc --noEmit                                              0 errors
-```
 
-No third-party audit has been performed. Static analysis plus invariants reduce risk; they do not
-eliminate it, and this document does not claim otherwise.
+> [!IMPORTANT]
+> No third-party audit has been performed. Static analysis plus invariants reduce risk; they do not
+> eliminate it, and this document does not claim otherwise.
 
-### 7.4 Client-side safety
+### 8.4 Client-side safety
 
-- Keys never leave the wallet; the protocol has no custody of user keys.
-- Cloud sync derives its AES-256-GCM key from a `personal_sign` signature via PBKDF2-SHA256
-  (120k iterations); the relay only ever stores ciphertext.
-- Paper mode is labelled in the mode switch, the risk dialog and the trade panel. No simulated
-  fill is ever presented as settled money.
+- Keys never leave the wallet; the protocol never custodies them.
+- Cloud sync derives an AES-256-GCM key from `personal_sign` + PBKDF2-SHA256 (120k iterations);
+  the relay stores ciphertext only.
+- Paper mode is labelled in the mode switch, the risk dialog and the trade panel.
 
 ---
 
-## 8. Operations
+## 9 · Operations
 
-### 8.1 Deployment
+### 9.1 Deployment
 
 | Contract | Address |
 | --- | --- |
@@ -323,90 +338,118 @@ eliminate it, and this document does not claim otherwise.
 | `ProtocolFeeVault` | `0x29dE563f3059827D00837305FAE2Bbc87c7D9eE1` |
 | USDC (canonical, 6 dp) | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
 
-Roles: `DEFAULT_ADMIN` (pause, role grants), `CREATOR`, `ORACLE`, `FEE_MANAGER`. Pause is one
-global switch: it blocks new fills and redemptions, and only the `resolutionTime + 7d` refund path
-runs through it.
+Roles: `DEFAULT_ADMIN` (pause, role grants), `CREATOR`, `ORACLE`, `FEE_MANAGER`.
 
-### 8.2 Runbook
+### 9.2 Runbook
 
-```
-forge test                                               # contract gate
-cd frontend && npx tsc --noEmit && npm run build          # client gate
-python3 frontend/scripts/e2e_ui.py http://127.0.0.1:4173/  # UI gate
-./deploy/gh-pages.sh                                      # publish + verify 200
+```bash
+forge test                                                  # contract gate
+cd frontend && npx tsc --noEmit && npm run build             # client gate
+python3 frontend/scripts/e2e_ui.py http://127.0.0.1:4173/     # UI gate
+./deploy/gh-pages.sh                                         # publish + verify 200
 ```
 
-### 8.3 Client architecture
+### 9.3 Client
 
-Static bundle, no server session. Prices are recomputed from reserves client-side with the same
-formula as §4; five locales (EN/ZH/JA/KO/DE) are a typed message tree with per-market copy in
-`src/locales/markets.<code>.json`; state that must survive devices (positions, comments, language)
-syncs through the encrypted relay in §7.4.
+Static bundle, no server session. Prices recomputed from reserves with the §4 formula; five locales
+(EN/ZH/JA/KO/DE) as a typed message tree plus per-market copy in `src/locales/markets.<code>.json`;
+portfolio, debate takes and language sync through the encrypted relay.
 
-### 8.4 Known centralisation
+### 9.4 Known centralisation
 
-Admin and treasury are a single EOA. This is disclosed because it is true: an admin key compromise
-can pause trading and re-rule inside a dispute window. It cannot mint, cannot move user positions,
-and cannot pay itself out of a settled market. Migration to a 2-of-3 Safe is the first operational
-item before real volume.
+Admin and treasury are a single EOA. An admin key compromise can pause trading and re-rule inside a
+dispute window. It cannot mint, cannot move user positions, and cannot pay itself out of a settled
+market. Migration to a 2-of-3 Safe is the first operational item before real volume.
 
 ---
 
-## 9. Limitations
+## 10 · Ecosystem
 
-1. **Oracle trust** — the main assumption. Mitigated, not solved.
-2. **Liquidity depth** — early markets are seeded, not market-made; large orders hit the impact cap
-   quickly. The cap protects the pool, not the trader.
-3. **No permissionless creation** — supply is operator-gated: high quality, low breadth.
-4. **Paper mode is not money** — the simulator uses the real curve with FAKE-USDC, and says so.
-5. **No third-party audit** — stated plainly, everywhere it matters.
+### 10.1 Integrations in production
 
----
+| Name | Role | Where it shows up |
+| --- | --- | --- |
+| Base (8453) | settlement network | every write |
+| USDC | collateral, 6 dp | balances, fills, payouts |
+| CoinGecko | crypto settlement prices, live spot | market rules, live strip |
+| Binance | public aggregated prints | order-flow and whale tapes |
+| ESPN · LoL Esports | official scoreboards / series results | sport and esports rules |
+| Wikimedia Commons | photography, credited per file | market artwork |
 
-## 10. Ecosystem, partners and community
+> [!NOTE]
+> A name appears here only because an integration exists in this repository. There is no logo wall
+> and no implied endorsement; the institutional portal states the same rule to visitors.
 
-### 10.1 Liquidity providers
+### 10.2 Institutional tracks
 
-Two arrangements, both on the same CPMM curve as public flow — no privileged price, no hidden
-inventory, no separate fee schedule:
-
-| Track | Who funds | Fee treatment | Reporting |
-| --- | --- | --- | --- |
-| Direct | LP seeds a named market itself | LP keeps 100% of the 1.5% trade fee that market produces | per-market volume, fee accrual, redemption exposure, daily |
-| Curated | we design the market, the LP funds it | split agreed in a signed term sheet before launch | same, plus launch notes |
-
-Minimum seed is 10,000 USDC per market; settlement is USDC on Base. Because the seed sits inside
-the same reserves as public flow, an LP cannot front-run its own book: its fills are priced by the
-same invariant as everyone else's, and its capital is redeemable only through the normal
-resolution path.
-
-### 10.2 Data and oracle partners
-
-A partner qualifies if it publishes a number we can settle against — a closing price, an official
-final score, a regulatory decision. In exchange: named attribution on the market card and in the
-resolution rule, machine-readable criteria reviewed jointly, and a human signature on every
-resolution. News markets never auto-settle, whatever the feed says.
+| Track | Offer | Terms |
+| --- | --- | --- |
+| Market maker (direct) | depth in a named market | keeps 100% of the 1.5% fee it generates |
+| Market maker (curated) | we design, you fund | split in a signed term sheet before launch |
+| Oracle / data | settlement feed + named attribution | machine-readable criteria reviewed jointly |
+| Audit / security | review engagement | scope, timeline, disclosure agreed in writing |
+| Infrastructure | RPC, indexing, monitoring | operational SLA agreed per integration |
 
 ### 10.3 Integrators
 
 `@prediction/sdk` (class `CentralPredictionSDK`) quotes, trades and reads positions against the
-deployed engine with no API key and no rate-limit tier — it is plain JSON-RPC against Base 8453.
-The client in this repository is one consumer of that SDK, not a privileged one.
+deployed engine: plain JSON-RPC on Base 8453, no API key, no rate-limit tier.
 
 ### 10.4 Community layer
 
-Every market carries a debate wall: a stance (YES / NO / neutral), a written take, and one upvote
-per browser per take. Takes ride the same encrypted payload as the portfolio, so a wall follows the
-wallet across devices; likes merge monotonically (the higher count wins) and seeded official
-prompts cannot be deleted. The wall is a discussion surface, not a signal product: nothing on it
-changes how a market settles.
+Every market carries a debate wall: a stance (YES / NO / neutral), a written take, one upvote per
+browser per take. Takes ride the same encrypted payload as the portfolio; likes merge monotonically
+and seeded official prompts cannot be deleted. It is a discussion surface, not a signal product.
 
 ---
 
-## 11. References
+## 11 · AI research layer
 
-- Contract source: `src/CentralPredictionEngine.sol`, `src/ProtocolFeeVault.sol`
-- Invariant suite: `test/CentralEngineInvariant.t.sol`
-- Slither output: `docs/security/slither-report.json`
-- SDK: `sdk/` · agent: `hermes/` · client: `frontend/`
-- Deployed terminal: <https://peacecoin10.github.io/Aura-AI-Prediction-Market/>
+Market commentary is written by a hosted language model (DeepSeek), not by templates:
+
+```text
+inputs  ──▶ question · live probability · delta since last snapshot · depth · volume
+            whale prints (≥ $25k, Binance spot) · headline tone · hours to settlement
+model   ──▶ one paragraph per market, 60–110 words, dry research-desk register
+guards  ──▶ ① the quoted probability must equal the live one
+            ② every numeral must exist in the input (2% tolerance for rounding)
+            ③ whale claims must match the prints field (none ⇒ "no large-trader read")
+            ④ no cross-market superlatives, no refusals, no invented flow
+            ⑤ failing any guard ⇒ the market falls back to the deterministic engine
+```
+
+> [!NOTE]
+> The model writes prose; it never writes prices. If the API is unreachable, or a paragraph fails a
+> guard, that market keeps computed commentary marked `source: computed` — no silent substitution,
+> no fabricated numbers.
+
+---
+
+## Appendix A · Parameters
+
+| Constant | Value | Meaning |
+| --- | --- | --- |
+| `TRADE_FEE_BPS` | 150 | 1.5% on notional, per fill |
+| `SETTLE_FEE_BPS` | 50 | 0.5% on winning redemption |
+| `MAX_IMPACT_BPS_CAP` | 500 | per-fill notional cap = 5% of depth |
+| `MIN_BET` / `MAX_BET` | 5 / 10,000 USDC | trade bounds |
+| `MIN_SEED` | 10 USDC | seed floor (added to both reserves) |
+| `MIN_TRADING_WINDOW` | 1 hour | blocks create-then-refund |
+| `MAX_TRADING_WINDOW` | 365 days | longest market lifetime |
+| `DISPUTE_WINDOW` | 1 hour | ruling can be corrected |
+| `REFUND_DELAY` | 7 days | emergency refund after resolution time |
+| `OUTCOME_*` | 0 NO · 1 YES · 2 INVALID | on-chain encoding |
+
+## Appendix B · Repository
+
+```text
+src/            engine, fee vault, referral ledger, libraries
+test/           unit, fuzz and the invariant harness
+sdk/            @prediction/sdk — typed JSON-RPC client
+hermes/         market drafter, feeds, insight engine (DeepSeek)
+frontend/       Vite + React terminal, five locales, debate wall
+docs/           this whitepaper + raw Slither output
+```
+
+- Live terminal — <https://peacecoin10.github.io/Aura-AI-Prediction-Market/>
+- Source — <https://github.com/PeaceCoin10/Aura-AI-Prediction-Market>

@@ -11,6 +11,7 @@ import { DemoDetail, DemoMarketCard } from "./components/DemoMarketCard";
 import { Empty, Spinner } from "./components/ui";
 import { DocsPortal, RiskModal, SecurityDrawer } from "./components/Overlays";
 import { PartnersDrawer } from "./components/PartnersDrawer";
+import { SocialLinks } from "./components/SocialLinks";
 import { AffiliateDrawer } from "./components/AffiliateDrawer";
 import { bindBackButton, initTelegram, marketFromLaunch } from "./lib/telegram";
 import { StatusBar } from "./components/StatusBar";
@@ -529,6 +530,9 @@ function Dashboard() {
       <footer className="mt-6 border-t border-white/[0.06] px-4 py-5 text-[11px] text-slate-600">
         <div className="mx-auto mb-3 max-w-[1240px]">
           <StatusBar onOpenSecurity={() => setSecOpen(true)} onOpenDocs={() => setDocsOpen(true)} />
+        </div>
+        <div className="mb-3 flex justify-center">
+          <SocialLinks />
         </div>
         <div className="text-center">
           {t.shell.footer.engine}{" "}

@@ -8,6 +8,7 @@ import { useI18n, useT } from "../lib/i18n";
 import { LogoLockup, LogoMark } from "./BrandLogo";
 import { ModeSwitch, SoundToggle } from "./ModeSwitch";
 import { LocaleSwitcher } from "./LocaleSwitcher";
+import { SocialLinks } from "./SocialLinks";
 import { SyncBadge } from "./SyncBadge";
 
 const SHORT_ENGINE = shortAddr(ENGINE_ADDRESS);
@@ -111,6 +112,9 @@ export function Header({
           />
           <SoundToggle />
           <SyncBadge />
+          <div className="hidden sm:block">
+            <SocialLinks variant="compact" />
+          </div>
           <LocaleSwitcher />
 
           <button
