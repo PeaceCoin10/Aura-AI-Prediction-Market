@@ -13,6 +13,7 @@ Chinese engineering notes are archived outside this repository and are no longer
 | [CENTRAL-SDK-GUIDE.md](CENTRAL-SDK-GUIDE.md) | TypeScript SDK: transport, reads, write preflights, error codes, event decoding |
 | [MAINNET-DEPLOYED.md](MAINNET-DEPLOYED.md) | Live Base mainnet addresses and parameters, read back from chain |
 | [SECURITY.md](SECURITY.md) | Threat model, admin powers, dispute mechanics, Slither and invariant results |
+| [cloud-sync.md](cloud-sync.md) | Wallet-bound encrypted state: seal → transport → merge, Supabase schema, threat model |
 | [security/slither-report.json](security/slither-report.json) | Raw static-analysis output |
 
 Repo-level policies: [`../SECURITY.md`](../SECURITY.md) (disclosure), [`../CONTRIBUTING.md`](../CONTRIBUTING.md).
@@ -30,12 +31,18 @@ deliberately **not** part of the static deployment.
 
 ## Localisation
 
-The dApp ships English and is built to add locales without touching components:
+Five locales ship today — English (reference), Simplified Chinese, Japanese, Korean and German:
 
 ```
 frontend/src/lib/i18n.tsx          typed message tree, registerLocale, {{var}} interpolation
-frontend/src/locales/en/           one file per surface: shell, hall, trade, paper, social, security…
+frontend/src/locales/en/           one file per surface: shell, hall, trade, paper, social, terminal…
+frontend/src/locales/{zh,ja,ko,de}/index.ts   full trees, `satisfies Messages`
 ```
 
-Add `frontend/src/locales/<code>/index.ts`, satisfy the `Messages` type, call `registerLocale()` once,
-and the header switcher turns from a static `EN` chip into a `<select>`.
+A locale is a plain object that must satisfy `Messages` (a deeply widened copy of the English tree), so
+a missing key is a `tsc` error rather than a runtime `undefined`. The header switcher is a frosted
+dropdown; switching is in-place (no reload), writes `<html lang>`, persists to `localStorage` and is
+mirrored to the cloud. Initial resolution order: `?lang=` → saved → `navigator.languages` → English.
+
+Add `frontend/src/locales/<code>/index.ts` and one `registerLocale({ code, label, native, htmlLang,
+messages })` call — nothing else changes.

@@ -61,24 +61,34 @@ cast send <mockUsdc> "approve(address,uint256)" <engine> 1000000000000 \
 On chain **8453** the deploy script takes the production safety path (`REQUIRE_SAFE_CONTRACT=1`, admin and
 treasury must be contracts). Use `REQUIRE_SAFE_CONTRACT=0` only on a local fork.
 
-## 4. The five suites
+## 4. The suites
 
 ```bash
-forge test                                                    # 46 · contracts
+forge test                                                    # 62 · contracts
 cd sdk && npm test                                            # 70 · SDK, fully offline
-python3 -m unittest discover -s hermes -p 'test_*.py'          # 49 · agent
+python3 -m unittest discover -s hermes -p 'test_*.py'          # 64 · agent
+
+node server/sync-server.mjs &                                 # cloud-sync store
+node server/sync-selftest.mjs                                 # 11 · seal → round-trip → wrong key
 
 cd frontend
 npx tsc --noEmit                                              # types
 npm run build                                                 # production bundle
-python3 scripts/e2e_ui.py http://127.0.0.1:4173/              # 63 · UI, headless
+python3 scripts/e2e_ui.py http://127.0.0.1:4173/              # 91 · UI, headless
+python3 scripts/e2e_sync.py http://127.0.0.1:4188/            # 13 · two devices, one ledger
+SYNC_MODE=relay python3 scripts/e2e_sync.py https://<host>/   # same, over the public relay
 python3 scripts/e2e_local.py http://127.0.0.1:4181/ http://127.0.0.1:8545   # 12 · real chain
 ```
 
-`e2e_ui.py` asserts a first-run path (risk modal → 10k bonus → hall), the 12 featured markets, the 7-second
-tick, a paper fill, posting a take, both overlays, the Real/Paper switch, brand assets and a 390×844 mobile
-layout with no horizontal overflow. `e2e_local.py` injects an EIP-1193 wallet, buys on-chain and checks the
-position and the decoded event feed.
+`e2e_ui.py` asserts the first-run path (risk modal → 10k bonus → hall), 250+ featured markets, the 7-second
+tick, the headline carousel and whale tape, all five locales (including a CJK render and the `<html lang>`
+switch), a paper fill with the live depth curve, posting a take, both overlays, the Real/Paper switch, brand
+assets and a 390×844 mobile layout with no horizontal overflow.
+
+`e2e_sync.py` runs two isolated browser profiles: device A trades and pushes, device B starts empty and must
+adopt the same balance and position. It also asserts the record on the wire contains no plaintext balance and
+a valid AES-GCM `iv`/`ct`. `e2e_local.py` injects an EIP-1193 wallet, buys on-chain and checks the position
+and the decoded event feed.
 
 ## 5. Regenerating assets and screenshots
 
@@ -91,13 +101,19 @@ Both use Playwright, so the same chromium install covers tests and assets.
 
 ## 6. Adding a locale
 
+Five locales ship: English (reference), Simplified Chinese, Japanese, Korean, German.
+
 ```
-frontend/src/locales/en/        one namespace file per surface
-frontend/src/lib/i18n.tsx       typed tree, registerLocale, {{var}} interpolation
+frontend/src/locales/en/                    one namespace file per surface
+frontend/src/locales/{zh,ja,ko,de}/index.ts full trees, `satisfies Messages`
+frontend/src/lib/i18n.tsx                   typed tree, REGISTRY, registerLocale, {{var}} interpolation
+frontend/src/components/LocaleSwitcher.tsx  frosted dropdown, keyboard navigable
 ```
 
-Create `frontend/src/locales/<code>/index.ts` satisfying the `Messages` type and call `registerLocale()`
-once. The header chip becomes a `<select>` automatically; no component changes.
+Create `frontend/src/locales/<code>/index.ts` satisfying the `Messages` type and call `registerLocale({
+code, label, native, htmlLang, messages })` once. The switcher picks it up automatically — no component
+changes. Switching is in-place (no reload), writes `<html lang>`, persists to `localStorage` and is
+mirrored to the cloud.
 
 ## 7. Conventions that are enforced, not suggested
 
