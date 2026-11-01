@@ -1,11 +1,24 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { addComment, ensureSeeded, listComments, removeComment, stanceTally, subscribe, type Comment, type Stance } from "../lib/comments";
+import {
+  addComment,
+  ensureSeeded,
+  likedIds,
+  listComments,
+  removeComment,
+  stanceTally,
+  subscribe,
+  toggleLike,
+  type Comment,
+  type Stance,
+} from "../lib/comments";
 
 export interface CommentsState {
   comments: Comment[];
   tally: { yes: number; no: number; neutral: number };
   post: (input: { author: string; stance: Stance; text: string }) => void;
   remove: (id: string) => void;
+  like: (id: string) => void;
+  liked: Set<string>;
 }
 
 /**
@@ -34,6 +47,8 @@ export function useComments(marketId: string, seedIds: string[] = []): CommentsS
   );
 
   const remove = useCallback((id: string) => removeComment(marketId, id), [marketId]);
+  const like = useCallback((id: string) => void toggleLike(marketId, id), [marketId]);
+  const liked = useMemo(() => likedIds(), [version]);
 
-  return { comments, tally, post, remove };
+  return { comments, tally, post, remove, like, liked };
 }

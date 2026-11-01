@@ -221,7 +221,7 @@ forge test                                              # 62 tests
 cd sdk && npm install && npm test && cd ..               # 70 tests
 
 # agent
-python3 -m unittest discover -s hermes -p 'test_*.py'    # 64 tests
+python3 -m unittest discover -s hermes -p 'test_*.py'    # 79 tests
 
 # cloud-sync store (optional: durable transport for the ledger)
 node server/sync-server.mjs                              # :8787
@@ -459,7 +459,7 @@ Without credentials it prints `[dry]` and never claims a tweet went out.
 | Layer | Result |
 | --- | --- |
 | Static analysis (Slither 0.10.0) | **0 High, 0 Medium**, 12 Low (`block.timestamp`, intended), 7 Informational |
-| Invariant testing | 512 runs × depth 200 = **102,400 handler calls, 0 invariant breaks** |
+| Invariant testing | 1,000 runs × depth 100 = **100,000 handler calls, 0 invariant breaks** |
 | Unit + integration | 62 forge tests (46 engine + 16 referral ledger) |
 | Settlement | 3×30s sampling for price markets; official results only for sports/esports; news never auto-resolves |
 | Dispute | 1-hour window, withdrawals locked, Safe multisig can override resolution |

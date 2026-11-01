@@ -31,6 +31,8 @@ interface ServerFile {
 }
 
 let cache: ServerFile | null = null;
+/** Bumped whenever a fetch lands, so every mounted card can re-read brainInsight(). */
+export const insightListeners = new Set<() => void>();
 let fetchedAt = 0;
 let inflight: Promise<ServerFile | null> | null = null;
 
@@ -44,6 +46,7 @@ async function fetchServer(): Promise<ServerFile | null> {
       const json = (await res.json()) as ServerFile;
       cache = json;
       fetchedAt = Date.now();
+      insightListeners.forEach((fn) => fn());
       return json;
     } catch {
       fetchedAt = Date.now();

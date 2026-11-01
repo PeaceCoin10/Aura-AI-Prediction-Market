@@ -6,7 +6,7 @@ import { useMarketText } from "../lib/marketText";
 import type { LiveMarket } from "../lib/liveCrypto";
 import { liveTitle } from "./LiveMarkets";
 import { listComments, subscribe, type Comment } from "../lib/comments";
-import { CommentsWall } from "./CommentsWall";
+import { DebateWall } from "./DebateWall";
 import { Countdown, ProbabilityBar } from "./ui";
 import { ShareButton } from "./ShareButton";
 import { AIInsights } from "./AIInsights";
@@ -345,7 +345,7 @@ export function DemoDetail({ market, onClose }: { market: DemoMarket; onClose: (
         </div>
 
         <div className="mt-4">
-          <CommentsWall marketId={market.id} compact />
+          <DebateWall marketId={market.id} compact />
         </div>
       </div>
     </div>

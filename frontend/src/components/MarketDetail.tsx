@@ -3,7 +3,7 @@ import { EXPLORER } from "../lib/config";
 import { shortId, shortTime, usdc, pct, toProb } from "../lib/format";
 import { DEMO_MARKETS } from "../lib/demo";
 import { TradePanel } from "./TradePanel";
-import { CommentsWall } from "./CommentsWall";
+import { DebateWall } from "./DebateWall";
 import { Countdown } from "./ui";
 import { AIInsights } from "./AIInsights";
 import { PaperPanel } from "./PaperPanel";
@@ -155,7 +155,7 @@ export function MarketDetail({
         </div>
 
         <div className="mt-4">
-          <CommentsWall marketId={market.marketId} seedIds={DEMO_MARKETS.map((d) => d.id)} />
+          <DebateWall marketId={market.marketId} seedIds={DEMO_MARKETS.map((d) => d.id)} />
         </div>
       </div>
     </div>

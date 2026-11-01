@@ -10,6 +10,7 @@ import { CategoryNav } from "./components/CategoryNav";
 import { DemoDetail, DemoMarketCard } from "./components/DemoMarketCard";
 import { Empty, Spinner } from "./components/ui";
 import { DocsPortal, RiskModal, SecurityDrawer } from "./components/Overlays";
+import { PartnersDrawer } from "./components/PartnersDrawer";
 import { AffiliateDrawer } from "./components/AffiliateDrawer";
 import { bindBackButton, initTelegram, marketFromLaunch } from "./lib/telegram";
 import { StatusBar } from "./components/StatusBar";
@@ -263,6 +264,7 @@ function Dashboard() {
   const showEmptyChain = !loading && markets.length === 0;
   const [secOpen, setSecOpen] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
+  const [partnersOpen, setPartnersOpen] = useState(false);
   const { mode, paper, claim, reset } = useMode();
 
   // Hall liveness: featured markets tick every 7s, seeded debate takes land in local storage.
@@ -335,6 +337,7 @@ function Dashboard() {
         onConnectClick={() => setConnectOpen(true)}
         onOpenSecurity={() => setSecOpen(true)}
         onOpenDocs={() => setDocsOpen(true)}
+        onOpenPartners={() => setPartnersOpen(true)}
       />
 
       {paused && (
@@ -553,6 +556,7 @@ function Dashboard() {
       {connectOpen && <ConnectModal onClose={() => setConnectOpen(false)} />}
       <SecurityDrawer open={secOpen} onClose={() => setSecOpen(false)} />
       <DocsPortal open={docsOpen} onClose={() => setDocsOpen(false)} />
+      <PartnersDrawer open={partnersOpen} onClose={() => setPartnersOpen(false)} />
       <AffiliateDrawer open={affOpen} onClose={() => setAffOpen(false)} />
       <RiskModal />
       <WelcomeAirdrop />

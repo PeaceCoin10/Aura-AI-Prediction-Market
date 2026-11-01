@@ -20,12 +20,14 @@ export function Header({
   onConnectClick,
   onOpenSecurity,
   onOpenDocs,
+  onOpenPartners,
 }: {
   tab: Tab;
   onTab: (t: Tab) => void;
   onConnectClick: () => void;
   onOpenSecurity: () => void;
   onOpenDocs: () => void;
+  onOpenPartners: () => void;
 }) {
   const { account, chainId, activeName, disconnect, switchToBase } = useWallet();
   const { push } = useToasts();
@@ -124,6 +126,14 @@ export function Header({
             title={t.shell.actions.docsTitle}
           >
             📚 {t.shell.actions.docs}
+          </button>
+          <button
+            data-testid="open-partners"
+            className="btn-ghost hidden h-8 px-2.5 text-[11px] sm:inline-flex"
+            onClick={onOpenPartners}
+            title={t.shell.partners.title}
+          >
+            🤝 {t.shell.actions.partners}
           </button>
 
           {!account ? (

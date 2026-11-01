@@ -18,11 +18,14 @@ export interface Comment {
   stance: Stance;
   text: string;
   ts: number;
+  /** Upvotes carried with the take (merged max across devices) */
+  likes?: number;
   /** Pinned official prompt (cannot be deleted) */
   seeded?: boolean;
 }
 
 const KEY = "predict.comments.v2";
+const LIKED_KEY = "predict.comments.liked.v1";
 const MAX_PER_MARKET = 200;
 const listeners = new Set<() => void>();
 
@@ -54,6 +57,52 @@ function writeAll(data: Record<string, Comment[]>): void {
     /* quota exceeded / private mode: degrade silently, the main flow keeps working */
   }
   listeners.forEach((fn) => fn());
+}
+
+/** Ids this browser has upvoted — one vote per device, so the count stays honest. */
+export function likedIds(): Set<string> {
+  if (!canUseStorage()) return new Set();
+  try {
+    const raw = window.localStorage.getItem(LIKED_KEY);
+    const arr = raw ? (JSON.parse(raw) as unknown) : [];
+    return new Set(Array.isArray(arr) ? arr.filter((x): x is string => typeof x === "string") : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveLiked(ids: Set<string>): void {
+  if (!canUseStorage()) return;
+  try {
+    window.localStorage.setItem(LIKED_KEY, JSON.stringify([...ids]));
+  } catch {
+    /* quota / private mode: the vote simply does not persist */
+  }
+  listeners.forEach((fn) => fn());
+}
+
+/**
+ * Toggle this device's upvote on a take and return the resulting count.
+ * The count lives on the comment (so it travels with the cloud payload); the vote
+ * itself lives in a per-browser set, which is what stops one person inflating it.
+ */
+export function toggleLike(marketId: string, id: string): number {
+  const liked = likedIds();
+  const all = readAll();
+  const list = all[marketId] ?? [];
+  const target = list.find((c) => c.id === id);
+  if (!target) return 0;
+  const base = target.likes ?? 0;
+  if (liked.has(id)) {
+    liked.delete(id);
+    target.likes = Math.max(0, base - 1);
+  } else {
+    liked.add(id);
+    target.likes = base + 1;
+  }
+  saveLiked(liked);
+  writeAll(all);
+  return target.likes;
 }
 
 export function subscribe(fn: () => void): () => void {
@@ -117,6 +166,7 @@ export function addComment(
     stance: input.stance,
     text,
     ts: Date.now(),
+    likes: 0,
   };
   const list = all[marketId] ?? [];
   all[marketId] = [item, ...list].slice(0, MAX_PER_MARKET);
@@ -166,6 +216,10 @@ export function mergeComments(remote: Record<string, Comment[]>): void {
         changed = true;
       } else if (seen.seeded && !c.seeded) {
         byId.set(c.id, c);
+        changed = true;
+      } else if ((c.likes ?? 0) > (seen.likes ?? 0)) {
+        // likes are monotone per comment id: adopt the higher count from the other device
+        byId.set(c.id, { ...seen, likes: c.likes });
         changed = true;
       }
     }

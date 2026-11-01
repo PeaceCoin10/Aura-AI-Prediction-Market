@@ -16,7 +16,7 @@ export const SECURITY_FACTS = {
     info: 7,
     note: "Slither 0.10.0, measured: 19 findings = 0 High + 0 Medium + 12 Low (block.timestamp) + 7 Informational (solc version / complexity). Full JSON: docs/security/slither-report.json",
   },
-  tests: { forge: 46, invariantCalls: 102400, invariantRuns: 512, invariantDepth: 200 },
+  tests: { forge: 62, invariantCalls: 100000, invariantRuns: 1000, invariantDepth: 100 },
   disputeWindow: "1 hour",
   fee: "1.5% trade / 0.5% settlement",
   safe: "the Safe multisig can overrideResolution and overturn the outcome inside the dispute window",
@@ -290,7 +290,7 @@ const hash = await wallet.sendTransaction(plan);`}
   );
 }
 
-function Drawer({
+export function Drawer({
   title,
   onClose,
   children,

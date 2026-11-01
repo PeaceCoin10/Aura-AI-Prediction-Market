@@ -233,9 +233,19 @@ def main():
         check("debate composer is present", box.count() == 1)
         take = "e2e take: the book is thin above 90k, one sweep reprices it."
         box.fill(take)
-        modal.get_by_role("button", name=re.compile(r"^Post$", re.I)).first.click()
+        check("debate wall mounts", modal.locator('[data-testid="debate-wall"]').count() == 1)
+        modal.locator('[data-testid="debate-post"]').click()
         page.wait_for_timeout(900)
         check("posted take is rendered", take[:24] in modal.inner_text())
+        like = modal.locator('[data-testid="debate-like"]').first
+        before = like.inner_text()
+        like.click()
+        page.wait_for_timeout(300)
+        after = modal.locator('[data-testid="debate-like"]').first.inner_text()
+        check("upvote changes the count", before.strip() != after.strip(), f"{before}->{after}")
+        modal.locator('[data-testid="debate-sort-top"]').click()
+        page.wait_for_timeout(250)
+        check("top sort keeps takes visible", modal.locator('[data-testid="debate-item"]').count() >= 1)
         modal.get_by_role("button", name=re.compile(r"^Close$", re.I)).first.click()
         page.wait_for_timeout(600)
 
@@ -246,7 +256,7 @@ def main():
         text = " ".join(drawer.inner_text().split())
         check("security matrix opens", "Security matrix" in text)
         check("slither results are stated", "Slither" in text)
-        check("invariant numbers are stated", "102,400" in text or "invariant" in text.lower())
+        check("invariant numbers are stated", "100,000" in text or "invariant" in text.lower())
         drawer.get_by_role("button", name=re.compile(r"^Close$", re.I)).first.click()
         page.wait_for_timeout(500)
         page.locator("header").get_by_role("button", name=re.compile(r"Docs", re.I)).first.click()
@@ -255,6 +265,21 @@ def main():
         text = " ".join(drawer.inner_text().split())
         check("docs portal opens", len(text) > 700)
         check("docs cover the SDK", "SDK" in text)
+        drawer.get_by_role("button", name=re.compile(r"^Close$", re.I)).first.click()
+        page.wait_for_timeout(500)
+
+        print("\n[12a] partners portal")
+        page.locator('[data-testid="open-partners"]').click()
+        page.wait_for_timeout(700)
+        drawer = page.locator("div.fixed.inset-0.z-\\[65\\]").last
+        check("partners portal opens", drawer.locator('[data-testid="partners-lp"]').count() == 1)
+        ptext = " ".join(drawer.inner_text().split())
+        check("LP programme is stated", "1.5%" in ptext and "10,000" in ptext.replace(",", ","), ptext[:120])
+        check("oracle + builder tracks are present", drawer.locator('[data-testid="partners-oracle"]').count() == 1
+              and drawer.locator('[data-testid="partners-dev"]').count() == 1)
+        drawer.locator('[data-testid="partners-submit"]').click()
+        page.wait_for_timeout(300)
+        check("empty application is refused", "Fill in name" in drawer.inner_text())
         drawer.get_by_role("button", name=re.compile(r"^Close$", re.I)).first.click()
         page.wait_for_timeout(500)
 
