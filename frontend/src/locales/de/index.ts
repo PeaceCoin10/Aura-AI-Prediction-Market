@@ -874,7 +874,7 @@ export const de = {
     },
     spotlight: {
       eyebrow: "KI-Desk · Spotlight",
-      title: "130 Märkte. Sechs Kategorien. Eine Kurve.",
+      title: "255 Märkte. Fünf Kategorien. Eine Kurve.",
       body:
         "Politik, Krypto, Sport, E-Sport und Zukunftstechnologie — bepreist vom selben Constant-Product-Market-Maker, der auf Base abrechnet.",
       cta: "Gesamtes Buch ansehen",

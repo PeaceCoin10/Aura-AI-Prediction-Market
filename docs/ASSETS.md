@@ -1,7 +1,7 @@
 # Asset inventory
 
 Everything this project actually owns: deployed contracts, source size, live endpoints, feature surface
-and the numbers behind the claims. Updated 2026-10-29.
+and the numbers behind the claims. Updated 2026-11-01.
 
 ## 1. Deployed contracts · Base mainnet (chain 8453)
 
@@ -48,14 +48,15 @@ Economics: **1.5%** on trade notional → vault; **0.5%** on settlement payout �
 
 ## 4. Feature surface
 
-**Hall** — **130 sample markets** across six verticals (Politics, Crypto & Macro, Sports & F1, Esports,
-AI & Tech), each with generated vector artwork, live simulated ticks every 7 s, YES/NO probability bars,
+**Hall** — **255 sample markets** across five verticals (Crypto, News, Sports, Esports, Tech), each with
+generated vector artwork, live simulated ticks every 7 s, YES/NO probability bars,
 depth, volume, settlement countdown, AI commentary and a debate count. A live-fill ticker and a
 predictor leaderboard (explicitly labelled *simulated cohort*) give the book a social shape; on-chain
 markets render in their own section so real and sample liquidity never blur together.
 
 Artwork: one SVG per market plus five vertical banners and a spotlight scene, generated deterministically
-by `frontend/scripts/gen_market_art.py` (136 files, ~3 KB each, no external CDN).
+distributed by `frontend/scripts/gen_market_art.py` (255 market SVGs + vertical banners + a spotlight scene,
+~3 KB each, no external CDN).
 
 **Growth** — one-click X share per market (`#PredictionMarkets #Base #AI #Crypto`) with a rendered 1200×630
 poster that includes the market's artwork, question, probability and a QR code; novice prize-pool beat in
@@ -74,17 +75,20 @@ price markets resolve by 3×30 s sampling, sports/esports by official result, ne
 **Surfaces** — security matrix drawer (Slither, invariants, dispute mechanics), docs portal, first-run
 risk disclosure, wallet portfolio, on-chain event feed, market creation, share poster.
 
-**Internationalisation** — English is the only shipped locale, but the runtime is a typed namespace tree:
-adding a language is one file plus one `registerLocale()` call.
+**Internationalisation** — five locales ship (EN / ZH / JA / KO / DE) behind a five-row frosted glass
+dropdown in the header; the runtime is a typed namespace tree, so adding a sixth is one file plus one
+`registerLocale()` call.
 
 ## 5. Test matrix (all green as of this build)
 
 | Suite | Command | Result |
 | --- | --- | --- |
-| Contracts | `forge test` | **46 passed** |
+| Contracts | `forge test` | **62 passed** |
 | SDK | `cd sdk && npm test` | **70 passed** |
-| Agent | `python3 -m unittest discover -s hermes -p 'test_*.py'` | **49 passed** |
-| UI e2e (headless) | `python3 scripts/e2e_ui.py` | **73 passed** |
+| Agent | `python3 -m unittest discover -s hermes -p 'test_*.py'` | **64 passed** |
+| UI e2e (headless) | `python3 scripts/e2e_ui.py` | **91 passed** |
+| Cloud-sync e2e (two devices) | `python3 scripts/e2e_sync.py` | **13 passed** |
+| Sync crypto self-test | `node server/sync-selftest.mjs` | **11 passed** |
 | Real-chain e2e (anvil) | `python3 scripts/e2e_local.py` | **12 passed** |
 | Type check | `npx tsc --noEmit` | 0 errors |
 | Build | `npm run build` | 0 errors, ~1.4k modules |
@@ -94,17 +98,17 @@ Invariant campaign: 512 runs × depth 200 = **102,400 handler calls, 0 invariant
 
 ## 6. Sample market book
 
-130 markets, catalogue in `frontend/src/data/markets.ts` (id, vertical, question, criteria, source,
+255 markets, catalogue in `frontend/src/data/markets.ts` (id, vertical, question, criteria, source,
 probability, depth, hours to settle, volume, topic).
 
 | Vertical | Markets | Example markets |
 | --- | --- | --- |
-| Crypto & macro | 26 | BTC above $90k this week · spot ETH ETF inflows > $500M · Fed cut at the next FOMC |
-| Global politics | 26 | Republicans hold the House · US government shutdown this quarter · Ukraine ceasefire signed |
-| Sports & F1 | 28 | Celtics win tonight · Arsenal beat Chelsea · Verstappen wins the next GP · McLaren constructors' title |
-| Esports | 24 | T1 beat KOI at Worlds · European roster wins the CS2 Major · Sentinels win 2:0 |
-| AI & tech frontiers | 26 | Frontier lab ships a GPT-5-class model · Nvidia beats consensus · Starship reaches orbit |
-| **Total** | **130** | simulated depth and volume, quoted with the real CPMM formula |
+| Crypto | 48 | BTC above $90k this week · spot ETH ETF inflows > $500M · SOL above $300 this month |
+| News | 72 | US government shutdown this quarter · Ukraine ceasefire signed · a Fed cut at the next FOMC |
+| Sports | 43 | Celtics win tonight · Arsenal beat Chelsea · Verstappen wins the next GP |
+| Esports | 39 | T1 beat KOI at Worlds · a European roster wins the CS2 Major · Sentinels win 2:0 |
+| Tech | 53 | A frontier lab ships a GPT-5-class model · Nvidia beats consensus · Starship reaches orbit |
+| **Total** | **255** | simulated depth and volume, quoted with the real CPMM formula |
 
 ## 7. Brand assets
 

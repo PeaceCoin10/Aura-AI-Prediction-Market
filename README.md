@@ -54,7 +54,7 @@ liquidity, no liquidity means no markets. Most teams answer that with incentives
 | **Who writes the markets?** | A Hermes agent cycle polls CoinGecko/Binance, RSS, ESPN and LoL Esports every 5 minutes and drafts a binary market with an explicit resolution rule | `hermes/hermes_brain.py`, `hermes/verticals.py` |
 | **Who prices them?** | A constant-product market maker on-chain — `p_yes = noReserve / (yesReserve + noReserve)`. No order book, no market maker to hire | `src/CentralPredictionEngine.sol` |
 | **Who settles them?** | Price markets: 3×30s sampling to resist wicks. Sports/esports: official results only. News: **never auto-resolved** — routed to a Safe | `OracleEngine` |
-| **What about first-time users?** | Paper mode: 10,000 FAKE-USDC credited on arrival, 255 sample markets across six verticals, quoted with the same CPMM maths and settled locally | `frontend/src/lib/paper.ts` |
+| **What about first-time users?** | Paper mode: 10,000 FAKE-USDC credited on arrival, 255 sample markets across five verticals, quoted with the same CPMM maths and settled locally | `frontend/src/lib/paper.ts` |
 | **Can settlement be gamed?** | 1-hour dispute window after resolution, withdrawals locked, Safe multisig can override | `DISPUTE_WINDOW = 1 hours` |
 | **Can the admin run away?** | After 7 days unsettled, anyone can call `emergencyRefund` for a full refund | `REFUND_DELAY = 7 days` |
 
@@ -239,7 +239,7 @@ cd frontend
 python3 scripts/e2e_ui.py        # 91 headless UI assertions (5 locales, carousel, whale tape, depth)
 SYNC_MODE=relay python3 scripts/e2e_sync.py   # 13 cross-device cloud-sync assertions
 python3 scripts/shots.py         # regenerate README screenshots
-python3 scripts/e2e_local.py     # 11 real-chain assertions against anvil (see docs)
+python3 scripts/e2e_local.py     # 12 real-chain assertions against anvil (see docs)
 ```
 
 <details>
@@ -336,9 +336,11 @@ frontend/src/locales/
 - **No reload.** The provider swaps the message tree in place and writes `<html lang>`; the choice is
   persisted to `localStorage` and mirrored to the cloud so a second device adopts it.
 - **First visit resolution:** `?lang=` → saved preference → `navigator.languages` → English.
-- **The switcher** is a frosted dropdown in the header: Latin two-letter chips (EN/ZH/JA/KO/DE) plus
-  endonyms, keyboard navigable, click-outside and `Escape` to dismiss. It renders conditionally so the
-  English first paint contains no translated glyphs.
+- **The switcher** is a five-row luxury glass dropdown in the header: a frosted, blurred panel with the
+  Latin two-letter chip (EN/ZH/JA/KO/DE) and the native endonym per row, the active row marked. It is
+  keyboard navigable — Up/Down move, Home/End jump, Enter commits, `Escape` or an outside click
+  dismisses — and never degrades into a native `<select>`, which cannot be styled or show five endonyms
+  side by side. It renders conditionally so the English first paint contains no translated glyphs.
 - Adding a locale is one file and one `registerLocale({ code, label, native, htmlLang, messages })` call.
 
 ---

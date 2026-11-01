@@ -5,7 +5,7 @@ Chinese engineering notes are archived outside this repository and are no longer
 
 | Document | What it answers |
 | --- | --- |
-| [DEVELOPMENT.md](DEVELOPMENT.md) | Run the stack locally: anvil, deploy script, env vars, the five test suites, screenshots |
+| [DEVELOPMENT.md](DEVELOPMENT.md) | Run the stack locally: anvil, deploy script, env vars, the full test matrix (62/70/64/91/13/11), screenshots |
 | [ASSETS.md](ASSETS.md) | The full asset inventory: contracts, verified addresses, code size, live URLs, test matrix |
 | [GITHUB-PUSH.md](GITHUB-PUSH.md) | Publish this repo with a PAT — no browser session, no password, no token in `.git/config` |
 | [DEPLOY-PERMANENT.md](DEPLOY-PERMANENT.md) | Permanent hosting: GitHub Pages (default), Vercel, Netlify — one command each |

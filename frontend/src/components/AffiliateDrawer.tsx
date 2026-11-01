@@ -127,7 +127,7 @@ export function AffiliateDrawer({ open, onClose }: { open: boolean; onClose: () 
                 {copied === "tg" ? "Copied" : "Copy Telegram link"}
               </button>
               <button
-                onClick={() => shareToTelegram(tgLink, "Trade AI-written prediction markets on Base — 130 markets live.")}
+                onClick={() => shareToTelegram(tgLink, "Trade AI-written prediction markets on Base — 255 markets live.")}
                 className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10.5px] text-slate-300"
               >
                 Share

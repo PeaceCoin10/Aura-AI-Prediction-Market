@@ -94,7 +94,7 @@ Hard bounds: `MIN_SLIPPAGE_BPS = 1`, `MAX_SLIPPAGE_BPS = 500`.
 ## Tests
 
 ```bash
-cd sdk && npm test     # 116 assertions across the legacy vault SDK and the central engine SDK
+cd sdk && npm test     # 70 tests · 116 assertions across the legacy vault SDK and the central engine SDK
 ```
 
 The suite checks the hand-written encoders byte-for-byte against `cast calldata`, the selectors

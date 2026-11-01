@@ -1,21 +1,80 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useI18n } from "../lib/i18n";
 import { play } from "../lib/sound";
 
 /**
- * Frosted-glass language switcher for the terminal header.
+ * Five-row frosted-glass language switcher for the terminal header.
  *
  * - Closed by default and rendered conditionally, so the English first paint carries no
  *   translated glyphs (the E2E suite asserts a CJK-free English hall).
  * - Switches without a page reload: the provider swaps the message tree and writes `<html lang>`.
- * - Keyboard support: ArrowUp/ArrowDown move, Enter/Space select, Escape closes.
+ * - Keyboard support: ArrowUp/ArrowDown move the roving focus, Home/End jump to the ends,
+ *   Enter/Space select the focused row, Escape closes and returns focus to the trigger.
  * - Click-outside dismisses; the preference is persisted by `setLocale`.
+ *
+ * It is a styled popup by design — never a native `<select>`, which cannot be styled or show
+ * five endonyms side by side and renders differently on every platform.
  */
 export function LocaleSwitcher({ compact = false }: { compact?: boolean }) {
   const { locale, setLocale, locales, t } = useI18n();
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const rows = useRef<Array<HTMLButtonElement | null>>([]);
+  const pending = useRef<number | null>(null);
   const active = locales.find((l) => l.code === locale) ?? locales[0];
+
+  useEffect(() => {
+    if (!open || pending.current === null) return;
+    rows.current[pending.current]?.focus();
+    pending.current = null;
+  }, [open]);
+
+  const openAt = (code?: string) => {
+    pending.current = Math.max(0, locales.findIndex((l) => l.code === (code ?? locale)));
+    setOpen(true);
+  };
+
+  const focusables = () => rows.current.filter((r): r is HTMLButtonElement => !!r);
+
+  const onMenuKey = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    const list = focusables();
+    const at = list.indexOf(document.activeElement as HTMLButtonElement);
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        list[(at + 1) % list.length]?.focus();
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        list[(at - 1 + list.length) % list.length]?.focus();
+        break;
+      case "Home":
+        e.preventDefault();
+        list[0]?.focus();
+        break;
+      case "End":
+        e.preventDefault();
+        list[list.length - 1]?.focus();
+        break;
+      case "Escape":
+        e.preventDefault();
+        setOpen(false);
+        trigger.current?.focus();
+        break;
+      case "Tab":
+        setOpen(false);
+        break;
+    }
+  };
+
+  const onTriggerKey = (e: ReactKeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp" || e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      if (open) rows.current[Math.max(0, locales.findIndex((l) => l.code === locale))]?.focus();
+      else openAt();
+    }
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -43,6 +102,8 @@ export function LocaleSwitcher({ compact = false }: { compact?: boolean }) {
     <div className="relative" ref={box} data-testid="locale-switcher">
       <button
         type="button"
+        ref={trigger}
+        onKeyDown={onTriggerKey}
         onClick={() => {
           play("click");
           setOpen((v) => !v);
@@ -73,12 +134,13 @@ export function LocaleSwitcher({ compact = false }: { compact?: boolean }) {
         <div
           role="listbox"
           aria-label={t.terminal.locale.label}
+          onKeyDown={onMenuKey}
           className="absolute right-0 z-50 mt-2 w-56 origin-top-right animate-fade-in overflow-hidden rounded-2xl border border-white/12 bg-[#0a0c12]/85 p-1 shadow-[0_24px_60px_-16px_rgba(0,0,0,0.85)] backdrop-blur-2xl"
         >
           <div className="px-2.5 pb-1 pt-1.5 text-[9px] uppercase tracking-[0.2em] text-slate-500">
             {t.terminal.locale.current}
           </div>
-          {locales.map((l) => {
+          {locales.map((l, i) => {
             const on = l.code === locale;
             return (
               <button
@@ -86,8 +148,12 @@ export function LocaleSwitcher({ compact = false }: { compact?: boolean }) {
                 role="option"
                 aria-selected={on}
                 data-locale={l.code}
+                tabIndex={-1}
+                ref={(el) => {
+                  rows.current[i] = el;
+                }}
                 onClick={() => pick(l.code)}
-                className={`flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left text-[12px] transition-colors ${
+                className={`flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left text-[12px] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-brand/60 ${
                   on ? "bg-brand/12 text-slate-100" : "text-slate-300 hover:bg-white/[0.06]"
                 }`}
               >

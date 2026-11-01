@@ -49,7 +49,7 @@
     <rect x="0" y="377" width="1200" height="3" fill="url(#edge)"/>
   </g>
   <text x="72" y="198" font-family="Inter, Segoe UI, sans-serif" font-size="66" font-weight="700" fill="url(#txt)" letter-spacing="-1.5">CRYPTO · MACRO</text>
-  <text x="74" y="246" font-family="Inter, Segoe UI, sans-serif" font-size="21" fill="#9fb3c8">26 markets · CPMM pricing · simulated book</text>
+  <text x="74" y="246" font-family="Inter, Segoe UI, sans-serif" font-size="21" fill="#9fb3c8">48 markets · CPMM pricing · simulated book</text>
   <rect x="72" y="278" width="152" height="36" rx="18" fill="#f59e0b"/>
   <text x="94" y="302" font-family="Inter, Segoe UI, sans-serif" font-size="15" font-weight="700" fill="#05060a">TRADE NOW</text>
 </svg>

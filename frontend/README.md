@@ -86,8 +86,9 @@ The Python scripts drive Playwright; `e2e_local.py` needs anvil plus a deployed 
 - **Debate wall** — per-market comments with YES/NO/neutral stance, stored in `localStorage`.
 - **Security and docs overlays** — audit summary, dispute mechanics, verified contract links, an
   integration guide, plus an RPC/brain health indicator.
-- **Localisation** — every string lives in `src/locales/en` as a typed tree; adding a locale is one
-  module that satisfies `Messages` plus a `registerLocale()` call (`src/lib/i18n.tsx`).
+- **Localisation** — five locales ship (EN / ZH / JA / KO / DE) behind a five-row frosted dropdown in the
+  header. Every string lives in `src/locales/en` as a typed tree; adding a sixth is one module that
+  satisfies `Messages` plus a `registerLocale()` call (`src/lib/i18n.tsx`).
 
 ## Project layout
 

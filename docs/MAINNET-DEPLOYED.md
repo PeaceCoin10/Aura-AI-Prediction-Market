@@ -33,7 +33,7 @@ cast call 0xE6056Bc6700F6d7E6fF8779B212655284dc1631C "marketCount()(uint256)" --
 ## What this state means
 
 - The engine is live and unpaused, with the protocol fee pointing at the fee vault. It is **empty**:
-  `marketCount()` is `0`, so no book trades real USDC yet. The dApp's 130 featured markets are
+  `marketCount()` is `0`, so no book trades real USDC yet. The dApp's 255 featured markets are
   sample data quoted with the same CPMM maths (paper mode); they are not on-chain markets.
 - `admin` and `treasury` are a single EOA, not a Safe. That is a deliberate single-operator
   bootstrap setting, not production custody: before any real volume, move both to a Safe and call

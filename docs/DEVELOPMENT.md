@@ -80,7 +80,7 @@ SYNC_MODE=relay python3 scripts/e2e_sync.py https://<host>/   # same, over the p
 python3 scripts/e2e_local.py http://127.0.0.1:4181/ http://127.0.0.1:8545   # 12 · real chain
 ```
 
-`e2e_ui.py` asserts the first-run path (risk modal → 10k bonus → hall), 250+ featured markets, the 7-second
+`e2e_ui.py` asserts the first-run path (risk modal → 10k bonus → hall), 255 featured markets, the 7-second
 tick, the headline carousel and whale tape, all five locales (including a CJK render and the `<html lang>`
 switch), a paper fill with the live depth curve, posting a take, both overlays, the Real/Paper switch, brand
 assets and a 390×844 mobile layout with no horizontal overflow.
@@ -99,21 +99,30 @@ python3 frontend/scripts/shots.py http://127.0.0.1:4173/ reports/shots
 
 Both use Playwright, so the same chromium install covers tests and assets.
 
-## 6. Adding a locale
+## 6. Locales and the header switcher
 
 Five locales ship: English (reference), Simplified Chinese, Japanese, Korean, German.
+
+The header control is a five-row luxury glass-morphism dropdown — **EN / ZH / JA / KO / DE** — a frosted
+`backdrop-blur-xl` panel over a translucent hairline border, one row per locale showing its two-letter
+chip and native endonym, the active row marked and keyboard focus visible. It deliberately never falls
+back to a native `<select>`: a native popup cannot be styled, cannot show five endonyms side by side, and
+renders differently on every platform, so the old "header chip turns into a `<select>` on click" behaviour
+is gone and must not come back. The trigger stays a compact chip; opening it reveals the full panel.
+Up/Down move the highlight, Home/End jump, Enter commits, Escape and an outside click dismiss, and the
+menu mounts only once opened so the English first paint carries no translated glyphs.
 
 ```
 frontend/src/locales/en/                    one namespace file per surface
 frontend/src/locales/{zh,ja,ko,de}/index.ts full trees, `satisfies Messages`
 frontend/src/lib/i18n.tsx                   typed tree, REGISTRY, registerLocale, {{var}} interpolation
-frontend/src/components/LocaleSwitcher.tsx  frosted dropdown, keyboard navigable
+frontend/src/components/LocaleSwitcher.tsx  five-row frosted dropdown, keyboard navigable
 ```
 
-Create `frontend/src/locales/<code>/index.ts` satisfying the `Messages` type and call `registerLocale({
-code, label, native, htmlLang, messages })` once. The switcher picks it up automatically — no component
-changes. Switching is in-place (no reload), writes `<html lang>`, persists to `localStorage` and is
-mirrored to the cloud.
+Create `frontend/src/locales/<code>/index.ts` satisfying the `Messages` type and call
+`registerLocale({ code, label, native, htmlLang, messages })` once. The dropdown grows a row
+automatically — no component changes. Switching is in-place (no reload), writes `<html lang>`, persists to
+`localStorage` and is mirrored to the cloud.
 
 ## 7. Conventions that are enforced, not suggested
 
@@ -121,5 +130,6 @@ mirrored to the cloud.
 - Contract outcome encoding is `0 = NO, 1 = YES`; the UI's side index is the reverse. The single mapping
   lives in `src/lib/paper.ts` and is covered by tests — never re-derive it inline.
 - Anything simulated must be labelled simulated in the copy (`Sample`, `Simulated ticks`, `Paper mode`).
-- No Chinese characters in shipped UI code; the check is part of the acceptance run:
-  `grep -rlP '[\x{4e00}-\x{9fff}]' frontend/src` must be empty.
+- No Chinese characters in shipped UI code, the locale trees and the switcher's endonyms aside. The check
+  is part of the acceptance run and must print nothing:
+  `grep -rlP '[\x{4e00}-\x{9fff}]' frontend/src | grep -v -e 'locales/' -e 'lib/i18n.tsx'`

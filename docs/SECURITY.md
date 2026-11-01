@@ -42,10 +42,12 @@ script therefore insists on setting it correctly on day one (see `script/DeployC
 | --- | --- |
 | Slither 0.10.0 | **0 High, 0 Medium**; 12 Low (`block.timestamp`, used only for deadlines and the dispute window), 7 Informational |
 | Invariant campaign | 512 runs × depth 200 = **102,400 handler calls**, 0 reverts, 0 invariant breaks |
-| forge unit + integration | **46 passed** |
+| forge unit + integration | **62 passed** |
 | SDK offline suite | **70 passed** |
-| Agent unit tests | **49 passed** |
-| UI e2e | **63 passed** (first-run funnel, hall, ticks, paper fill, debate wall, overlays, mode switch, mobile) |
+| Agent unit tests | **64 passed** |
+| UI e2e | **91 passed** (first-run funnel, hall, ticks, paper fill, debate wall, overlays, mode switch, five locales, mobile) |
+| Cloud-sync e2e | **13 passed** (two isolated devices, ciphertext on the wire) |
+| Sync crypto self-test | **11 passed** (seal → round-trip → wrong key → miss) |
 | Real-chain e2e | **12 passed** against anvil (connect → quote → buy → position → event feed) |
 
 Raw Slither output: [`security/slither-report.json`](security/slither-report.json).

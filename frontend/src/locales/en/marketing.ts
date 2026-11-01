@@ -25,7 +25,7 @@ export const marketing = {
   },
   spotlight: {
     eyebrow: "AI desk · spotlight",
-    title: "130 markets. Six verticals. One curve.",
+    title: "255 markets. Five verticals. One curve.",
     body: "Politics, crypto, sport, esports and frontier tech — priced by the same constant-product market maker that settles on Base.",
     cta: "Browse the full book",
   },
