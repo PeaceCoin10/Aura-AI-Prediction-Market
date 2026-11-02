@@ -299,7 +299,7 @@ export function DemoDetail({ market, onClose }: { market: DemoMarket; onClose: (
               marketId: market.id,
             }}
           />
-          <button className="btn-ghost px-3 py-1.5" onClick={onClose}>
+          <button data-testid="detail-close" className="btn-ghost px-3 py-1.5" onClick={onClose}>
             {t.paper.detail.close}
           </button>
         </div>
@@ -345,7 +345,7 @@ export function DemoDetail({ market, onClose }: { market: DemoMarket; onClose: (
         </div>
 
         <div className="mt-4">
-          <DebateWall marketId={market.id} compact />
+          <DebateWall marketId={market.id} compact prob={prob} />
         </div>
       </div>
     </div>

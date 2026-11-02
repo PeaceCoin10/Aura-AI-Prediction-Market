@@ -20,6 +20,7 @@ import { useMode } from "./lib/mode";
 import { ToastStack } from "./hooks/useToasts";
 import { useMarkets } from "./hooks/useMarkets";
 import { usePortfolio } from "./hooks/usePortfolio";
+import { setIdentity } from "./lib/identity";
 import { useEventFeed } from "./hooks/useEventFeed";
 import { useWallet, WalletProvider } from "./lib/wallet";
 import { makeSdk } from "./lib/sdk";
@@ -37,6 +38,8 @@ import { LiveTicker } from "./components/LiveTicker";
 import { PredictorBoard } from "./components/PredictorBoard";
 import { HeroCarousel } from "./components/HeroCarousel";
 import { WhaleTicker } from "./components/WhaleTicker";
+import { GenesisStrip } from "./components/GenesisStrip";
+import { CoinBurst } from "./components/CoinBurst";
 import { useExchangeTape } from "./lib/exchangeTape";
 import { useLiveCrypto } from "./lib/liveCrypto";
 import { LiveMarkets } from "./components/LiveMarkets";
@@ -132,6 +135,7 @@ function StatStrip({ items }: { items: Array<{ k: string; v: string; tone?: stri
 
 function Dashboard() {
   const { account } = useWallet();
+  useEffect(() => setIdentity(account), [account]);
   const t = useT();
   const [tab, setTab] = useState<Tab>("feed");
   const [selected, setSelected] = useState<MarketSnapshot | null>(null);
@@ -431,6 +435,8 @@ function Dashboard() {
 
             <LiveMarkets markets={liveCrypto.markets} updatedAt={liveCrypto.updatedAt} onOpen={setDemoSelected} />
 
+            <GenesisStrip feed={items} account={account} onInvite={() => setAffOpen(true)} />
+
             <WhaleTicker prints={tape.prints} />
             <LiveTicker prints={tape.prints} />
 
@@ -562,6 +568,7 @@ function Dashboard() {
       <DocsPortal open={docsOpen} onClose={() => setDocsOpen(false)} />
       <PartnersDrawer open={partnersOpen} onClose={() => setPartnersOpen(false)} />
       <AffiliateDrawer open={affOpen} onClose={() => setAffOpen(false)} />
+      <CoinBurst />
       <RiskModal />
       <WelcomeAirdrop />
       {!account && tab === "portfolio" && (

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { PosterInput } from "../lib/share";
 import { play } from "../lib/sound";
+import { burstFrom } from "../lib/fx";
+import { getIdentity } from "../lib/identity";
 import { Spinner } from "./ui";
 import { format, useT } from "../lib/i18n";
 import { haptic, marketDeepLink, shareToTelegram } from "../lib/telegram";
@@ -30,9 +32,11 @@ export function ShareButton({
     try {
       // Poster engine (QR encoder included) loads on demand so it never blocks first paint.
       const { renderPoster } = await import("../lib/share");
-      const r = await renderPoster(input);
+      const r = await renderPoster({ ...input, ref: input.ref ?? getIdentity() ?? undefined });
       setResult(r);
       setOpen(true);
+      play("success");
+      burstFrom(null, 16);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -43,6 +47,7 @@ export function ShareButton({
   return (
     <>
       <button
+        data-testid={compact ? "share-compact" : "share-card"}
         onClick={(e) => {
           e.stopPropagation();
           void generate();
@@ -70,7 +75,7 @@ export function ShareButton({
             <div className="mb-3 flex items-center gap-2">
               <h3 className="text-sm font-semibold text-slate-100">{t.social.share.heading}</h3>
               <span className="chip text-[10px]">{t.social.share.geometry}</span>
-              <button className="btn-ghost ml-auto px-3 py-1.5 text-xs" onClick={() => setOpen(false)}>
+              <button data-testid="share-close" className="btn-ghost ml-auto px-3 py-1.5 text-xs" onClick={() => setOpen(false)}>
                 {t.social.share.close}
               </button>
             </div>
@@ -82,6 +87,7 @@ export function ShareButton({
                   const { downloadDataUrl } = await import("../lib/share");
                   downloadDataUrl(result.dataUrl, `aura-poster-${Date.now()}.png`);
                   play("success");
+                  burstFrom(null, 18);
                 }}
               >
                 {t.social.share.download}
@@ -112,7 +118,8 @@ export function ShareButton({
                 className="btn-ghost px-3 py-1.5 text-[12px]"
                 onClick={() => {
                   void navigator.clipboard?.writeText(`${result.tweet} ${result.shareUrl}`);
-                  play("click");
+                  play("success");
+                  burstFrom(null, 12);
                 }}
               >
                 {t.social.share.copyText}

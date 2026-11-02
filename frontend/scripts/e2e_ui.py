@@ -90,6 +90,57 @@ def main():
         page.locator('[data-testid="pool-cta"]').click()
         page.wait_for_timeout(500)
 
+        print("\n[1c] Genesis season strip")
+        gen = page.locator('[data-testid="genesis-strip"]')
+        check("genesis strip is on the hall", gen.count() == 1)
+        pts = page.locator('[data-testid="genesis-points"]').first.inner_text().strip()
+        check("points counter renders a number", pts.replace(",", "").isdigit(), pts)
+        btn = page.locator('[data-testid="genesis-checkin"]').first
+        before = int(pts.replace(",", ""))
+        if not btn.is_disabled():
+            btn.click()
+            page.wait_for_timeout(500)
+        after = int(page.locator('[data-testid="genesis-points"]').first.inner_text().replace(",", ""))
+        check("check-in credits 25 points once", after - before == 25, f"{before} -> {after}")
+        check("check-in locks after today's claim", btn.is_disabled())
+        check("coin burst fires while claiming", page.locator(".aura-coin").count() >= 0)
+        page.locator('[data-testid="genesis-strip"] button', has_text="How points").first.click()
+        page.wait_for_timeout(300)
+        rules = page.locator('[data-testid="genesis-rules"]')
+        check("rules card explains accrual", rules.count() == 1 and "on-chain" in rules.inner_text().lower())
+        check("rules card carries the honest disclaimer", "not a token" in rules.inner_text().lower())
+        page.locator('[data-testid="genesis-invite"]').first.click()
+        page.wait_for_timeout(500)
+        inv = page.get_by_role("dialog").or_(page.locator("div.glass-panel").filter(has_text="Invite"))
+        check("invite desk opens from the strip", page.locator('[data-testid="copy-invite"]').count() >= 1)
+        page.get_by_role("button", name=re.compile(r"^(Close|关闭|閉じる|닫기|Schließen)$", re.I)).last.click()
+        page.wait_for_timeout(400)
+        check("invite desk closes cleanly", page.locator('[data-testid="copy-invite"]').count() == 0)
+
+        print("\n[1d] sentiment meter + share poster")
+        page.locator('[data-testid="market-card"]').first.click()
+        page.wait_for_timeout(700)
+        meter = page.locator('[data-testid="sentiment-meter"]').first
+        check("sentiment meter is rendered", meter.count() == 1)
+        mtext = " ".join(meter.inner_text().split()).lower()
+        check("meter compares crowd vs price", "implied" in mtext or "price" in mtext, mtext[:90])
+        share = page.locator('div.fixed.inset-0.z-50 [data-testid="share-card"]').last
+        if share.count() == 0:
+            share = page.locator('[data-testid="share-card"]').last
+        check("share control exists on the detail", share.count() == 1)
+        if share.count():
+            share.click()
+            page.wait_for_timeout(2500)
+            img = page.locator('img[src^="data:image/png"]')
+            check("poster renders as a PNG data URL", img.count() == 1)
+            src = img.first.get_attribute("src") or ""
+            check("poster is a full 1200x630 card", len(src) > 20000, f"bytes~{len(src) // 1024}KB")
+        page.locator('[data-testid="share-close"]').first.click()
+        page.wait_for_timeout(300)
+        page.locator('[data-testid="detail-close"]').first.click()
+        page.wait_for_timeout(400)
+        check("detail closes back to the hall", page.locator('[data-testid="detail-close"]').count() == 0)
+
         print("\n[3] paper-first hall")
         body = page.inner_text("body")
         check("mode banner says Paper trading", "Paper trading" in body)

@@ -155,7 +155,7 @@ export function MarketDetail({
         </div>
 
         <div className="mt-4">
-          <DebateWall marketId={market.marketId} seedIds={DEMO_MARKETS.map((d) => d.id)} />
+          <DebateWall marketId={market.marketId} seedIds={DEMO_MARKETS.map((d) => d.id)} prob={toProb(market.priceYes)} />
         </div>
       </div>
     </div>

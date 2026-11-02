@@ -4,6 +4,8 @@ import { REFERRAL_LEDGER_ABI, referralLink, useReferral } from "../lib/referral"
 import { REFERRAL_LEDGER, hasReferralLedger } from "../lib/config";
 import { shareToTelegram, referralDeepLink } from "../lib/telegram";
 import { useWallet } from "../lib/wallet";
+import { burstFrom } from "../lib/fx";
+import { play } from "../lib/sound";
 import { publicClient } from "../lib/sdk";
 import { usdc } from "../lib/format";
 import { format, useT } from "../lib/i18n";
@@ -67,6 +69,8 @@ export function AffiliateDrawer({ open, onClose }: { open: boolean; onClose: () 
     try {
       await navigator.clipboard.writeText(value);
       setCopied(kind);
+      play("success");
+      burstFrom(null, 14);
       window.setTimeout(() => setCopied(null), 1600);
     } catch {
       setCopied(null);

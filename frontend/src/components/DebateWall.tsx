@@ -2,6 +2,9 @@ import { useMemo, useState } from "react";
 import { useComments } from "../hooks/useComments";
 import type { Stance } from "../lib/comments";
 import { format, useT } from "../lib/i18n";
+import { recordTake } from "../lib/points";
+import { burstFrom } from "../lib/fx";
+import { play } from "../lib/sound";
 
 const STANCE_STYLE: Record<Stance, { ring: string; chip: string; bar: string }> = {
   YES: { ring: "border-brand/40 text-brand hover:bg-brand/10", chip: "border-brand/30 bg-brand/10 text-brand", bar: "bg-brand" },
@@ -25,10 +28,13 @@ export function DebateWall({
   marketId,
   seedIds = [],
   compact = false,
+  prob,
 }: {
   marketId: string;
   seedIds?: string[];
   compact?: boolean;
+  /** implied YES probability (0..1) of the market this wall belongs to */
+  prob?: number;
 }) {
   const t = useT();
   const { comments, tally, post, remove, like, liked } = useComments(marketId, seedIds);
@@ -77,6 +83,10 @@ export function DebateWall({
       /* private mode: the nickname simply does not persist */
     }
     post({ author, stance, text });
+    // Season 1: one take, one credit — the id makes a double click harmless.
+    recordTake(`${marketId}:${Date.now()}`);
+    play("success");
+    burstFrom(null, 10);
     setText("");
     setFlash("posted");
     window.setTimeout(() => setFlash(""), 1400);
@@ -125,6 +135,40 @@ export function DebateWall({
             <span className="text-danger">{tally.no}</span> · {format(t.social.comments.neutralTally, { count: tally.neutral })}
           </span>
         </div>
+      </div>
+
+
+      {/* sentiment meter: what the crowd says vs what the book prices */}
+      <div data-testid="sentiment-meter" className="mt-2 rounded-lg border border-white/8 bg-white/[0.02] p-2">
+        <div className="flex flex-wrap items-center justify-between gap-1 text-[10px]">
+          <span className="uppercase tracking-wider text-slate-500">{t.social.debate.meterTitle}</span>
+          <span className="mono text-slate-500">
+            {typeof prob === "number" ? format(t.social.debate.meterMarket, { prob: `${(prob * 100).toFixed(1)}%` }) : ""}
+          </span>
+        </div>
+        <div className="relative mt-1 h-2 overflow-hidden rounded-full bg-white/5">
+          <span className="absolute inset-y-0 left-0 bg-gradient-to-r from-brand/50 to-brand" style={{ width: `${yesPct}%` }} />
+          <span className="absolute inset-y-0 right-0 bg-gradient-to-l from-danger to-danger/40" style={{ width: `${noPct}%` }} />
+          {typeof prob === "number" && (
+            <span
+              className="absolute inset-y-[-3px] w-[2px] rounded bg-white/80"
+              style={{ left: `calc(${Math.min(100, Math.max(0, prob * 100))}% - 1px)` }}
+              title={format(t.social.debate.meterMarket, { prob: `${(prob * 100).toFixed(1)}%` })}
+            />
+          )}
+        </div>
+        <div className="mt-1 flex items-center justify-between text-[10px]">
+          <span className="text-brand">
+            {t.social.debate.meterBull} · {tally.yes}
+          </span>
+          <span className="text-slate-500">
+            {format(t.social.debate.meterYou, { side: stanceName(stance) })}
+          </span>
+          <span className="text-danger">
+            {t.social.debate.meterBear} · {tally.no}
+          </span>
+        </div>
+        <p className="mt-0.5 text-[9.5px] text-slate-600">{tally.yes + tally.no === 0 ? t.social.debate.meterNone : t.social.debate.meterHint}</p>
       </div>
 
       {/* composer */}

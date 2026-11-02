@@ -39,6 +39,13 @@ export const social = {
     needText: "Write at least a sentence.",
     posted: "Published",
     topHint: "Ranked by upvotes from this community",
+    meterTitle: "Bull vs bear",
+    meterBull: "Bullish takes",
+    meterBear: "Bearish takes",
+    meterYou: "You are {{side}}",
+    meterMarket: "Price implies {{prob}} YES",
+    meterHint: "Counts takes on this market, not the price.",
+    meterNone: "No takes yet — be the first to pick a side.",
   },
   comments: {
     title: "Debate wall · {{count}} takes",

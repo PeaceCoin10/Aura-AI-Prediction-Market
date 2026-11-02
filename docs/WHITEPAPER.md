@@ -310,7 +310,7 @@ forge test                                                    # 62 passed, 0 fai
 cd sdk && npm test                                            # 70 passed, 116 assertions
 python3 -m unittest discover -s hermes -p 'test_*.py'          # 86 passed
 node server/sync-selftest.mjs                                 # 11 passed
-python3 frontend/scripts/e2e_ui.py <url>                      # 108 passed
+python3 frontend/scripts/e2e_ui.py <url>                      # 123 passed
 python3 frontend/scripts/e2e_sync.py <url>                    # 13 passed
 npx tsc --noEmit                                              # 0 errors
 ```
@@ -400,6 +400,20 @@ deployed engine: plain JSON-RPC on Base 8453, no API key, no rate-limit tier.
 Every market carries a debate wall: a stance (YES / NO / neutral), a written take, one upvote per
 browser per take. Takes ride the same encrypted payload as the portfolio; likes merge monotonically
 and seeded official prompts cannot be deleted. It is a discussion surface, not a signal product.
+
+### 10.5 Growth layer
+
+Two mechanics, both auditable:
+
+| Surface | What it does | Where the number comes from |
+| --- | --- | --- |
+| Share poster | 1200×630 PNG with both-side probability, potential return, ref-coded link and QR; one click to the X intent with `#PredictionMarkets #Base #Crypto` | the card's own live quote; the ref code is the connected address |
+| Genesis Season 1 | points for on-chain volume, daily check-in and published takes, plus a standings table | `SharesBought` / `SharesSold` for volume; a local ledger for check-ins and takes |
+
+> [!IMPORTANT]
+> Points are a loyalty ledger, not a token. Paper fills earn nothing — only a settled on-chain fill
+> scores. The UI says both things next to the number, and the standings table is rebuilt from the
+> same public event feed the activity tab shows.
 
 ---
 

@@ -640,3 +640,24 @@ body::after {
     width: 100%;
   }
 }
+
+/* Share/check-in coin burst (see lib/fx.ts) */
+.aura-coin {
+  position: absolute;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 32% 28%, #fde68a 0%, #f59e0b 52%, #b45309 100%);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.65);
+  transform: translate(-50%, -50%);
+  animation: aura-coin-fly 900ms cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+@keyframes aura-coin-fly {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4) rotate(0deg); }
+  18% { opacity: 1; }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.05) rotate(var(--rot));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aura-coin { display: none; }
+}

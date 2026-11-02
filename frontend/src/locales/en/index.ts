@@ -12,6 +12,7 @@ import { ui } from "./ui";
 import { terminal } from "./terminal";
 import { affiliate } from "./affiliate";
 import { live } from "./live";
+import { genesis } from "./genesis";
 
 /**
  * English message tree — the reference implementation every other locale must satisfy.
@@ -32,6 +33,7 @@ export const en = {
   terminal,
   affiliate,
   live,
+  genesis,
 } as const;
 
 /**

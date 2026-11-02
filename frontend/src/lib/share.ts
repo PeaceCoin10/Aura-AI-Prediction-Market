@@ -10,7 +10,18 @@ import { BRAND, logoSvgDataUri } from "../components/BrandLogo";
 import { format } from "./i18n";
 import { en } from "../locales/en";
 
-export const SHARE_SITE = "https://aura.hermes.markets";
+/**
+ * Where a shared link resolves.
+ *
+ * Env override first, then the origin the bundle is actually served from — a poster must never
+ * print a domain that does not resolve. `BASE_URL` keeps the QR correct under the /repo/ path
+ * used by GitHub Pages.
+ */
+export function shareSite(): string {
+  const env = (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, "");
+  if (env) return env;
+  return `${window.location.origin}${import.meta.env.BASE_URL}`.replace(/\/$/, "");
+}
 
 const P = en.content.poster;
 
@@ -22,6 +33,8 @@ export interface PosterInput {
   potentialReturn?: string; // e.g. "2.4x"
   mode?: "real" | "paper";
   marketId?: string;
+  /** referrer address (or code) to stamp into the link and the poster */
+  ref?: string;
 }
 
 export interface PosterResult {
@@ -160,6 +173,27 @@ export async function renderPoster(input: PosterInput): Promise<PosterResult> {
   const lines = wrap(ctx, input.question, W - 240, 3);
   lines.forEach((line, i) => ctx.fillText(line, 96, 236 + i * 54));
 
+  // ---- Probability bar (both sides, so the card reads as a market not a slogan) ----
+  const yesPct = Math.min(100, Math.max(0, input.prob * 100));
+  const barX = 96;
+  const barY = 392;
+  const barW = W - 192;
+  ctx.font = "600 13px ui-monospace, SFMono-Regular, Menlo, monospace";
+  ctx.fillStyle = "rgba(110,231,183,0.95)";
+  ctx.fillText(`YES ${yesPct.toFixed(1)}%`, barX, barY - 10);
+  const noLabel = `NO ${(100 - yesPct).toFixed(1)}%`;
+  ctx.fillStyle = "rgba(251,113,133,0.95)";
+  ctx.fillText(noLabel, barX + barW - ctx.measureText(noLabel).width, barY - 10);
+  rounded(ctx, barX, barY, barW, 14, 7);
+  ctx.fillStyle = "rgba(251,113,133,0.55)";
+  ctx.fill();
+  ctx.save();
+  rounded(ctx, barX, barY, barW, 14, 7);
+  ctx.clip();
+  ctx.fillStyle = "rgba(52,211,153,0.92)";
+  ctx.fillRect(barX, barY, (barW * yesPct) / 100, 14);
+  ctx.restore();
+
   // ---- Side + probability ----
   const isYes = input.side === "YES";
   const isNo = input.side === "NO";
@@ -186,7 +220,11 @@ export async function renderPoster(input: PosterInput): Promise<PosterResult> {
   }
 
   // ---- QR code (ref param for referral attribution) ----
-  const shareUrl = `${SHARE_SITE}/?ref=share&m=${input.marketId ?? "feed"}`;
+  const params = new URLSearchParams();
+  if (input.ref) params.set("ref", input.ref);
+  if (input.marketId) params.set("m", input.marketId);
+  const query = params.toString();
+  const shareUrl = `${shareSite()}/${query ? `?${query}` : ""}`;
   const qrData = await QRCode.toDataURL(shareUrl, {
     margin: 1,
     width: 300,
@@ -201,10 +239,17 @@ export async function renderPoster(input: PosterInput): Promise<PosterResult> {
   ctx.fillStyle = "rgba(203,213,225,0.6)";
   ctx.fillText(P.scanQr, W - 96 - 160, H - 96 - 176);
 
-  // ---- Footer ----
+  // ---- Footer (kept clear of the QR block and the return figure) ----
   ctx.font = "400 13px ui-monospace, SFMono-Regular, Menlo, monospace";
   ctx.fillStyle = "rgba(148,163,184,0.65)";
-  ctx.fillText(P.footer, 96, H - 96);
+  ctx.fillText(P.footer, 96, H - 44);
+  if (input.ref) {
+    const code = input.ref.startsWith("0x") ? `0x${input.ref.slice(2, 6)}…${input.ref.slice(-4)}` : input.ref;
+    ctx.font = "600 13px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.fillStyle = "rgba(110,231,183,0.9)";
+    const refLine = `ref ${code}`;
+    ctx.fillText(refLine, W - 96 - ctx.measureText(refLine).width, H - 44);
+  }
 
   const dataUrl = canvas.toDataURL("image/png");
   const tweet = format(P.tweet, {
