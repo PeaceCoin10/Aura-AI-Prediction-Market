@@ -10,10 +10,21 @@ const KEY = "aura.identity.v1";
 let current: string | null = null;
 
 export function setIdentity(address?: string | null): void {
-  current = address && /^0x[0-9a-fA-F]{40}$/.test(address) ? address.toLowerCase() : null;
+  const next = address && /^0x[0-9a-fA-F]{40}$/.test(address) ? address.toLowerCase() : null;
+  current = next;
+  if (!next) return; // keep the last wallet on this device: it is still the invite code to share
   try {
-    if (current) localStorage.setItem(KEY, current);
-    else localStorage.removeItem(KEY);
+    localStorage.setItem(KEY, next);
+  } catch {
+    /* private mode */
+  }
+}
+
+/** Explicit opt-out (account switching is not a reason to forget the invite code). */
+export function clearIdentity(): void {
+  current = null;
+  try {
+    localStorage.removeItem(KEY);
   } catch {
     /* private mode */
   }
