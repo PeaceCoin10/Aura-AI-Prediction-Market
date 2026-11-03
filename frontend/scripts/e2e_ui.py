@@ -135,6 +135,12 @@ def main():
             check("poster renders as a PNG data URL", img.count() == 1)
             src = img.first.get_attribute("src") or ""
             check("poster is a full 1200x630 card", len(src) > 20000, f"bytes~{len(src) // 1024}KB")
+            mini = page.locator('[data-testid="share-miniapp"]')
+            check("poster offers a Telegram Mini App hop", mini.count() == 1)
+            if mini.count():
+                href = mini.first.get_attribute("href") or ""
+                check("Mini App link is a t.me deep link with a start param",
+                      href.startswith("https://t.me/") and "startapp=" in href, href[:90])
         page.locator('[data-testid="share-close"]').first.click()
         page.wait_for_timeout(300)
         page.locator('[data-testid="detail-close"]').first.click()

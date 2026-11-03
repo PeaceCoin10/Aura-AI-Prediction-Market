@@ -992,6 +992,7 @@ export const ko = {
       alt: "공유 카드",
       download: "PNG 다운로드",
       postOnX: "X에 게시",
+      miniApp: "텔레그램에서 열기",
       copyText: "게시 문구 복사",
       failed: "카드 생성 실패: {{err}}",
     },

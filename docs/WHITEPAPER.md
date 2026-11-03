@@ -315,7 +315,7 @@ forge test                                                    # 62 passed, 0 fai
 cd sdk && npm test                                            # 70 passed, 116 assertions
 python3 -m unittest discover -s hermes -p 'test_*.py'          # 86 passed
 node server/sync-selftest.mjs                                 # 11 passed
-python3 frontend/scripts/e2e_ui.py <url>                      # 123 passed
+python3 frontend/scripts/e2e_ui.py <url>                      # 125 passed
 python3 frontend/scripts/e2e_sync.py <url>                    # 13 passed
 npx tsc --noEmit                                              # 0 errors
 ```
@@ -342,7 +342,7 @@ npx tsc --noEmit                                              # 0 errors
 | `CentralPredictionEngine` | `0xE6056Bc6700F6d7E6fF8779B212655284dc1631C` |
 | `ProtocolFeeVault` | `0x29dE563f3059827D00837305FAE2Bbc87c7D9eE1` |
 | USDC (canonical, 6 dp) | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
-| `ReferralLedger` | `0x2ebf3b69870979f863b8900f03ce8acfe58e8954` |
+| `ReferralLedger` | `0x2ebf3b69870979f863b8900f03ce8acfe58e8954` (owner = treasury, **operator = indexer `0xaaA5…7C80`**) |
 
 Roles: `DEFAULT_ADMIN` (pause, role grants), `CREATOR`, `ORACLE`, `FEE_MANAGER`.
 

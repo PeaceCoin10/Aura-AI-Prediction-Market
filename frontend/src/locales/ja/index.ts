@@ -1019,6 +1019,7 @@ export const ja = {
       alt: "シェアカード",
       download: "PNGをダウンロード",
       postOnX: "Xに投稿",
+      miniApp: "Telegram で開く",
       copyText: "投稿文をコピー",
       failed: "カードの生成に失敗しました：{{err}}",
     },

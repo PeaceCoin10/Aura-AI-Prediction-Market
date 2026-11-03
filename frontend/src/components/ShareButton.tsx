@@ -5,7 +5,7 @@ import { burstFrom } from "../lib/fx";
 import { getIdentity } from "../lib/identity";
 import { Spinner } from "./ui";
 import { format, useT } from "../lib/i18n";
-import { haptic, marketDeepLink, shareToTelegram } from "../lib/telegram";
+import { haptic, marketDeepLink, referralDeepLink, shareToTelegram } from "../lib/telegram";
 
 /** One-click share card for X (used by market cards and position cards). */
 export function ShareButton({
@@ -102,6 +102,16 @@ export function ShareButton({
               >
                 {t.social.share.postOnX}
               </button>
+              <a
+                data-testid="share-miniapp"
+                href={getIdentity() ? referralDeepLink(getIdentity() as string) : marketDeepLink(String(input.marketId ?? ""))}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="btn-ghost px-3 py-1.5 text-[12px] text-sky-300"
+                onClick={() => haptic("tap")}
+              >
+                {t.social.share.miniApp}
+              </a>
               {input.marketId && (
                 <button
                   data-testid="share-telegram"

@@ -972,6 +972,7 @@ export const zh = {
       alt: "分享卡片",
       download: "下载 PNG",
       postOnX: "发布到 X",
+      miniApp: "在 Telegram 打开",
       copyText: "复制文案",
       failed: "卡片生成失败：{{err}}",
     },

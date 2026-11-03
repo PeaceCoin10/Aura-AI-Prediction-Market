@@ -1063,6 +1063,7 @@ export const de = {
       alt: "Teilen-Karte",
       download: "PNG herunterladen",
       postOnX: "Auf X posten",
+      miniApp: "In Telegram öffnen",
       copyText: "Post-Text kopieren",
       failed: "Card-Rendering fehlgeschlagen: {{err}}",
     },

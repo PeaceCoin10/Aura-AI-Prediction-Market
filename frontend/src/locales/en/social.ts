@@ -100,6 +100,7 @@ export const social = {
     alt: "Share card",
     download: "Download PNG",
     postOnX: "Post on X",
+    miniApp: "Open in Telegram",
     copyText: "Copy post text",
     failed: "Card render failed: {{err}}",
   },
