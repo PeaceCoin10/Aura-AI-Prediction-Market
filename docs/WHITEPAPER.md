@@ -104,7 +104,7 @@ The terminal is a static client: no account, no backend session, no custody of u
 | --- | --- |
 | `CentralPredictionEngine` | market state, CPMM, escrow, resolution, pause |
 | `ProtocolFeeVault` | fee custody; `autoDistributeFee()` takes no parameters |
-| `ReferralLedger` | optional off-book attribution ledger |
+| `ReferralLedger` | affiliate accrual + pull payout: `rebateBps` 2000 (20% of the 1.5% fee), credited by its `operator`, claimed in USDC |
 
 > [!IMPORTANT]
 > The client never trusts a server for prices. Quotes are recomputed from reserves with the same
@@ -227,6 +227,11 @@ redeem (0.5%) ──┘        anyone may call · no recipient parameter
 | Settlement | 0.5% of payout | at redeem | `ProtocolFeeVault` |
 | `INVALID` refund | 0% | at redeem | — |
 
+Referral rebates settle in `ReferralLedger`, funded as a separate pool: the ledger credits 20% of
+the 1.5% fee to the referrer of an attributed trade (`rebateBps = 2000`) and the referrer pulls the
+USDC whenever they want. The pool is funded explicitly, so a credit can never be paid out of user
+collateral, and claims revert while the pool is short.
+
 The vault holds no logic beyond custody: `autoDistributeFee()` takes no arguments, so a caller
 cannot redirect funds; `renounceOwnership()` is disabled so `setTreasury` can never be bricked by
 accident. `pendingFees()` exposes the balance for monitoring.
@@ -337,6 +342,7 @@ npx tsc --noEmit                                              # 0 errors
 | `CentralPredictionEngine` | `0xE6056Bc6700F6d7E6fF8779B212655284dc1631C` |
 | `ProtocolFeeVault` | `0x29dE563f3059827D00837305FAE2Bbc87c7D9eE1` |
 | USDC (canonical, 6 dp) | `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913` |
+| `ReferralLedger` | `0x2ebf3b69870979f863b8900f03ce8acfe58e8954` |
 
 Roles: `DEFAULT_ADMIN` (pause, role grants), `CREATOR`, `ORACLE`, `FEE_MANAGER`.
 
