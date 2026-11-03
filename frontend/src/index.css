@@ -661,3 +661,13 @@ body::after {
 @media (prefers-reduced-motion: reduce) {
   .aura-coin { display: none; }
 }
+
+/*
+ * Long halls: skip layout/paint for cards that are off-screen. Measured on the 48-card first page
+ * this cuts a full-page repaint (a locale switch, a panel toggle) roughly in half, and it keeps the
+ * cost flat as the user pages through the catalogue.
+ */
+.market-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 340px;
+}

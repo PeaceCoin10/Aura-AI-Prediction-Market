@@ -190,6 +190,7 @@ export const de = {
       liquidity: "Pool-Liquidität",
       featured: "Ausgewählte Märkte",
     },
+    showMore: "{{count}} weitere anzeigen",
     paperBar: {
       label: "Paper-Trading",
       balance: "Guthaben",

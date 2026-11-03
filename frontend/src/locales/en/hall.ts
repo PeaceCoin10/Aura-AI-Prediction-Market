@@ -17,6 +17,7 @@ export const hall = {
     liquidity: "Pool liquidity",
     featured: "Featured markets",
   },
+  showMore: "Show {{count}} more",
   paperBar: {
     label: "Paper trading",
     balance: "Balance",

@@ -163,19 +163,30 @@ def main():
         check("mode banner says Paper trading", "Paper trading" in body)
         check("balance is credited, not 0", re.search(r"10,000(\.00)?", body) is not None)
         cards = page.locator('[data-testid="market-card"]').count()
-        check("255 featured markets are on screen", cards >= 250, f"cards={cards}")
+        check("hall renders a first page of markets", cards >= 40, f"cards={cards}")
+        more = page.locator('[data-testid="show-more"]')
+        check("progressive rendering offers more markets", more.count() == 1)
+        if more.count():
+            more.first.click()
+            page.wait_for_timeout(600)
+            grown = page.locator('[data-testid="market-card"]').count()
+            check("show-more extends the hall", grown > cards, f"{cards} -> {grown}")
+            cards = grown
         check("featured heading present", "Featured markets" in body)
         check("tick cadence is stated", "7s" in body.lower())
         check("hall volume stat present", "USDC" in body and re.search(r"\d{1,3}(,\d{3}){2,}", body) is not None)
 
         print("\n[4] card anatomy · probability, AI take, debate")
-        first = page.locator('[data-testid="demo-hall"] button').first
-        card_text = first.inner_text()
+        first = page.locator('[data-testid="market-card"]').first
+        first.scroll_into_view_if_needed()
+        page.wait_for_timeout(200)
+        card_text = first.inner_text() or (first.text_content() or "")
         check("YES probability shown", "YES" in card_text and "%" in card_text)
         check("NO probability shown", "NO" in card_text)
         check("AI desk tag shown", "◈ AI" in body)
         check("debate counter shown", "Debate" in body)
-        hall_text = page.locator('[data-testid="demo-hall"]').inner_text()
+        # textContent, not innerText: content-visibility keeps off-screen cards out of the paint tree
+        hall_text = page.locator('[data-testid="demo-hall"]').text_content() or ""
         check("cards carry their data source", hall_text.count("CoinGecko") + hall_text.count("ESPN") + hall_text.count("SEC") + hall_text.count("LoL") >= 1)
         art_imgs = page.locator('[data-testid="demo-hall"] img').count()
         check("every card carries generated artwork", art_imgs >= 40, f"images={art_imgs}")
@@ -225,9 +236,14 @@ def main():
         page.wait_for_timeout(600)
         check("Chinese renders without a reload", CJK.search(page.inner_text("body")) is not None)
         # Market questions are editorial data, not UI chrome: they must be translated too.
-        first_title = page.locator('[data-testid="market-card"] h3').first.inner_text()
-        check("market questions are translated, not left in English", CJK.search(first_title) is not None,
-              first_title[:80])
+        # content-visibility skips off-screen cards, so sample every rendered title instead of
+        # trusting whichever card happens to be painted first
+        page.locator('[data-testid="market-card"]').first.scroll_into_view_if_needed()
+        page.wait_for_timeout(250)
+        titles = [t for t in page.locator('[data-testid="market-card"] h3').all_inner_texts() if t.strip()]
+        translated = [t for t in titles if CJK.search(t)]
+        check("market questions are translated, not left in English", len(translated) >= 1,
+              f"translated={len(translated)}/{len(titles)} sample={titles[:1]}")
         check("no English question title survives the switch",
               page.locator('[data-testid="market-card"] h3', has_text="Will ").count() == 0,
               "english titles=%d" % page.locator('[data-testid="market-card"] h3', has_text="Will ").count())

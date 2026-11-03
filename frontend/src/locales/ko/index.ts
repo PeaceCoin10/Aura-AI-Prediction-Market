@@ -175,6 +175,7 @@ export const ko = {
       liquidity: "풀 유동성",
       featured: "추천 마켓",
     },
+    showMore: "{{count}}개 더 보기",
     paperBar: {
       label: "페이퍼 트레이딩",
       balance: "잔액",

@@ -177,6 +177,7 @@ export const ja = {
       liquidity: "プール流動性",
       featured: "注目マーケット",
     },
+    showMore: "さらに {{count}} 件表示",
     paperBar: {
       label: "ペーパー取引",
       balance: "残高",

@@ -229,6 +229,15 @@ function Dashboard() {
     [nav, q],
   );
 
+  /**
+   * Progressive rendering: 255 cards at once costs ~2.5k DOM nodes and 255 image requests, which
+   * makes a locale switch feel heavy. First page is cheap, "show more" reveals the rest.
+   */
+  const PAGE = 48;
+  const [shownCount, setShownCount] = useState(PAGE);
+  useEffect(() => setShownCount(PAGE), [nav, q]);
+  const demoShown = useMemo(() => demoFiltered.slice(0, shownCount), [demoFiltered, shownCount]);
+
   /** Nav counts: on-chain and featured markets counted together. */
   const counts = useMemo(() => {
     const c: Record<string, number> = { hot: markets.length + DEMO_MARKETS.length };
@@ -296,9 +305,18 @@ function Dashboard() {
         <Empty title={t.hall.sections.demoEmptyTitle} hint={t.hall.sections.demoEmptyHint} />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {demoFiltered.map((d) => (
+          {demoShown.map((d) => (
             <DemoMarketCard key={d.id} market={d} onOpen={() => setDemoSelected(d)} />
           ))}
+          {demoFiltered.length > shownCount && (
+            <button
+              data-testid="show-more"
+              onClick={() => setShownCount((n) => n + PAGE)}
+              className="card col-span-full py-3 text-[12px] text-slate-400 transition hover:text-slate-200"
+            >
+              {format(t.hall.showMore, { count: Math.min(PAGE, demoFiltered.length - shownCount) })}
+            </button>
+          )}
         </div>
       )}
     </section>

@@ -129,7 +129,7 @@ export function DemoMarketCard({ market, onOpen }: { market: DemoMarket; onOpen:
   return (
     <div
       data-testid="market-card"
-      className="flow-border demo-glow card card-hover group relative flex flex-col gap-3 p-4"
+      className="market-card flow-border demo-glow card card-hover group relative flex flex-col gap-3 p-4"
     >
       <button onClick={onOpen} className="flex flex-1 flex-col gap-3 text-left">
         <MarketArt

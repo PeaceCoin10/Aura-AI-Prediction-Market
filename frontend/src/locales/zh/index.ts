@@ -181,6 +181,7 @@ export const zh = {
       liquidity: "池内流动性",
       featured: "精选市场",
     },
+    showMore: "再显示 {{count}} 个",
     paperBar: {
       label: "模拟盘",
       balance: "余额",

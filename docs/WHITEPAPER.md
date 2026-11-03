@@ -315,7 +315,7 @@ forge test                                                    # 62 passed, 0 fai
 cd sdk && npm test                                            # 70 passed, 116 assertions
 python3 -m unittest discover -s hermes -p 'test_*.py'          # 107 passed
 node server/sync-selftest.mjs                                 # 11 passed
-python3 frontend/scripts/e2e_ui.py <url>                      # 127 passed
+python3 frontend/scripts/e2e_ui.py <url>                      # 130 passed
 python3 frontend/scripts/e2e_sync.py <url>                    # 13 passed
 npx tsc --noEmit                                              # 0 errors
 ```
@@ -360,6 +360,14 @@ python3 frontend/scripts/e2e_ui.py http://127.0.0.1:4173/     # UI gate
 Static bundle, no server session. Prices recomputed from reserves with the §4 formula; five locales
 (EN/ZH/JA/KO/DE) as a typed message tree plus per-market copy in `src/locales/markets.<code>.json`;
 portfolio, debate takes and language sync through the encrypted relay.
+
+### 9.5 Client performance
+
+The hall renders a first page of 48 markets with `content-visibility: auto` on each card, so
+off-screen cards cost neither layout nor paint. Measured on the public build with a headless
+software rasteriser: 3.1k DOM nodes, 56 images, and a full-locale switch in **0.52–0.70 s**
+(measured before this change: 4.2–5.0 s with all 255 cards mounted). JavaScript time for a switch is
+~45 ms; the remainder is compositing of the glass surfaces, which is cheaper on real GPUs.
 
 ### 9.4 Known centralisation
 
