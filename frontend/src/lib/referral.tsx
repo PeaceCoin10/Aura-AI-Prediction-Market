@@ -134,7 +134,7 @@ export function readOrderTag(data: string): string | null {
   if (clean.length < 56) return null;
   const tail = clean.slice(-56).toLowerCase();
   if (!tail.startsWith(REF_MAGIC)) return null;
-  const addr = `0x${tail.slice(8)}`;
+  const addr = `0x${tail.slice(16)}`;
   return ADDRESS.test(addr) ? addr : null;
 }
 

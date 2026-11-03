@@ -113,6 +113,17 @@ def main():
         page.wait_for_timeout(500)
         inv = page.get_by_role("dialog").or_(page.locator("div.glass-panel").filter(has_text="Invite"))
         check("invite desk opens from the strip", page.locator('[data-testid="copy-invite"]').count() >= 1)
+        drawer_text = " ".join(page.locator('[data-testid="copy-invite"]').first.locator("xpath=ancestor::aside").inner_text().split())
+        genesis_panel = page.locator('[data-testid="genesis-explorer"]')
+        claim_btn = page.locator('[data-testid="claim-rebate"]')
+        check("affiliate shows either a claim path or the genesis state",
+              genesis_panel.count() + claim_btn.count() >= 1,
+              f"genesis={genesis_panel.count()} claim={claim_btn.count()}")
+        if genesis_panel.count():
+            gtext = " ".join(genesis_panel.first.inner_text().split())
+            check("genesis state is warm, not a hard failure",
+                  "genesis" in gtext.lower() and "insufficient" not in gtext.lower(), gtext[:80])
+        check("no cold insufficient-liquidity copy in the drawer", "insufficient" not in drawer_text.lower())
         page.get_by_role("button", name=re.compile(r"^(Close|关闭|閉じる|닫기|Schließen)$", re.I)).last.click()
         page.wait_for_timeout(400)
         check("invite desk closes cleanly", page.locator('[data-testid="copy-invite"]').count() == 0)

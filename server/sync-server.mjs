@@ -8,6 +8,7 @@
  *
  * Endpoints
  *   GET  /health                 → { ok, objects, uptime }
+ *   POST /v1/attribution         → { ok, queued }   append one attribution candidate (JSONL)
  *   GET  /v1/blob/:tag           → { record } | 404
  *   PUT  /v1/blob/:tag           → { ok, tag, updatedAt }
  *   DELETE /v1/blob/:tag         → { ok }        (only with SYNC_ADMIN_TOKEN)
@@ -23,7 +24,7 @@
  * Then point the frontend at it:  VITE_SYNC_ENDPOINT=http://127.0.0.1:8787/v1/blob
  */
 import { createServer } from "node:http";
-import { mkdir, readFile, writeFile, unlink, readdir } from "node:fs/promises";
+import { mkdir, readFile, writeFile, unlink, readdir, appendFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -89,6 +90,41 @@ async function countObjects() {
   }
 }
 
+/**
+ * Attribution ingest.
+ *
+ * The frontend cannot hold the operator key, so it only posts "this wallet arrived with ref X and
+ * sent tx Y". Nothing here is trusted: the indexer worker re-reads the receipt on Base and only the
+ * engine's own SharesBought / SharesSold logs decide whether a rebate is credited. This endpoint is
+ * a queue, not an oracle.
+ */
+const ATTR_FILE = process.env.ATTR_FILE ?? join(DATA_DIR, "attribution.jsonl");
+const ADDRESS_RE = /^0x[0-9a-fA-F]{40}$/;
+const TX_RE = /^0x[0-9a-fA-F]{64}$/;
+
+async function queueAttribution(raw) {
+  let body;
+  try {
+    body = JSON.parse(raw);
+  } catch {
+    return { status: 400, payload: { error: "bad_json" } };
+  }
+  const tx = String(body.tx_hash ?? "").trim().toLowerCase();
+  const referrer = String(body.referrer ?? "").trim().toLowerCase();
+  const trader = body.trader ? String(body.trader).trim().toLowerCase() : undefined;
+  if (!TX_RE.test(tx)) return { status: 400, payload: { error: "bad_tx_hash" } };
+  if (!ADDRESS_RE.test(referrer) || /^0x0{40}$/.test(referrer)) {
+    return { status: 400, payload: { error: "bad_referrer" } };
+  }
+  if (trader !== undefined && !ADDRESS_RE.test(trader)) {
+    return { status: 400, payload: { error: "bad_trader" } };
+  }
+  await mkdir(DATA_DIR, { recursive: true });
+  const line = JSON.stringify({ tx_hash: tx, referrer, trader, at: Date.now() }) + "\n";
+  await appendFile(ATTR_FILE, line, "utf8");
+  return { status: 202, payload: { ok: true, queued: true, file: ATTR_FILE } };
+}
+
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
   const path = url.pathname;
@@ -101,6 +137,21 @@ const server = createServer(async (req, res) => {
 
   if (path === "/health") {
     json(res, 200, { ok: true, objects: await countObjects(), uptime: Math.round((Date.now() - STARTED) / 1000) });
+    return;
+  }
+
+  if (path === "/v1/attribution") {
+    if (req.method !== "POST") {
+      json(res, 405, { error: "method_not_allowed" });
+      return;
+    }
+    const raw = await readBody(req);
+    if (raw.length > 2048) {
+      json(res, 413, { error: "too_large" });
+      return;
+    }
+    const { status, payload } = await queueAttribution(raw);
+    json(res, status, payload);
     return;
   }
 

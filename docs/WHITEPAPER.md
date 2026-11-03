@@ -313,9 +313,9 @@ breaks**:
 ```bash
 forge test                                                    # 62 passed, 0 failed
 cd sdk && npm test                                            # 70 passed, 116 assertions
-python3 -m unittest discover -s hermes -p 'test_*.py'          # 86 passed
+python3 -m unittest discover -s hermes -p 'test_*.py'          # 107 passed
 node server/sync-selftest.mjs                                 # 11 passed
-python3 frontend/scripts/e2e_ui.py <url>                      # 125 passed
+python3 frontend/scripts/e2e_ui.py <url>                      # 127 passed
 python3 frontend/scripts/e2e_sync.py <url>                    # 13 passed
 npx tsc --noEmit                                              # 0 errors
 ```
@@ -415,6 +415,26 @@ Two mechanics, both auditable:
 | --- | --- | --- |
 | Share poster | 1200×630 PNG with both-side probability, potential return, ref-coded link and QR; one click to the X intent with `#PredictionMarkets #Base #Crypto` | the card's own live quote; the ref code is the connected address |
 | Genesis Season 1 | points for on-chain volume, daily check-in and published takes, plus a standings table | `SharesBought` / `SharesSold` for volume; a local ledger for check-ins and takes |
+
+### 10.6 Attribution indexer
+
+A trade's referrer rides in the last 28 bytes of the order calldata — `auraref1` (8 bytes) followed
+by the referrer address — which the engine's ABI decoder never reads. `hermes/indexer.py` recovers
+it, re-reads the receipt, and only credits a rebate when the engine's own `SharesBought` /
+`SharesSold` log matches:
+
+| Step | Rule |
+| --- | --- |
+| discover | `--scan-blocks N` walks the last N blocks for tagged engine calls; or a queue line from `/v1/attribution` |
+| verify | tag in calldata is authoritative; a queue referrer that disagrees is refused |
+| decode | volume from `amountIn` (buy) or `amountOut` (sell); trader must match the tx sender |
+| credit | `accrue(tradeId = sha3(tx:logIndex), referrer, volume)` signed by the **operator** key |
+| fallback | dry-run is the default; `--live` is a deliberate flag |
+
+> [!NOTE]
+> While the pool is unfunded the affiliate panel shows a **Genesis Explorer** state instead of an
+> error: links, points and attribution all keep working, and claims switch on the moment the pool is
+> funded. That state is derived from `poolBalance() == 0`, not from a hard-coded flag.
 
 > [!IMPORTANT]
 > Points are a loyalty ledger, not a token. Paper fills earn nothing — only a settled on-chain fill

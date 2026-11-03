@@ -35,20 +35,26 @@ export function AffiliateDrawer({ open, onClose }: { open: boolean; onClose: () 
   const link = address ? referralLink(address) : `${window.location.origin}${import.meta.env.BASE_URL}?ref=0x…`;
   const tgLink = address ? referralDeepLink(address) : link;
   const ledgerReady = hasReferralLedger();
+  /** Genesis phase: the ledger is live but its pool has not been funded yet. */
+  const genesisPhase = ledgerReady && onchain !== null && onchain.pool === 0n;
 
   /* Read the referrer's settled balance straight from the ledger. */
   useEffect(() => {
-    if (!open || !address || !ledgerReady) return;
+    if (!open || !ledgerReady) return;
     let alive = true;
     void (async () => {
       try {
+        // The pool balance is public: it decides the genesis/early-access state for every visitor,
+        // not only for a connected wallet.
         const [claimable, pool] = await Promise.all([
-          publicClient.readContract({
-            address: REFERRAL_LEDGER as `0x${string}`,
-            abi: REFERRAL_LEDGER_ABI,
-            functionName: "claimable",
-            args: [address],
-          }) as Promise<bigint>,
+          address
+            ? (publicClient.readContract({
+                address: REFERRAL_LEDGER as `0x${string}`,
+                abi: REFERRAL_LEDGER_ABI,
+                functionName: "claimable",
+                args: [address],
+              }) as Promise<bigint>)
+            : Promise.resolve(0n),
           publicClient.readContract({
             address: REFERRAL_LEDGER as `0x${string}`,
             abi: REFERRAL_LEDGER_ABI,
@@ -156,6 +162,30 @@ export function AffiliateDrawer({ open, onClose }: { open: boolean; onClose: () 
             </div>
           </div>
 
+          {genesisPhase && (
+            <div data-testid="genesis-explorer" className="rounded-xl border border-brand/20 bg-brand/[0.06] p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="chip border-brand/30 text-[9.5px] uppercase tracking-wider text-brand">
+                  {t.affiliate.explorerTitle}
+                </span>
+                <span className="text-[10px] text-slate-500">{t.affiliate.explorerPhase}</span>
+              </div>
+              <p className="mt-1.5 text-[11px] leading-relaxed text-slate-400">{t.affiliate.explorerBody}</p>
+              <ul className="mt-1.5 space-y-0.5 text-[10.5px] leading-relaxed text-slate-500">
+                <li>▸ {t.affiliate.explorerPoint1}</li>
+                <li>▸ {t.affiliate.explorerPoint2}</li>
+                <li>▸ {t.affiliate.explorerPoint3}</li>
+              </ul>
+              <button
+                data-testid="explorer-copy"
+                onClick={() => copy(link, "link")}
+                className="mt-2 rounded-lg border border-brand/30 bg-brand/10 px-2.5 py-1 text-[10.5px] text-brand hover:bg-brand/20"
+              >
+                {t.affiliate.explorerCta}
+              </button>
+            </div>
+          )}
+
           <div className="rounded-xl border border-white/8 bg-white/[0.03] p-3">
             <div className="flex items-center justify-between">
               <div className="text-[9.5px] uppercase tracking-wide text-slate-500">{t.affiliate.onchain}</div>
@@ -167,7 +197,10 @@ export function AffiliateDrawer({ open, onClose }: { open: boolean; onClose: () 
               <div className="mono text-xl text-brand" data-testid="claimable">
                 {ledgerReady ? (onchain ? `${usdc(onchain.claimable)} USDC` : "…") : t.affiliate.ledgerMissing}
               </div>
-              {ledgerReady && (
+              {ledgerReady && genesisPhase && (
+                <span className="text-[10px] text-slate-500">{t.affiliate.explorerClaimNote}</span>
+              )}
+              {ledgerReady && !genesisPhase && (
                 <button
                   data-testid="claim-rebate"
                   onClick={claim}
