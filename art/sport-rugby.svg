@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-label="Will the Six Nations be won with a grand slam?">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="675" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#030c09"/><stop offset="52%" stop-color="#065f46" stop-opacity=".30"/><stop offset="100%" stop-color="#030c09"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="31%" cy="75%" r="58%">
+      <stop offset="0%" stop-color="#34d399" stop-opacity=".30"/><stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vig" cx="50%" cy="50%" r="72%">
+      <stop offset="55%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".62"/>
+    </radialGradient>
+    <linearGradient id="edge" x1="0" y1="675" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#34d399" stop-opacity="0"/><stop offset="50%" stop-color="#a7f3d0" stop-opacity=".7"/><stop offset="100%" stop-color="#34d399" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+      <path d="M60 0H0V60" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+    </pattern>
+    <clipPath id="c"><rect width="1200" height="675"/></clipPath>
+  </defs>
+  <g clip-path="url(#c)">
+    <rect width="1200" height="675" fill="url(#bg)"/>
+    <rect width="1200" height="675" fill="url(#grid)"/>
+    <rect width="1200" height="675" fill="url(#glow)"/>
+    <rect x="70" y="90" width="1060" height="485" rx="8" fill="none" stroke="#a7f3d0" stroke-width="2" opacity=".22"/>
+    <line x1="600" y1="90" x2="600" y2="575" stroke="#a7f3d0" stroke-width="2" opacity=".22"/>
+    <circle cx="600" cy="330" r="120" fill="none" stroke="#a7f3d0" stroke-width="2" opacity=".22"/>
+    <circle cx="600" cy="330" r="6" fill="#34d399" opacity=".85"/>
+    <circle cx="451" cy="135" r="3" fill="#34d399" opacity=".55"/>
+    <line x1="451" y1="135" x2="562" y2="151" stroke="#34d399" stroke-width="1.2" opacity=".28"/>
+    <circle cx="555" cy="526" r="4" fill="#34d399" opacity=".55"/>
+    <line x1="555" y1="526" x2="690" y2="483" stroke="#34d399" stroke-width="1.2" opacity=".28"/>
+    <circle cx="906" cy="541" r="5" fill="#34d399" opacity=".55"/>
+    <line x1="906" y1="541" x2="1132" y2="530" stroke="#34d399" stroke-width="1.2" opacity=".28"/>
+    <circle cx="1001" cy="526" r="3" fill="#34d399" opacity=".55"/>
+    <line x1="1001" y1="526" x2="1122" y2="577" stroke="#34d399" stroke-width="1.2" opacity=".28"/>
+    <circle cx="706" cy="287" r="4" fill="#34d399" opacity=".55"/>
+    <line x1="706" y1="287" x2="852" y2="300" stroke="#34d399" stroke-width="1.2" opacity=".28"/>
+    <circle cx="587" cy="579" r="5" fill="#34d399" opacity=".55"/>
+    <line x1="587" y1="579" x2="814" y2="543" stroke="#34d399" stroke-width="1.2" opacity=".28"/>
+    <circle cx="859" cy="301" r="3" fill="#34d399" opacity=".55"/>
+    <line x1="859" y1="301" x2="1038" y2="244" stroke="#34d399" stroke-width="1.2" opacity=".28"/>
+    <rect width="1200" height="675" fill="url(#vig)"/>
+    <rect x="0" y="672" width="1200" height="3" fill="url(#edge)"/>
+  </g>
+</svg>

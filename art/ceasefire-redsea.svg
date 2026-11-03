@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-label="Will Red Sea shipping traffic recover above 60% of 2023 levels?">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="675" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#03080f"/><stop offset="52%" stop-color="#0c4a6e" stop-opacity=".30"/><stop offset="100%" stop-color="#03080f"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="58%" cy="59%" r="58%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity=".30"/><stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vig" cx="50%" cy="50%" r="72%">
+      <stop offset="55%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".62"/>
+    </radialGradient>
+    <linearGradient id="edge" x1="0" y1="675" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0"/><stop offset="50%" stop-color="#bae6fd" stop-opacity=".7"/><stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+      <path d="M60 0H0V60" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+    </pattern>
+    <clipPath id="c"><rect width="1200" height="675"/></clipPath>
+  </defs>
+  <g clip-path="url(#c)">
+    <rect width="1200" height="675" fill="url(#bg)"/>
+    <rect width="1200" height="675" fill="url(#grid)"/>
+    <rect width="1200" height="675" fill="url(#glow)"/>
+    <path d="M60 120 H1124" stroke="#bae6fd" stroke-width="2" opacity=".12"/>
+    <path d="M60 172 H1067" stroke="#bae6fd" stroke-width="2" opacity=".12"/>
+    <path d="M60 224 H892" stroke="#bae6fd" stroke-width="2" opacity=".12"/>
+    <path d="M60 276 H1069" stroke="#bae6fd" stroke-width="2" opacity=".12"/>
+    <path d="M60 328 H896" stroke="#bae6fd" stroke-width="2" opacity=".12"/>
+    <path d="M60 380 H966" stroke="#bae6fd" stroke-width="2" opacity=".12"/>
+    <path d="M60 432 H924" stroke="#bae6fd" stroke-width="2" opacity=".12"/>
+    <path d="M60 484 H951" stroke="#bae6fd" stroke-width="2" opacity=".12"/>
+    <path d="M60 536 H1019" stroke="#bae6fd" stroke-width="2" opacity=".12"/>
+    <circle cx="600" cy="338" r="210" fill="none" stroke="#38bdf8" stroke-width="1.6" opacity=".28"/>
+    <ellipse cx="600" cy="338" rx="210" ry="60" fill="none" stroke="#38bdf8" stroke-width="1" opacity=".18"/>
+    <ellipse cx="600" cy="338" rx="210" ry="100" fill="none" stroke="#38bdf8" stroke-width="1" opacity=".18"/>
+    <ellipse cx="600" cy="338" rx="210" ry="140" fill="none" stroke="#38bdf8" stroke-width="1" opacity=".18"/>
+    <ellipse cx="600" cy="338" rx="210" ry="180" fill="none" stroke="#38bdf8" stroke-width="1" opacity=".18"/>
+    <ellipse cx="600" cy="338" rx="210" ry="220" fill="none" stroke="#38bdf8" stroke-width="1" opacity=".18"/>
+    <circle cx="266" cy="228" r="41" fill="none" stroke="#38bdf8" stroke-width="1.5" opacity=".3"/>
+    <circle cx="266" cy="228" r="4" fill="#bae6fd" opacity=".85"/>
+    <circle cx="503" cy="351" r="104" fill="none" stroke="#38bdf8" stroke-width="1.5" opacity=".3"/>
+    <circle cx="503" cy="351" r="4" fill="#bae6fd" opacity=".85"/>
+    <circle cx="258" cy="224" r="84" fill="none" stroke="#38bdf8" stroke-width="1.5" opacity=".3"/>
+    <circle cx="258" cy="224" r="4" fill="#bae6fd" opacity=".85"/>
+    <circle cx="381" cy="274" r="56" fill="none" stroke="#38bdf8" stroke-width="1.5" opacity=".3"/>
+    <circle cx="381" cy="274" r="4" fill="#bae6fd" opacity=".85"/>
+    <circle cx="834" cy="316" r="109" fill="none" stroke="#38bdf8" stroke-width="1.5" opacity=".3"/>
+    <circle cx="834" cy="316" r="4" fill="#bae6fd" opacity=".85"/>
+    <circle cx="704" cy="369" r="71" fill="none" stroke="#38bdf8" stroke-width="1.5" opacity=".3"/>
+    <circle cx="704" cy="369" r="4" fill="#bae6fd" opacity=".85"/>
+    <rect width="1200" height="675" fill="url(#vig)"/>
+    <rect x="0" y="672" width="1200" height="3" fill="url(#edge)"/>
+  </g>
+</svg>

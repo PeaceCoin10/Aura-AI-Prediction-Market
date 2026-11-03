@@ -1,0 +1,44 @@
+# Photo credits
+
+Photographs are Wikimedia Commons thumbnails, used under the license named per file.
+
+- `crypto-1.jpg` — File:Bitcoin on Laptop Keyboard.jpg · Satheesh Sankaran · CC BY 2.0 · https://commons.wikimedia.org/wiki/File:Bitcoin_on_Laptop_Keyboard.jpg
+- `crypto-2.jpg` — File:Close-up of a Bitcoin physical coin in a womans hand and a laptop on her lap.jpg · Shixart1985 · CC BY 2.0 · https://commons.wikimedia.org/wiki/File:Close-up_of_a_Bitcoin_physical_coin_in_a_womans_hand_and_a_laptop_on_her_lap.jpg
+- `crypto-3.jpg` — File:Physical bitcoin statistic coin.JPG · AntanaCoins · CC BY-SA 3.0 · https://commons.wikimedia.org/wiki/File:Physical_bitcoin_statistic_coin.JPG
+- `crypto-4.jpg` — File:Young kid pointing light at the Bitcoin physical coin.jpg · Shixart1985 · CC BY 2.0 · https://commons.wikimedia.org/wiki/File:Young_kid_pointing_light_at_the_Bitcoin_physical_coin.jpg
+- `crypto-5.jpg` — File:Frankfurt Stock Exchange (Ank Kumar) 03.jpg · Ank Kumar · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Frankfurt_Stock_Exchange_(Ank_Kumar)_03.jpg
+- `crypto-6.jpg` — File:Frankfurt Stock Exchange (Ank Kumar) 04.jpg · Ank Kumar · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Frankfurt_Stock_Exchange_(Ank_Kumar)_04.jpg
+- `crypto-7.jpg` — File:Frankfurt Stock Exchange (Ank Kumar) 05.jpg · Ank Kumar · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Frankfurt_Stock_Exchange_(Ank_Kumar)_05.jpg
+- `crypto-8.jpg` — File:Frankfurt Stock Exchange (Ank Kumar) 08.jpg · Ank Kumar · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Frankfurt_Stock_Exchange_(Ank_Kumar)_08.jpg
+- `news-1.jpg` — File:Memorial plaque to the United Nations General Assembly. Methodist Central Hall, Westminster.jpg · Ollios · CC BY-SA 3.0 · https://commons.wikimedia.org/wiki/File:Memorial_plaque_to_the_United_Nations_General_Assembly._Methodist_Central_Hall,_Westminster.jpg
+- `news-2.jpg` — File:Panorama of the United Nations General Assembly, Oct 2012.jpg · Spiff · CC BY-SA 3.0 · https://commons.wikimedia.org/wiki/File:Panorama_of_the_United_Nations_General_Assembly,_Oct_2012.jpg
+- `news-3.jpg` — File:Prime Minister Takaichi delivering an address at the General Debate of the United Nations General Assembly in the General Assembly Hall (1).jpg · Cabinet Secretariat · CC BY 4.0 · https://commons.wikimedia.org/wiki/File:Prime_Minister_Takaichi_delivering_an_address_at_the_General_Debate_of_the_United_Nations_General_Assembly_in_the_General_Assembly_Hall_(1).jpg
+- `news-4.jpg` — File:United Nations General Assembly 2024.jpg · Mojnsen · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:United_Nations_General_Assembly_2024.jpg
+- `news-5.jpg` — File:United Nations General Assembly Hall. 2015 Kum Nelson Bame.jpg · Profnkbame2050 · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:United_Nations_General_Assembly_Hall._2015_Kum_Nelson_Bame.jpg
+- `news-6.jpg` — File:United Nations General Assembly Hall (2).jpg · Basil D Soufi · CC BY-SA 3.0 · https://commons.wikimedia.org/wiki/File:United_Nations_General_Assembly_Hall_(2).jpg
+- `news-7.jpg` — File:United Nations General Assembly Hall (3).jpg · Basil D Soufi · CC BY-SA 3.0 · https://commons.wikimedia.org/wiki/File:United_Nations_General_Assembly_Hall_(3).jpg
+- `news-8.jpg` — File:United Nations General Assembly Hall - Closeup of Emblem.jpg · Basil D Soufi · CC BY-SA 3.0 · https://commons.wikimedia.org/wiki/File:United_Nations_General_Assembly_Hall_-_Closeup_of_Emblem.jpg
+- `sports-1.jpg` — File:Basketball arena match sport game lakers tribune fans-1223638.jpg · pxhere.com · CC0 · https://commons.wikimedia.org/wiki/File:Basketball_arena_match_sport_game_lakers_tribune_fans-1223638.jpg
+- `sports-2.jpg` — File:Basketball game in Jerusalem Israel`s new Pais Arena.jpg · Orenrosenfeld · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Basketball_game_in_Jerusalem_Israel%60s_new_Pais_Arena.jpg
+- `sports-3.jpg` — File:Lithuania men's national basketball team after a game in 2011.jpg · globalite · CC BY-SA 2.0 · https://commons.wikimedia.org/wiki/File:Lithuania_men%27s_national_basketball_team_after_a_game_in_2011.jpg
+- `sports-4.jpg` — File:RAC Arena, Wildcats pre-game.jpg · DaHuzyBru · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:RAC_Arena,_Wildcats_pre-game.jpg
+- `sports-5.jpg` — File:Tech-Cavaliers Women's Basketball game (2024-03-03).jpg · Sean Dudley · Public domain · https://commons.wikimedia.org/wiki/File:Tech-Cavaliers_Women%27s_Basketball_game_(2024-03-03).jpg
+- `sports-6.jpg` — File:UAAP Season 82 Ateneo v. UST Basketball Finals Game 2.jpg · Jeremy Lim · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:UAAP_Season_82_Ateneo_v._UST_Basketball_Finals_Game_2.jpg
+- `sports-7.jpg` — File:Dasarath Rangasala Stadium damaged.jpg · Uhooep · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Dasarath_Rangasala_Stadium_damaged.jpg
+- `sports-8.jpg` — File:Dasarath Stadium during 2022 SAFF Women's Championship Final match.jpg · Aarogya1234 · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Dasarath_Stadium_during_2022_SAFF_Women%27s_Championship_Final_match.jpg
+- `esports-1.jpg` — File:Clash Royale League 2024 World Finals stage.jpg · Clash Royale Esports · CC BY 4.0 · https://commons.wikimedia.org/wiki/File:Clash_Royale_League_2024_World_Finals_stage.jpg
+- `esports-2.jpg` — File:ESport IFNG Munich 20-Nov-11 Stage5.jpg · Peshay159 · CC BY-SA 3.0 · https://commons.wikimedia.org/wiki/File:ESport_IFNG_Munich_20-Nov-11_Stage5.jpg
+- `esports-3.jpg` — File:League-of-Legends-Wild-Rift Final Four opening at eSports Stage 20210130a.jpg · Solomon203 · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:League-of-Legends-Wild-Rift_Final_Four_opening_at_eSports_Stage_20210130a.jpg
+- `esports-4.jpg` — File:League-of-Legends-Wild-Rift Final Four opening at eSports Stage 20210130b.jpg · Solomon203 · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:League-of-Legends-Wild-Rift_Final_Four_opening_at_eSports_Stage_20210130b.jpg
+- `esports-5.jpg` — File:LoL Worlds 2020 Stage - 01.jpg · 갱맘TV · CC BY 3.0 · https://commons.wikimedia.org/wiki/File:LoL_Worlds_2020_Stage_-_01.jpg
+- `esports-6.jpg` — File:LoL Worlds 2020 Stage - 02.jpg · 갱맘TV · CC BY 3.0 · https://commons.wikimedia.org/wiki/File:LoL_Worlds_2020_Stage_-_02.jpg
+- `esports-7.jpg` — File:Riot Games Arena VCT Americas February 2024.jpg · DJTechYT · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Riot_Games_Arena_VCT_Americas_February_2024.jpg
+- `esports-8.jpg` — File:Ding Junhui with fans.jpg · Pete from Liverpool, UK · CC0 · https://commons.wikimedia.org/wiki/File:Ding_Junhui_with_fans.jpg
+- `tech-1.jpg` — File:BalticServers data center.jpg · BalticServers.com · CC BY-SA 3.0 · https://commons.wikimedia.org/wiki/File:BalticServers_data_center.jpg
+- `tech-2.jpg` — File:Data Center 2 (UNC).jpg · Ana Las Heras · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Data_Center_2_(UNC).jpg
+- `tech-3.jpg` — File:Data Center 3 (UNC).jpg · Ana Las Heras · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Data_Center_3_(UNC).jpg
+- `tech-4.jpg` — File:Le torrette con i bocchettoni per il raffreddamento ad aria dei server in un data center attivo dal 2015.jpg · Lapalmauz · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Le_torrette_con_i_bocchettoni_per_il_raffreddamento_ad_aria_dei_server_in_un_data_center_attivo_dal_2015.jpg
+- `tech-5.jpg` — File:Virginia Tech - data center.jpg · Christopher Bowns · CC BY-SA 2.0 · https://commons.wikimedia.org/wiki/File:Virginia_Tech_-_data_center.jpg
+- `tech-6.jpg` — File:Wikimedia Foundation Servers-8055 13.jpg · Victorgrigas · CC BY-SA 3.0 · https://commons.wikimedia.org/wiki/File:Wikimedia_Foundation_Servers-8055_13.jpg
+- `tech-7.jpg` — File:Shanghai Copper (54220105).jpg · Steve Jurvetson from Los Altos, USA · CC BY 2.0 · https://commons.wikimedia.org/wiki/File:Shanghai_Copper_(54220105).jpg
+- `tech-8.jpg` — File:Halodi Robotics' Perception Engineer With a Humanoid Collaborative Robot.jpg · Nicholas-halodi · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Halodi_Robotics%27_Perception_Engineer_With_a_Humanoid_Collaborative_Robot.jpg
