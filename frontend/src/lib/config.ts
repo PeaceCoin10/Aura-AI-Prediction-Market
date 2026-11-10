@@ -17,10 +17,16 @@ export const USDC_ADDRESS = (
 
 export const USDC_DECIMALS = 6;
 
-/** Public RPCs (override with VITE_RPC_URL, comma-separated for several) */
+/** Public RPCs (override with VITE_RPC_URL, comma-separated for several)
+ *
+ *  Verified 2026-11-10: `https://1rpc.io/base` was discontinued ("This endpoint has been
+ *  discontinued") and `base.llamarpc.com` answers HTTP 525, so both were dropped. Every entry
+ *  below returned a live `marketCount()` at that time; the SDK treats them as a fallback ring,
+ *  so one dead host only costs a timeout.
+ */
 export const RPC_URLS: string[] = (
   import.meta.env.VITE_RPC_URL ??
-  "https://base-rpc.publicnode.com,https://1rpc.io/base,https://mainnet.base.org"
+  "https://base-rpc.publicnode.com,https://base.drpc.org,https://mainnet.base.org,https://base-pokt.nodies.app"
 )
   .split(",")
   .map((s) => s.trim())
