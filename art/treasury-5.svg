@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-label="Will the 10-year Treasury yield close above 4.5% this week?">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="675" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0b0703"/><stop offset="52%" stop-color="#7c2d12" stop-opacity=".30"/><stop offset="100%" stop-color="#0b0703"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="25%" cy="58%" r="58%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity=".30"/><stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vig" cx="50%" cy="50%" r="72%">
+      <stop offset="55%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".62"/>
+    </radialGradient>
+    <linearGradient id="edge" x1="0" y1="675" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0"/><stop offset="50%" stop-color="#fcd34d" stop-opacity=".7"/><stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+      <path d="M60 0H0V60" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+    </pattern>
+    <clipPath id="c"><rect width="1200" height="675"/></clipPath>
+  </defs>
+  <g clip-path="url(#c)">
+    <rect width="1200" height="675" fill="url(#bg)"/>
+    <rect width="1200" height="675" fill="url(#grid)"/>
+    <rect width="1200" height="675" fill="url(#glow)"/>
+    <rect x="101" y="268" width="14" height="232" rx="3" fill="#f87171" opacity="0.30"/>
+    <line x1="108" y1="242" x2="108" y2="518" stroke="#f87171" stroke-width="2" opacity=".4"/>
+    <rect x="232" y="222" width="14" height="278" rx="3" fill="#34d399" opacity="0.38"/>
+    <line x1="239" y1="196" x2="239" y2="518" stroke="#34d399" stroke-width="2" opacity=".4"/>
+    <rect x="346" y="402" width="14" height="98" rx="3" fill="#34d399" opacity="0.46"/>
+    <line x1="353" y1="376" x2="353" y2="518" stroke="#34d399" stroke-width="2" opacity=".4"/>
+    <rect x="468" y="362" width="14" height="138" rx="3" fill="#f87171" opacity="0.54"/>
+    <line x1="475" y1="336" x2="475" y2="518" stroke="#f87171" stroke-width="2" opacity=".4"/>
+    <rect x="564" y="416" width="14" height="84" rx="3" fill="#34d399" opacity="0.30"/>
+    <line x1="571" y1="390" x2="571" y2="518" stroke="#34d399" stroke-width="2" opacity=".4"/>
+    <rect x="702" y="348" width="14" height="152" rx="3" fill="#34d399" opacity="0.38"/>
+    <line x1="709" y1="322" x2="709" y2="518" stroke="#34d399" stroke-width="2" opacity=".4"/>
+    <rect x="812" y="394" width="14" height="106" rx="3" fill="#f87171" opacity="0.46"/>
+    <line x1="819" y1="368" x2="819" y2="518" stroke="#f87171" stroke-width="2" opacity=".4"/>
+    <rect x="940" y="242" width="14" height="258" rx="3" fill="#34d399" opacity="0.54"/>
+    <line x1="947" y1="216" x2="947" y2="518" stroke="#34d399" stroke-width="2" opacity=".4"/>
+    <rect x="1040" y="406" width="14" height="93" rx="3" fill="#34d399" opacity="0.30"/>
+    <line x1="1047" y1="380" x2="1047" y2="518" stroke="#34d399" stroke-width="2" opacity=".4"/>
+    <polyline points="40,203 148,285 256,331 364,299 472,314 580,335 688,337 796,337 904,337 1012,337 1120,337" fill="none" stroke="#fcd34d" stroke-width="3" opacity=".7"/>
+    <rect width="1200" height="675" fill="url(#vig)"/>
+    <rect x="0" y="672" width="1200" height="3" fill="url(#edge)"/>
+  </g>
+</svg>

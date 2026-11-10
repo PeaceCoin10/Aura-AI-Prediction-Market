@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-label="Will a Pacific team reach the VCT final?">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="675" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0a0410"/><stop offset="52%" stop-color="#4c1d95" stop-opacity=".30"/><stop offset="100%" stop-color="#0a0410"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="60%" cy="43%" r="58%">
+      <stop offset="0%" stop-color="#e879f9" stop-opacity=".30"/><stop offset="100%" stop-color="#e879f9" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vig" cx="50%" cy="50%" r="72%">
+      <stop offset="55%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".62"/>
+    </radialGradient>
+    <linearGradient id="edge" x1="0" y1="675" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#e879f9" stop-opacity="0"/><stop offset="50%" stop-color="#c4b5fd" stop-opacity=".7"/><stop offset="100%" stop-color="#e879f9" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+      <path d="M60 0H0V60" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+    </pattern>
+    <clipPath id="c"><rect width="1200" height="675"/></clipPath>
+  </defs>
+  <g clip-path="url(#c)">
+    <rect width="1200" height="675" fill="url(#bg)"/>
+    <rect width="1200" height="675" fill="url(#grid)"/>
+    <rect width="1200" height="675" fill="url(#glow)"/>
+    <polygon points="140,130 194,160 194,220 140,250 86,220 86,160" fill="none" stroke="#c4b5fd" stroke-width="1.6" opacity="0.16"/>
+    <polygon points="272,130 326,160 326,220 272,250 218,220 218,160" fill="none" stroke="#c4b5fd" stroke-width="1.6" opacity="0.25"/>
+    <polygon points="404,130 458,160 458,220 404,250 350,220 350,160" fill="none" stroke="#c4b5fd" stroke-width="1.6" opacity="0.34"/>
+    <polygon points="536,130 590,160 590,220 536,250 482,220 482,160" fill="none" stroke="#c4b5fd" stroke-width="1.6" opacity="0.16"/>
+    <polygon points="668,130 722,160 722,220 668,250 614,220 614,160" fill="none" stroke="#c4b5fd" stroke-width="1.6" opacity="0.25"/>
+    <polygon points="800,130 854,160 854,220 800,250 746,220 746,160" fill="none" stroke="#c4b5fd" stroke-width="1.6" opacity="0.34"/>
+    <polygon points="932,130 986,160 986,220 932,250 878,220 878,160" fill="none" stroke="#c4b5fd" stroke-width="1.6" opacity="0.16"/>
+    <polygon points="1064,130 1118,160 1118,220 1064,250 1010,220 1010,160" fill="none" stroke="#c4b5fd" stroke-width="1.6" opacity="0.25"/>
+    <circle cx="600" cy="338" r="180" fill="none" stroke="#e879f9" stroke-width="1.8" opacity=".3"/>
+    <circle cx="600" cy="338" r="70" fill="none" stroke="#e879f9" stroke-width="1.8" opacity=".35"/>
+    <path d="M600 138v90M600 448v90M400 338h90M710 338h90" stroke="#e879f9" stroke-width="2" opacity=".4"/>
+    <rect width="1200" height="675" fill="url(#vig)"/>
+    <rect x="0" y="672" width="1200" height="3" fill="url(#edge)"/>
+  </g>
+</svg>

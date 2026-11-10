@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-label="Will Argentina's reform bill pass Congress this quarter?">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="675" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#03080f"/><stop offset="52%" stop-color="#0c4a6e" stop-opacity=".30"/><stop offset="100%" stop-color="#03080f"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="80%" cy="53%" r="58%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity=".30"/><stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vig" cx="50%" cy="50%" r="72%">
+      <stop offset="55%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".62"/>
+    </radialGradient>
+    <linearGradient id="edge" x1="0" y1="675" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0"/><stop offset="50%" stop-color="#bae6fd" stop-opacity=".7"/><stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+      <path d="M60 0H0V60" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+    </pattern>
+    <clipPath id="c"><rect width="1200" height="675"/></clipPath>
+  </defs>
+  <g clip-path="url(#c)">
+    <rect width="1200" height="675" fill="url(#bg)"/>
+    <rect width="1200" height="675" fill="url(#grid)"/>
+    <rect width="1200" height="675" fill="url(#glow)"/>
+    <path d="M60 120 H1010" stroke="#bae6fd" stroke-width="2" opacity=".12"/>
+    <path d="M60 172 H1013" stroke="#bae6fd" stroke-width="2" opacity=".12"/>
+    <path d="M60 224 H985" stroke="#bae6fd" stroke-width="2" opacity=".12"/>
+    <path d="M60 276 H1107" stroke="#bae6fd" stroke-width="2" opacity=".12"/>
+    <path d="M60 328 H994" stroke="#bae6fd" stroke-width="2" opacity=".12"/>
+    <path d="M60 380 H1017" stroke="#bae6fd" stroke-width="2" opacity=".12"/>
+    <path d="M60 432 H1093" stroke="#bae6fd" stroke-width="2" opacity=".12"/>
+    <path d="M60 484 H1037" stroke="#bae6fd" stroke-width="2" opacity=".12"/>
+    <path d="M60 536 H1063" stroke="#bae6fd" stroke-width="2" opacity=".12"/>
+    <circle cx="600" cy="338" r="210" fill="none" stroke="#38bdf8" stroke-width="1.6" opacity=".28"/>
+    <ellipse cx="600" cy="338" rx="210" ry="60" fill="none" stroke="#38bdf8" stroke-width="1" opacity=".18"/>
+    <ellipse cx="600" cy="338" rx="210" ry="100" fill="none" stroke="#38bdf8" stroke-width="1" opacity=".18"/>
+    <ellipse cx="600" cy="338" rx="210" ry="140" fill="none" stroke="#38bdf8" stroke-width="1" opacity=".18"/>
+    <ellipse cx="600" cy="338" rx="210" ry="180" fill="none" stroke="#38bdf8" stroke-width="1" opacity=".18"/>
+    <ellipse cx="600" cy="338" rx="210" ry="220" fill="none" stroke="#38bdf8" stroke-width="1" opacity=".18"/>
+    <circle cx="260" cy="175" r="63" fill="none" stroke="#38bdf8" stroke-width="1.5" opacity=".3"/>
+    <circle cx="260" cy="175" r="4" fill="#bae6fd" opacity=".85"/>
+    <circle cx="457" cy="173" r="66" fill="none" stroke="#38bdf8" stroke-width="1.5" opacity=".3"/>
+    <circle cx="457" cy="173" r="4" fill="#bae6fd" opacity=".85"/>
+    <circle cx="285" cy="246" r="73" fill="none" stroke="#38bdf8" stroke-width="1.5" opacity=".3"/>
+    <circle cx="285" cy="246" r="4" fill="#bae6fd" opacity=".85"/>
+    <circle cx="723" cy="163" r="77" fill="none" stroke="#38bdf8" stroke-width="1.5" opacity=".3"/>
+    <circle cx="723" cy="163" r="4" fill="#bae6fd" opacity=".85"/>
+    <circle cx="636" cy="207" r="123" fill="none" stroke="#38bdf8" stroke-width="1.5" opacity=".3"/>
+    <circle cx="636" cy="207" r="4" fill="#bae6fd" opacity=".85"/>
+    <circle cx="253" cy="403" r="117" fill="none" stroke="#38bdf8" stroke-width="1.5" opacity=".3"/>
+    <circle cx="253" cy="403" r="4" fill="#bae6fd" opacity=".85"/>
+    <rect width="1200" height="675" fill="url(#vig)"/>
+    <rect x="0" y="672" width="1200" height="3" fill="url(#edge)"/>
+  </g>
+</svg>

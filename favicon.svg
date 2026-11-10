@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none" role="img" aria-label="Aura AI prediction market logo">
+  <defs><linearGradient id="g" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6ee7b7"/><stop offset="46%" stop-color="#34d399"/><stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient></defs>
+  <g>
+      <path d="M32 4.5 55.5 17.2v21.4c0 9.9-9.4 17.9-23.5 22.9C17.9 55.5 8.5 47.5 8.5 37.6V17.2L32 4.5Z"
+            fill="rgba(52,211,153,0.07)" stroke="url(#g)" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M14.5 32.4c4.6-7.6 10.9-11.4 17.5-11.4s12.9 3.8 17.5 11.4c-4.6 7.6-10.9 11.4-17.5 11.4S19.1 40 14.5 32.4Z"
+            fill="#05070c" stroke="url(#g)" stroke-width="1.6"/>
+      <circle cx="32" cy="32.4" r="6.4" fill="url(#g)" opacity="0.92"/>
+      <circle cx="32" cy="32.4" r="2.4" fill="#05070c"/>
+      <g stroke="#34d399" stroke-width="1.1" opacity="0.85" stroke-linecap="round">
+        <path d="M32 12v5"/><path d="M32 47.8v5"/>
+        <path d="M11.6 32.4h5"/><path d="M47.4 32.4h5"/>
+        <path d="M19 19.6l3.6 3.6"/><path d="M41.4 41.6l3.6 3.6"/>
+        <path d="M45 19.6l-3.6 3.6"/><path d="M22.6 41.6l-3.6 3.6"/>
+      </g>
+      <circle cx="32" cy="12" r="1.4" fill="#6ee7b7"/>
+      <circle cx="32" cy="52.8" r="1.4" fill="#22d3ee"/>
+      <circle cx="11.6" cy="32.4" r="1.4" fill="#22d3ee"/>
+      <circle cx="52.4" cy="32.4" r="1.4" fill="#6ee7b7"/>
+    </g>
+</svg>

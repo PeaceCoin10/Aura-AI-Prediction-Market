@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-label="Will a major chain cut its unstaking period below 7 days?">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="675" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0b0703"/><stop offset="52%" stop-color="#7c2d12" stop-opacity=".30"/><stop offset="100%" stop-color="#0b0703"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="72%" cy="48%" r="58%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity=".30"/><stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vig" cx="50%" cy="50%" r="72%">
+      <stop offset="55%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#000" stop-opacity=".62"/>
+    </radialGradient>
+    <linearGradient id="edge" x1="0" y1="675" x2="1200" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0"/><stop offset="50%" stop-color="#fcd34d" stop-opacity=".7"/><stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+      <path d="M60 0H0V60" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+    </pattern>
+    <clipPath id="c"><rect width="1200" height="675"/></clipPath>
+  </defs>
+  <g clip-path="url(#c)">
+    <rect width="1200" height="675" fill="url(#bg)"/>
+    <rect width="1200" height="675" fill="url(#grid)"/>
+    <rect width="1200" height="675" fill="url(#glow)"/>
+    <rect x="90" y="264" width="14" height="236" rx="3" fill="#f87171" opacity="0.30"/>
+    <line x1="97" y1="238" x2="97" y2="518" stroke="#f87171" stroke-width="2" opacity=".4"/>
+    <rect x="232" y="410" width="14" height="90" rx="3" fill="#34d399" opacity="0.38"/>
+    <line x1="239" y1="384" x2="239" y2="518" stroke="#34d399" stroke-width="2" opacity=".4"/>
+    <rect x="338" y="394" width="14" height="106" rx="3" fill="#34d399" opacity="0.46"/>
+    <line x1="345" y1="368" x2="345" y2="518" stroke="#34d399" stroke-width="2" opacity=".4"/>
+    <rect x="456" y="284" width="14" height="215" rx="3" fill="#f87171" opacity="0.54"/>
+    <line x1="463" y1="258" x2="463" y2="518" stroke="#f87171" stroke-width="2" opacity=".4"/>
+    <rect x="563" y="246" width="14" height="253" rx="3" fill="#34d399" opacity="0.30"/>
+    <line x1="570" y1="220" x2="570" y2="518" stroke="#34d399" stroke-width="2" opacity=".4"/>
+    <rect x="681" y="250" width="14" height="250" rx="3" fill="#34d399" opacity="0.38"/>
+    <line x1="688" y1="224" x2="688" y2="518" stroke="#34d399" stroke-width="2" opacity=".4"/>
+    <rect x="814" y="250" width="14" height="250" rx="3" fill="#f87171" opacity="0.46"/>
+    <line x1="821" y1="224" x2="821" y2="518" stroke="#f87171" stroke-width="2" opacity=".4"/>
+    <rect x="918" y="354" width="14" height="145" rx="3" fill="#34d399" opacity="0.54"/>
+    <line x1="925" y1="328" x2="925" y2="518" stroke="#34d399" stroke-width="2" opacity=".4"/>
+    <rect x="1057" y="420" width="14" height="79" rx="3" fill="#34d399" opacity="0.30"/>
+    <line x1="1064" y1="394" x2="1064" y2="518" stroke="#34d399" stroke-width="2" opacity=".4"/>
+    <polyline points="40,334 148,337 256,337 364,262 472,328 580,336 688,337 796,337 904,337 1012,337 1120,337" fill="none" stroke="#fcd34d" stroke-width="3" opacity=".7"/>
+    <rect width="1200" height="675" fill="url(#vig)"/>
+    <rect x="0" y="672" width="1200" height="3" fill="url(#edge)"/>
+  </g>
+</svg>
