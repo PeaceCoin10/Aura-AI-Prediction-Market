@@ -521,8 +521,12 @@ assets/             brand: logo, banner
 
 ## Roadmap
 
+- [x] Deploy `CentralPredictionEngine` on Base mainnet and create the first live markets
+- [x] Deploy `ReferralLedger` on Base mainnet (`0x2EbF3B69870979F863B8900f03CE8AcfE58E8954`, `rebateBps` 2000)
+- [ ] Seed liquidity: every live market still has 0 USDC depth, so `buyShares` reverts `ImpactTooHigh`
+      (the cap is `(yesReserve + noReserve) * 5%`, and `MIN_SEED` is 10 USDC per market)
+- [ ] Fund `ReferralLedger.poolBalance()` (currently 0) so affiliate rebates can be claimed
 - [ ] Fund the agent wallet (≥100 USDC) so it seeds markets on mainnet automatically
-- [ ] Deploy `ReferralLedger` on Base and fund the rebate pool (script + 16 tests are ready)
 - [x] Move the debate wall off `localStorage` (wallet-bound, end-to-end encrypted cloud sync)
 - [ ] Hand `admin` to a Safe multisig (currently a single EOA)
 - [ ] Independent audit
